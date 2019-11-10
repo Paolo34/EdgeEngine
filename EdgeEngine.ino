@@ -3,27 +3,48 @@
 
 #define MILLIS_PER_MIN 60000
 #define MILLIS_PER_SEC 1000
-const char* ssid = "TORNATOREwifi";
-const char* password =  "finalborgo";
+
+const char* ssidWifi = "TIM-91746045";
+const char* passWifi = "1Oj3eyR5qHD3jAaT5Jfj1Ooh";
+/*
+const char* ssidWifi = "TORNATOREwifi";
+const char* passWifi =  "finalborgo";
+*/
+const String username = "admin";
+const String password =  "admin";
+const String url = "https://api.atmosphere.tools";
+const String ver = "v1";
+const String login = "login";
+const String devs = "devices";
+const String scps = "scripts";
+const String measurements = "measurements";
+const String id = "script_sample_1";
+const String device = "temperature-sensor-riccardo-office";
+const String thing = "riccardo-office";
+
 String token;
-
-
 int httpsCode;
 String response;
-String script;
-double startMin=0;
-double startSec=0;
-double minsElapsed=0;
-double secsElapsed=5;
-boolean gotScript=false;
-/*
-const char* ssid = "TIM-91746045";
-const char* password = "1Oj3eyR5qHD3jAaT5Jfj1Ooh";
-*/
+String scripts;
+String scriptsCode;
+
+double startLogCount=0;
+double startPostCount=0;
+double startGetCount=0;
+
+int tokenDuration=30;
+int period=10;
+int postInterval=5;
+
+double logCount=(double)tokenDuration;
+double postCount=(double)period;
+double getCount=(double)postInterval;
+
 /*
 const char* ssid = "S7Chicco";
 const char* password = "LLLLLLLL";
 */
+
 const char* root_ca= \
 "-----BEGIN CERTIFICATE-----\n" \
 "MIIDJTCCAg2gAwIBAgIJAL2SSUeiac7lMA0GCSqGSIb3DQEBCwUAMGAxLTArBgNV\n" \
@@ -50,49 +71,61 @@ const char* root_ca= \
 void setup() {
   Serial.begin(115200);
   delay(2000);
-  WiFi.begin(ssid, password); 
+  WiFi.begin(ssidWifi, passWifi); 
   while (WiFi.status() != WL_CONNECTED) {
     delay(2000);
     Serial.println("Connecting to WiFi..");
   }
   Serial.println("Connected to the WiFi network");
-
+        
+  token = POSTLogin(username, password); // Authentication
+  startLogCount = millis();
+  
+  response = GETDescr(token); // Get the virtual description
+  period=ParseResponse(response,"period").toInt();
+  scripts=ParseResponse(response,"scripts");
+  scriptsCode= retrieveScriptsCode(token, scripts);
+  startGetCount = millis();
+  
+  POSTvalues(token,"2","temperature","average-hourly-temperature"); // Post measurement
+  startPostCount = millis();   
 }
 
 void loop() {
-  if ((WiFi.status() == WL_CONNECTED)) { //Check the current connection status
+  if ((WiFi.status() == WL_CONNECTED)) //Check the current connection status
+  { 
+    /*postCount = (double)( millis()-startPostCount )/MILLIS_PER_SEC;
+    if( postCount >= postInterval ){
+      startPostCount = millis();
+      POSTvalues(token,"2","temperature","average-hourly-temperature"); // Post measurement
+    }*/
     
-    token=POSTLogin();//Authentication 
-    
-    startMin=millis();//start conuters
-    startSec=millis();
-    
-    if(!gotScript){// retrieve the script only once
-      script=GETScript(token);
-      Serial.println(script);
-      gotScript=true;
-   }
-    
-   while( minsElapsed<=29.5 ){//every 29.5 mins authenticate
-      
-      if( secsElapsed >=5){//every 5 seconds Post a new measurement
-        POSTNewMeasurement(token);
-        minsElapsed=(double)( millis()-startMin )/MILLIS_PER_MIN;
-        startSec=millis();
-      }
-      
-      secsElapsed=(double)( millis()-startSec )/MILLIS_PER_SEC;
+    getCount = (double)( millis()-startGetCount )/MILLIS_PER_MIN;
+    if( getCount >= period ){
+      startGetCount = millis(); 
+      response = GETDescr(token); // Get the scripts
+      period = ParseResponse(response,"period").toInt();
+      scripts = ParseResponse(response,"scripts");
+      scriptsCode= retrieveScriptsCode(token, scripts);
     }
+    
+    logCount = (double)( millis()-startLogCount )/MILLIS_PER_MIN;      
+    if( logCount >= tokenDuration ){ //every "tokenDuration" authenticate
+      startLogCount = millis();
+      token = POSTLogin(username, password); //Authentication
+    }  
+   
+    
+    executeScripts(scriptsCode);
   }
-  
 }
 
-String POSTLogin (){
+String POSTLogin (String username, String password){
     HTTPClient https;
-    https.begin("https://api.atmosphere.tools/v1/login", root_ca); //Specify the URL and certificate
+    https.begin(url+"/"+ver+"/"+login, root_ca); //Specify the URL and certificate
     
-    https.addHeader("Content-Type","application/json");//; charset=utf-8
-    httpsCode = https.POST("{\"username\": \"admin\",\"password\": \"admin\"}");//this is the body
+    https.addHeader("Content-Type","application/json");
+    httpsCode = https.POST("{\"username\": \"" + username + "\",\"password\": \"" + password + "\"}");//this is the body
  
     if (httpsCode > 0) { //Check for the returning code
         response = https.getString();
@@ -104,13 +137,13 @@ String POSTLogin (){
       Serial.printf("[HTTPS] POST Login... failed, error: %s\n", https.errorToString(httpsCode).c_str());
     }
     
-    
     https.end(); //Free the resources
     return ParseToken( response );
 }
-String GETScript(String token){
+
+String GETDescr(String token){
    HTTPClient https;
-   https.begin("https://api.atmosphere.tools/v1/scripts/script_sample_1", root_ca); //Specify the URL and certificate
+   https.begin(url+"/"+ver+"/"+devs+"/"+id, root_ca); //Specify the URL and certificate
 
    https.addHeader("Authorization",token);
    
@@ -124,14 +157,50 @@ String GETScript(String token){
      response="none";
      Serial.printf("[HTTPS] GET Script... failed, error: %s\n", https.errorToString(httpsCode).c_str());
    }
-    
    https.end(); //Free the resources
 
-   return ParseResponse(response,"custom");
+   return response;
 }
-String POSTNewMeasurement (String token){
+
+//DA COLLAUDARE
+String retrieveScriptsCode(String token, String scripts){
+  int startIndex=0;
+  int endIndex=0;
+  String code;
+  
+  while( scripts.indexOf(",", startIndex)!=-1){
+    endIndex=scripts.indexOf(",",startIndex);
+    code.concat( GETScript(token, scripts.substring(startIndex+1,endIndex) + ",");
+    startIndex=endIndex+1;
+  }
+  code.remove( code.length()-1 );//remove the last ","
+  
+  return code;
+}
+
+String GETScript(String token, String script){
+   HTTPClient https;
+   https.begin(url+"/"+ver+"/"+scps+"?filter={\"_id\":\""+script+"\"}", root_ca); //Specify the URL and certificate
+
+   https.addHeader("Authorization",token);
+   
+   httpsCode = https.GET();//the body is empty
+   if (httpsCode > 0) { //Check for the returning code
+        response = https.getString();
+        Serial.println(httpsCode);
+        Serial.println(response);
+   }
+   else {
+     response="none";
+     Serial.printf("[HTTPS] GET Script... failed, error: %s\n", https.errorToString(httpsCode).c_str());
+   }
+   https.end(); //Free the resources
+
+   return response;
+}
+/*String POSTNewMeasurement (String token){
     HTTPClient https;
-    https.begin("https://api.atmosphere.tools/v1/measurements", root_ca); //Specify the URL and certificate
+    https.begin(url+"/"+ver+"/"+measurements, root_ca); //Specify the URL and certificate
    
     https.addHeader("Content-Type","application/json");
     https.addHeader("Authorization",token);
@@ -146,27 +215,64 @@ String POSTNewMeasurement (String token){
       response="none";
       Serial.printf("[HTTPS] POST NewMeas... failed, error: %s\n", https.errorToString(httpsCode).c_str());
     }
-    
 
     https.end(); //Free the resources
     
+    return response;
+}*/
 
+String POSTvalues (String token, String values, String feature, String script){
+    HTTPClient https;
+    https.begin(url+"/"+ver+"/"+measurements, root_ca); //Specify the URL and certificate
+   
+    https.addHeader("Content-Type","application/json");
+    https.addHeader("Authorization",token);
+    
+    httpsCode = https.POST("{\"thing\": \""+thing+"\", \"feature\": \""+feature+"\", \"device\": \""+device+"\", \"script\": \""+script+"\", \"samples\": {\"values\":["+values+"]}}" );//this is the body
+    if (httpsCode > 0) { //Check for the returning code
+        response = https.getString();
+        Serial.println(httpsCode);
+        Serial.println(response);
+    }
+    else {
+      response="none";
+      Serial.printf("[HTTPS] POST NewMeas... failed, error: %s\n", https.errorToString(httpsCode).c_str());
+    }
+
+    https.end(); //Free the resources
+    
     return response;
 }
 
+//DA COLLAUDARE
+void executeScripts(String scriptsCode){
+  int startIndex=0;
+  int endIndex=0;
+  
+  while( scriptsCode.indexOf(",", startIndex)!=-1){
+    endIndex=scriptsCode.indexOf(",",startIndex);
+    executeCode( scriptsCode.substring(startIndex+1,endIndex) );
+    startIndex=endIndex+1;
+  }
+}
+
+void executeCode(String stringCode){
+  //DA IMPLEMENTARE
+}
 String ParseToken(String token){
   return token.substring( token.indexOf("J"), token.lastIndexOf("\"") );
 }
 
 //NOT WORKS WITH CUSTOM BECAUSE IT DELETE ANY WHITESPACES
 String ParseResponse( String response, String fieldName ){
+  
+  if( response.indexOf(fieldName) ==-1){
+    Serial.println("field name is not present!");
+    return "field name is not present!";
+  }
   response.replace(" ","");//delete whitespace
-  
   int beginOfValue = response.indexOf( ":", response.indexOf(fieldName) )+1;//find starting index of field value
-  
-  if(beginOfValue==-1)
-    return "field name is wrong";
-    
+   
   char firstChar = response.charAt( beginOfValue );//this is a delimiter: " or [ or {
   int endOfValue;
   
@@ -219,4 +325,26 @@ int FindEndIndex (char first,char last, int startIndex,String response){
     }
   }
   return nextClose;
+}
+
+double filterOp(String condition,double value){
+  
+}
+
+double maxValue=0;
+double maxOp(double value){
+  if(value>maxValue){
+    maxValue=value;
+    return value;
+  }
+  return NULL;
+}
+double mapOp(String function,double value){
+  
+}
+double windowOp(String function,double initial,double windowSize,double value){
+  
+}
+double slidingWindowOp(String function,double initial,double windowSize,double value){
+  
 }
