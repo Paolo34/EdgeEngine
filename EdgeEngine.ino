@@ -17,6 +17,7 @@ const String ver = "v1";
 const String login = "login";
 const String devs = "devices";
 const String scps = "scripts";
+const String feature="temperature";
 const String measurements = "measurements";
 const String id = "script_sample_1";
 const String device = "temperature-sensor-riccardo-office";
@@ -27,18 +28,21 @@ int httpsCode;
 String response;
 String scripts;
 String scriptsCode;
+String scriptsCounter;
+String measureInterval;
 
 double startLogCount=0;
-double startPostCount=0;
 double startGetCount=0;
+//double startPostCount=0;
 
 int tokenDuration=30;
 int period=10;
-int postInterval=5;
+
 
 double logCount=(double)tokenDuration;
-double postCount=(double)period;
-double getCount=(double)postInterval;
+double getCount=(double)period;
+//double postCount=(double)postInterval;
+
 
 /*
 const char* ssid = "S7Chicco";
@@ -82,13 +86,13 @@ void setup() {
   startLogCount = millis();
   
   response = GETDescr(token); // Get the virtual description
-  period=ParseResponse(response,"period").toInt();
-  scripts=ParseResponse(response,"scripts");
-  scriptsCode= retrieveScriptsCode(token, scripts);
+  period = ParseResponse(response,"period").toInt();
+  scripts = ParseResponse(response,"scripts");
+  scriptsCode = retrieveScriptsCode(token, scripts);
   startGetCount = millis();
   
-  POSTvalues(token,"2","temperature","average-hourly-temperature"); // Post measurement
-  startPostCount = millis();   
+  /*POSTvalues(token,"2","temperature","average-hourly-temperature"); // Post measurement
+  startPostCount = millis();*/
 }
 
 void loop() {
@@ -167,15 +171,66 @@ String retrieveScriptsCode(String token, String scripts){
   int startIndex=0;
   int endIndex=0;
   String code;
+  String tempCode;
   
   while( scripts.indexOf(",", startIndex)!=-1){
     endIndex=scripts.indexOf(",",startIndex);
-    code.concat( GETScript(token, scripts.substring(startIndex+1,endIndex) + ",");
+    tempCode=GETScript(token, scripts.substring(startIndex+1,endIndex);
+    
+    measureInterval.concat( ParseResponse(tempCode,feature) + "," );//get send interval
+    code.concat( tempCode + ",");//get all code
+    
     startIndex=endIndex+1;
   }
-  code.remove( code.length()-1 );//remove the last ","
+  measureInterval.remove( measureInterval.length()-1 ); //remove the last ","
+  code.remove( code.length()-1 ); //remove the last ","
   
   return code;
+}
+//DA COLLAUDARE
+void executeScripts(String scriptsCode){
+  int startIndex=0;
+  int endIndex=0;
+  int counterIndex=0;
+  
+  while( scriptsCode.indexOf(",", startIndex)!=-1){
+    endIndex=scriptsCode.indexOf(",",startIndex);
+    
+    executeCode( scriptsCode.substring(startIndex+1,endIndex) );
+    
+    startIndex=endIndex+1;
+  }
+}
+void executeCode(String stringCode,int ){
+  //DA IMPLEMENTARE
+  
+}
+//DA COLLAUDARE
+int ParseIntervalToSec(String interval){
+  int lastNumIndex=0;
+  int numberValue;// in Seconds
+  
+  while( interval.charAt(lastNumIndex)<58 ){// from 48 to 57 are the ascii codes for a number
+    lastNumIndex++;// precisely this is the firstindex of the unit
+  }
+  numberValue = ( interval.substring(0,lastNumIndex) ).toInt();
+  
+  switch( interval.substring(lastNumIndex,interval.length()-1) ){
+    case "s"://do nothing is already in Second
+      break;
+    case "m":// minutes
+      numberValue*60;
+      break;
+    case "h":// hours
+      numberValue*60*60;
+      break;
+    case "d":// days
+      numberValue*60*60*24;
+      break;
+    default:// if no measure unit is indicate, interpreted as Seconds
+      break;
+  }
+  return numberValue;
 }
 
 String GETScript(String token, String script){
@@ -244,21 +299,7 @@ String POSTvalues (String token, String values, String feature, String script){
     return response;
 }
 
-//DA COLLAUDARE
-void executeScripts(String scriptsCode){
-  int startIndex=0;
-  int endIndex=0;
-  
-  while( scriptsCode.indexOf(",", startIndex)!=-1){
-    endIndex=scriptsCode.indexOf(",",startIndex);
-    executeCode( scriptsCode.substring(startIndex+1,endIndex) );
-    startIndex=endIndex+1;
-  }
-}
 
-void executeCode(String stringCode){
-  //DA IMPLEMENTARE
-}
 String ParseToken(String token){
   return token.substring( token.indexOf("J"), token.lastIndexOf("\"") );
 }
@@ -279,6 +320,9 @@ String ParseResponse( String response, String fieldName ){
   switch (firstChar){
     case '\"':
       endOfValue = response.indexOf(firstChar,beginOfValue+1);// start looking for the last delimiter from the next value
+      break;
+    case '(':
+      endOfValue = FindEndIndex('(',')', beginOfValue+1,response);
       break;
     case '[':
       endOfValue = FindEndIndex('[',']', beginOfValue+1,response);
