@@ -10,16 +10,16 @@ const char* passWifi = "1Oj3eyR5qHD3jAaT5Jfj1Ooh";
 const char* ssidWifi = "TORNATOREwifi";
 const char* passWifi =  "finalborgo";
 */
-const String username = "admin";
-const String password =  "admin";
-const String url = "https://api.atmosphere.tools";
+const String username = "riccardo-office-temperature-sensor-username";
+const String password =  "riccardo-office-temperature-sensor-password";
+const String url = "http://students.atmosphere.tools";
 const String ver = "v1";
 const String login = "login";
 const String devs = "devices";
 const String scps = "scripts";
 const String feature="temperature";
 const String measurements = "measurements";
-const String id = "script_sample_1";
+const String id = "temperature-sensor-riccardo-office";
 const String device = "temperature-sensor-riccardo-office";
 const String thing = "riccardo-office";
 
@@ -35,7 +35,7 @@ double startLogCount=0;
 double startGetCount=0;
 //double startPostCount=0;
 
-int tokenDuration=30;
+int tokenDuration=1800;//30 minutes= 1800 seconds
 int period=10;
 
 
@@ -48,7 +48,7 @@ double getCount=(double)period;
 const char* ssid = "S7Chicco";
 const char* password = "LLLLLLLL";
 */
-
+/*
 const char* root_ca= \
 "-----BEGIN CERTIFICATE-----\n" \
 "MIIDJTCCAg2gAwIBAgIJAL2SSUeiac7lMA0GCSqGSIb3DQEBCwUAMGAxLTArBgNV\n" \
@@ -69,6 +69,7 @@ const char* root_ca= \
 "QUdm499dycwPutvUXeO0aqfNE7ONA/GIeDy+XKeake6SlqsJWLko2oBSy8HDZu1j\n" \
 "66BLarM52c/65MkI8e9XnjXpeSGQ4x6+4qKpapQyj3xOLKqVEYnEZbM=\n" \
 "-----END CERTIFICATE-----\n"; //Atmosphere CA
+*/
 /**
  * setup
  */
@@ -86,7 +87,7 @@ void setup() {
   startLogCount = millis();
   
   response = GETDescr(token); // Get the virtual description
-  period = ParseResponse(response,"period").toInt();
+  period = ParseResponse(response,"period")!="" ? ParseResponse(response,"period").toInt():600;
   scripts = ParseResponse(response,"scripts");
   scriptsCode = retrieveScriptsCode(token, scripts);
   startGetCount = millis();
@@ -104,16 +105,16 @@ void loop() {
       POSTvalues(token,"2","temperature","average-hourly-temperature"); // Post measurement
     }*/
     
-    getCount = (double)( millis()-startGetCount )/MILLIS_PER_MIN;
+    getCount = (double)( millis()-startGetCount )/MILLIS_PER_SEC;
     if( getCount >= period ){
       startGetCount = millis(); 
       response = GETDescr(token); // Get the scripts
-      period = ParseResponse(response,"period").toInt();
+      period = ParseResponse(response,"period")!="" ? ParseResponse(response,"period").toInt():5;
       scripts = ParseResponse(response,"scripts");
       scriptsCode= retrieveScriptsCode(token, scripts);
     }
     
-    logCount = (double)( millis()-startLogCount )/MILLIS_PER_MIN;      
+    logCount = (double)( millis()-startLogCount )/MILLIS_PER_SEC;      
     if( logCount >= tokenDuration ){ //every "tokenDuration" authenticate
       startLogCount = millis();
       token = POSTLogin(username, password); //Authentication
@@ -126,7 +127,7 @@ void loop() {
 
 String POSTLogin (String username, String password){
     HTTPClient https;
-    https.begin(url+"/"+ver+"/"+login, root_ca); //Specify the URL and certificate
+    https.begin(url+"/"+ver+"/"+login); //Specify the URL and certificate
     
     https.addHeader("Content-Type","application/json");
     httpsCode = https.POST("{\"username\": \"" + username + "\",\"password\": \"" + password + "\"}");//this is the body
@@ -147,7 +148,7 @@ String POSTLogin (String username, String password){
 
 String GETDescr(String token){
    HTTPClient https;
-   https.begin(url+"/"+ver+"/"+devs+"/"+id, root_ca); //Specify the URL and certificate
+   https.begin(url+"/"+ver+"/"+devs+"/"+id); //Specify the URL and certificate
 
    https.addHeader("Authorization",token);
    
@@ -175,7 +176,7 @@ String retrieveScriptsCode(String token, String scripts){
   
   while( scripts.indexOf(",", startIndex)!=-1){
     endIndex=scripts.indexOf(",",startIndex);
-    tempCode=GETScript(token, scripts.substring(startIndex+1,endIndex);
+    tempCode=GETScript( token, scripts.substring(startIndex+1,endIndex) );
     
     measureInterval.concat( ParseResponse(tempCode,feature) + "," );//get send interval
     code.concat( tempCode + ",");//get all code
@@ -196,35 +197,29 @@ void executeScripts(String scriptsCode){
   while( scriptsCode.indexOf(",", startIndex)!=-1){
     endIndex=scriptsCode.indexOf(",",startIndex);
     
-    executeCode( scriptsCode.substring(startIndex+1,endIndex) );
+    executeCode( scriptsCode.substring(startIndex+1,endIndex), 3 ); ////////////da cambiare il 3
     
     startIndex=endIndex+1;
   }
 }
-void executeCode(String stringCode,int ){
+void executeCode(String stringCode,int interval){
   //DA IMPLEMENTARE
   
 }
 //DA COLLAUDARE
 int ParseIntervalToSec(String interval){
-  int lastNumIndex=0;
-  int numberValue;// in Seconds
+  int numberValue = ( interval.substring(0,interval.length()-1) ).toInt();
   
-  while( interval.charAt(lastNumIndex)<58 ){// from 48 to 57 are the ascii codes for a number
-    lastNumIndex++;// precisely this is the firstindex of the unit
-  }
-  numberValue = ( interval.substring(0,lastNumIndex) ).toInt();
-  
-  switch( interval.substring(lastNumIndex,interval.length()-1) ){
-    case "s"://do nothing is already in Second
+  switch( interval.charAt(interval.length()-1) ){
+    case 's'://do nothing is already in Second
       break;
-    case "m":// minutes
+    case 'm':// minutes
       numberValue*60;
       break;
-    case "h":// hours
+    case 'h':// hours
       numberValue*60*60;
       break;
-    case "d":// days
+    case 'd':// days
       numberValue*60*60*24;
       break;
     default:// if no measure unit is indicate, interpreted as Seconds
@@ -235,7 +230,7 @@ int ParseIntervalToSec(String interval){
 
 String GETScript(String token, String script){
    HTTPClient https;
-   https.begin(url+"/"+ver+"/"+scps+"?filter={\"_id\":\""+script+"\"}", root_ca); //Specify the URL and certificate
+   https.begin(url+"/"+ver+"/"+scps+"?filter={\"_id\":\""+script+"\"}"); //Specify the URL and certificate
 
    https.addHeader("Authorization",token);
    
@@ -278,7 +273,7 @@ String GETScript(String token, String script){
 
 String POSTvalues (String token, String values, String feature, String script){
     HTTPClient https;
-    https.begin(url+"/"+ver+"/"+measurements, root_ca); //Specify the URL and certificate
+    https.begin(url+"/"+ver+"/"+measurements); //Specify the URL and certificate
    
     https.addHeader("Content-Type","application/json");
     https.addHeader("Authorization",token);
@@ -309,7 +304,7 @@ String ParseResponse( String response, String fieldName ){
   
   if( response.indexOf(fieldName) ==-1){
     Serial.println("field name is not present!");
-    return "field name is not present!";
+    return "";
   }
   response.replace(" ","");//delete whitespace
   int beginOfValue = response.indexOf( ":", response.indexOf(fieldName) )+1;//find starting index of field value
