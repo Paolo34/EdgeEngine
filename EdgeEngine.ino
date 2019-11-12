@@ -26,9 +26,9 @@ const String thing = "riccardo-office";
 String token;
 int httpsCode;
 String response;
-String scripts;
-String scriptsCode;
-String scriptsCounter;
+String scripts; // name of the scripts
+String scriptsCode; // code of the scripts
+String scriptsCounter; //counters of scripts 
 String measureInterval;
 
 double startLogCount=0;
@@ -87,8 +87,11 @@ void setup() {
   startLogCount = millis();
   
   response = GETDescr(token); // Get the virtual description
-  period = ParseResponse(response,"period")!="" ? ParseResponse(response,"period").toInt():600;
+  period = ParseResponse(response,"period")!="" ? ParseResponse(response,"period").toInt():600; // 10 minutes
   scripts = ParseResponse(response,"scripts");
+  
+  scripts="\"average-hourly-temperature\", \"max-temperature\"";
+  
   scriptsCode = retrieveScriptsCode(token, scripts);
   startGetCount = millis();
   
@@ -167,44 +170,60 @@ String GETDescr(String token){
    return response;
 }
 
-//DA COLLAUDARE
 String retrieveScriptsCode(String token, String scripts){
-  int startIndex=0;
-  int endIndex=0;
+  int startIndex=1;
+  int endIndex=1;
   String code;
   String tempCode;
+   
+  scripts.replace(" ","");//delete whitespace
+
+  while( startIndex < scripts.length()-1 ){
   
-  while( scripts.indexOf(",", startIndex)!=-1){
-    endIndex=scripts.indexOf(",",startIndex);
-    tempCode=GETScript( token, scripts.substring(startIndex+1,endIndex) );
+    endIndex=scripts.indexOf("\"",startIndex+1); // start the search from the next charater
+    tempCode=ParseResponse(GETScript( token, scripts.substring(startIndex,endIndex) ),"code");
     
-    measureInterval.concat( ParseResponse(tempCode,feature) + "," );//get send interval
-    code.concat( tempCode + ",");//get all code
+    measureInterval.concat( ParseInterval(tempCode,feature) + "," );//get send interval
+    code.concat( "\""+tempCode+"\"" + ",");//get all codes 
     
-    startIndex=endIndex+1;
+    startIndex=endIndex+3;//+3 because we want to avoid: "," characters between two scripts name
   }
+  
   measureInterval.remove( measureInterval.length()-1 ); //remove the last ","
   code.remove( code.length()-1 ); //remove the last ","
   
   return code;
 }
-//DA COLLAUDARE
+
 void executeScripts(String scriptsCode){
-  int startIndex=0;
-  int endIndex=0;
-  int counterIndex=0;
+  int startIndex=1;
+  int endIndex=1;
+  int codeIndex=0;
   
-  while( scriptsCode.indexOf(",", startIndex)!=-1){
-    endIndex=scriptsCode.indexOf(",",startIndex);
-    
-    executeCode( scriptsCode.substring(startIndex+1,endIndex), 3 ); ////////////da cambiare il 3
-    
-    startIndex=endIndex+1;
+  scriptsCode.replace(" ","");//delete whitespace
+  
+  while( startIndex < scriptsCode.length()-1){
+    endIndex=scriptsCode.indexOf("\"",startIndex+1);
+    executeCode( scriptsCode.substring(startIndex,endIndex), codeIndex ); 
+    codeIndex++;// useful to retrieve the right interval
+    startIndex=endIndex+3;//+3 because we want to avoid: "," characters between two scripts
   }
 }
-void executeCode(String stringCode,int interval){
-  //DA IMPLEMENTARE
+void executeCode(String stringCode,int intervalIndex){
+  int interval=ParseIntervalToSec( getInterval(intervalIndex,measureInterval) );
+  Serial.println("interval is: "+interval);
+}
+
+String getInterval(int index,String numString){
+  int startIndex=0;
+  int endIndex=0;
+  int interval=0;
   
+  for(int i=0;i<index;i++){
+    startIndex=endIndex;
+    endIndex=numString.indexOf(",",startIndex+1);
+  }
+  return numString.substring(startIndex,endIndex);
 }
 //DA COLLAUDARE
 int ParseIntervalToSec(String interval){
@@ -331,6 +350,19 @@ String ParseResponse( String response, String fieldName ){
   return response.substring( beginOfValue+1, endOfValue);
 }
 
+String ParseInterval( String response, String feature ){
+  
+  if( response.indexOf(feature) ==-1){
+    Serial.println("feature is not present!");
+    return "";
+  }
+  response.replace(" ","");//delete whitespace
+  int beginOfValue = response.indexOf( "(", response.indexOf(feature) )+1;//find starting index of interval
+   
+  int endOfValue= response.indexOf( ")", response.indexOf(feature) );//find ending index of interval
+   
+  return response.substring( beginOfValue, endOfValue);
+}
 
 int FindEndIndex (char first,char last, int startIndex,String response){
   String delimiters="";
