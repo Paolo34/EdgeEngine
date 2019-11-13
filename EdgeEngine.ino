@@ -17,27 +17,28 @@ const String ver = "v1";
 const String login = "login";
 const String devs = "devices";
 const String scps = "scripts";
-const String feature="temperature";
 const String measurements = "measurements";
-const String id = "temperature-sensor-riccardo-office";
-const String device = "temperature-sensor-riccardo-office";
+
 const String thing = "riccardo-office";
+const String device = "temperature-sensor-riccardo-office";
+const String id = "temperature-sensor-riccardo-office";
+const String feature="temperature";
 
 String token;
 int httpsCode;
 String response;
-String scripts; // name of the scripts
+String scriptsId; // id of the scripts
 String scriptsCode; // code of the scripts
-String scriptsCounter; //counters of scripts 
-String measureInterval;
+String scriptsCounters; //contains time counters of each script
+String measureIntervals; //contains time interval of each script
+String readyToSend; // contains a variable for each script which says if that script is ready
 
-double startLogCount=0;
-double startGetCount=0;
+double startLogCount=0;// starting instant of counter of Login
+double startGetCount=0;// starting instant of counter of Get scripts
 //double startPostCount=0;
 
-int tokenDuration=1800;//30 minutes= 1800 seconds
-int period=10;
-
+int tokenDuration=1800;//30 minutes= 1800 seconds; interval between two login
+int period=10;// interval between two GET script
 
 double logCount=(double)tokenDuration;
 double getCount=(double)period;
@@ -82,18 +83,19 @@ void setup() {
     Serial.println("Connecting to WiFi..");
   }
   Serial.println("Connected to the WiFi network");
-        
-  token = POSTLogin(username, password); // Authentication
-  startLogCount = millis();
   
+  startLogCount = millis();      
+  token = POSTLogin(username, password); // Authentication
+  
+  startGetCount = millis();
   response = GETDescr(token); // Get the virtual description
   period = ParseResponse(response,"period")!="" ? ParseResponse(response,"period").toInt():600; // 10 minutes
-  scripts = ParseResponse(response,"scripts");
+  scriptsId = ParseResponse(response,"scripts");
   
-  scripts="\"average-hourly-temperature\", \"max-temperature\"";
+  //fake the name of the scripts since now there are no scripts
+  scriptsId="\"average-hourly-temperature\", \"max-temperature\"";
   
-  scriptsCode = retrieveScriptsCode(token, scripts);
-  startGetCount = millis();
+  scriptsCode = retrieveScriptsCode(token, scriptsId);
   
   /*POSTvalues(token,"2","temperature","average-hourly-temperature"); // Post measurement
   startPostCount = millis();*/
@@ -113,8 +115,12 @@ void loop() {
       startGetCount = millis(); 
       response = GETDescr(token); // Get the scripts
       period = ParseResponse(response,"period")!="" ? ParseResponse(response,"period").toInt():5;
-      scripts = ParseResponse(response,"scripts");
-      scriptsCode= retrieveScriptsCode(token, scripts);
+      scriptsId = ParseResponse(response,"scripts");
+      
+      //fake the name of the scripts since now there are no scripts
+      scriptsId="\"average-hourly-temperature\", \"max-temperature\"";
+  
+      scriptsCode= retrieveScriptsCode(token, scriptsId);
     }
     
     logCount = (double)( millis()-startLogCount )/MILLIS_PER_SEC;      
@@ -123,30 +129,29 @@ void loop() {
       token = POSTLogin(username, password); //Authentication
     }  
    
-    
     executeScripts(scriptsCode);
   }
 }
 
 String POSTLogin (String username, String password){
-    HTTPClient https;
-    https.begin(url+"/"+ver+"/"+login); //Specify the URL and certificate
-    
-    https.addHeader("Content-Type","application/json");
-    httpsCode = https.POST("{\"username\": \"" + username + "\",\"password\": \"" + password + "\"}");//this is the body
- 
-    if (httpsCode > 0) { //Check for the returning code
-        response = https.getString();
-        Serial.println(httpsCode);
-        Serial.println(response);
-    }
-    else {
-      response="none";
-      Serial.printf("[HTTPS] POST Login... failed, error: %s\n", https.errorToString(httpsCode).c_str());
-    }
-    
-    https.end(); //Free the resources
-    return ParseToken( response );
+  HTTPClient https;
+  https.begin(url+"/"+ver+"/"+login); //Specify the URL and certificate
+  
+  https.addHeader("Content-Type","application/json");
+  httpsCode = https.POST("{\"username\": \"" + username + "\",\"password\": \"" + password + "\"}");//this is the body
+
+  if (httpsCode > 0) { //Check for the returning code
+      response = https.getString();
+      Serial.println(httpsCode);
+      Serial.println(response);
+  }
+  else {
+    response="none";
+    Serial.printf("[HTTPS] POST Login... failed, error: %s\n", https.errorToString(httpsCode).c_str());
+  }
+  
+  https.end(); //Free the resources
+  return ParseToken( response );
 }
 
 String GETDescr(String token){
@@ -182,14 +187,16 @@ String retrieveScriptsCode(String token, String scripts){
   
     endIndex=scripts.indexOf("\"",startIndex+1); // start the search from the next charater
     tempCode=ParseResponse(GETScript( token, scripts.substring(startIndex,endIndex) ),"code");
-    
-    measureInterval.concat( ParseInterval(tempCode,feature) + "," );//get send interval
+
+    readyToSend.concat("0,");// 0 means not ready
+    measureIntervals.concat( ParseInterval(tempCode,feature) + "," );//get send interval
     code.concat( "\""+tempCode+"\"" + ",");//get all codes 
     
     startIndex=endIndex+3;//+3 because we want to avoid: "," characters between two scripts name
   }
-  
-  measureInterval.remove( measureInterval.length()-1 ); //remove the last ","
+  readyToSend.remove( readyToSend.length()-1 ); //remove the last ","
+  measureIntervals.remove( measureIntervals.length()-1 ); //remove the last ","
+  scriptsCounters = measureIntervals; // initialize the counters
   code.remove( code.length()-1 ); //remove the last ","
   
   return code;
@@ -210,36 +217,46 @@ void executeScripts(String scriptsCode){
   }
 }
 void executeCode(String stringCode,int intervalIndex){
-  int interval=ParseIntervalToSec( getInterval(intervalIndex,measureInterval) );
-  Serial.println("interval is: "+interval);
+  int interval=ParseIntervalToSec( intervalIndex, measureIntervals );
+  int timeElapsed=ParseIntervalToSec( intervalIndex, scriptsCounters );
+
+  if(timeElapsed>=interval){
+    //Take measurement;
+  }
+  if(readyToSend.charAt(intervalIndex*2)=='1'){
+    //send data
+  }
+  
 }
 
-String getInterval(int index,String numString){
-  int startIndex=0;
-  int endIndex=0;
+int ParseIntervalToSec(int index, String numString){
+  int startIndex=-1;
+  int endIndex=-1;
   int interval=0;
+  String stringInterval="";
+  int numberValue=0;
+  char unit;
   
-  for(int i=0;i<index;i++){
-    startIndex=endIndex;
+  for(int i=0;i<=index;i++){
+    startIndex=endIndex+1;
     endIndex=numString.indexOf(",",startIndex+1);
   }
-  return numString.substring(startIndex,endIndex);
-}
-//DA COLLAUDARE
-int ParseIntervalToSec(String interval){
-  int numberValue = ( interval.substring(0,interval.length()-1) ).toInt();
+  stringInterval= numString.substring(startIndex,endIndex);
   
-  switch( interval.charAt(interval.length()-1) ){
+  numberValue = ( stringInterval.substring(0,stringInterval.length()-1) ).toInt();
+  unit=stringInterval.charAt(stringInterval.length()-1);
+  
+  switch( unit ){
     case 's'://do nothing is already in Second
       break;
     case 'm':// minutes
-      numberValue*60;
+      numberValue*=60;
       break;
     case 'h':// hours
-      numberValue*60*60;
+      numberValue*=60*60;
       break;
     case 'd':// days
-      numberValue*60*60*24;
+      numberValue*=60*60*24;
       break;
     default:// if no measure unit is indicate, interpreted as Seconds
       break;
