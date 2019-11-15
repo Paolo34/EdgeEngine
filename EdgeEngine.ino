@@ -1,6 +1,8 @@
+
 #include <WiFi.h>
 #include <HTTPClient.h>
-
+//#include "operation.h"
+#include "script.h"
 #define MILLIS_PER_MIN 60000
 #define MILLIS_PER_SEC 1000
 
@@ -24,14 +26,17 @@ const String device = "temperature-sensor-riccardo-office";
 const String id = "temperature-sensor-riccardo-office";
 const String feature="temperature";
 
+
 String token;
 int httpsCode;
 String response;
+script* scripts;
 String scriptsId; // id of the scripts
 String scriptsCode; // code of the scripts
-String scriptsCounters; //contains time counters of each script
-String measureIntervals; //contains time interval of each script
-String readyToSend; // contains a variable for each script which says if that script is ready
+
+//String scriptsCounters; //contains time counters of each script
+//String measureIntervals; //contains time interval of each script
+//String readyToSend; // contains a variable for each script which says if that script is ready
 
 double startLogCount=0;// starting instant of counter of Login
 double startGetCount=0;// starting instant of counter of Get scripts
@@ -93,9 +98,9 @@ void setup() {
   scriptsId = ParseResponse(response,"scripts");
   
   //fake the name of the scripts since now there are no scripts
-  scriptsId="\"average-hourly-temperature\", \"max-temperature\"";
+  //scriptsId="\"average-hourly-temperature\", \"max-temperature\"";
   
-  scriptsCode = retrieveScriptsCode(token, scriptsId);
+  retrieveScriptsCode(token, scriptsId);
   
   /*POSTvalues(token,"2","temperature","average-hourly-temperature"); // Post measurement
   startPostCount = millis();*/
@@ -175,10 +180,10 @@ String GETDescr(String token){
    return response;
 }
 
-String retrieveScriptsCode(String token, String scripts){
+void retrieveScriptsCode(String token, String scripts){
   int startIndex=1;
   int endIndex=1;
-  String code;
+  int counter=0;
   String tempCode;
    
   scripts.replace(" ","");//delete whitespace
@@ -186,48 +191,25 @@ String retrieveScriptsCode(String token, String scripts){
   while( startIndex < scripts.length()-1 ){
   
     endIndex=scripts.indexOf("\"",startIndex+1); // start the search from the next charater
-    tempCode=ParseResponse(GETScript( token, scripts.substring(startIndex,endIndex) ),"code");
-
-    readyToSend.concat("0,");// 0 means not ready
-    measureIntervals.concat( ParseInterval(tempCode,feature) + "," );//get send interval
-    code.concat( "\""+tempCode+"\"" + ",");//get all codes 
     
+    tempCode=ParseResponse(GETScript( token, scripts.substring(startIndex,endIndex) ),"code");
+    scripts[counter]=script(tempCode);
+    if(scripts[counter].isCreated==true)//if the creation of the script has been done, increment counter
+      counter++;
     startIndex=endIndex+3;//+3 because we want to avoid: "," characters between two scripts name
   }
-  readyToSend.remove( readyToSend.length()-1 ); //remove the last ","
-  measureIntervals.remove( measureIntervals.length()-1 ); //remove the last ","
-  scriptsCounters = measureIntervals; // initialize the counters
-  code.remove( code.length()-1 ); //remove the last ","
   
-  return code;
 }
 
-void executeScripts(String scriptsCode){
-  int startIndex=1;
-  int endIndex=1;
-  int codeIndex=0;
+void executeScripts(){
   
-  scriptsCode.replace(" ","");//delete whitespace
-  
-  while( startIndex < scriptsCode.length()-1){
-    endIndex=scriptsCode.indexOf("\"",startIndex+1);
-    executeCode( scriptsCode.substring(startIndex,endIndex), codeIndex ); 
-    codeIndex++;// useful to retrieve the right interval
-    startIndex=endIndex+3;//+3 because we want to avoid: "," characters between two scripts
+  int scriptIndex=0;
+  while( scripts[scriptIndex]!=NULL ){
+    //esegui scripts[scriptIndex]
+    scriptsIndex++;
   }
 }
-void executeCode(String stringCode,int intervalIndex){
-  int interval=ParseIntervalToSec( intervalIndex, measureIntervals );
-  int timeElapsed=ParseIntervalToSec( intervalIndex, scriptsCounters );
 
-  if(timeElapsed>=interval){
-    //Take measurement;
-  }
-  if(readyToSend.charAt(intervalIndex*2)=='1'){
-    //send data
-  }
-  
-}
 
 int ParseIntervalToSec(int index, String numString){
   int startIndex=-1;
@@ -413,26 +395,4 @@ int FindEndIndex (char first,char last, int startIndex,String response){
     }
   }
   return nextClose;
-}
-
-double filterOp(String condition,double value){
-  
-}
-
-double maxValue=0;
-double maxOp(double value){
-  if(value>maxValue){
-    maxValue=value;
-    return value;
-  }
-  return NULL;
-}
-double mapOp(String function,double value){
-  
-}
-double windowOp(String function,double initial,double windowSize,double value){
-  
-}
-double slidingWindowOp(String function,double initial,double windowSize,double value){
-  
 }
