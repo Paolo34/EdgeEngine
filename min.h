@@ -10,27 +10,26 @@ class minVal : public operation{
   
   public:
   //constructors
-  minVal();
-  minVal(double);
+  minVal(String);
+  minVal(String,double);
   
   //methods
-  double execute(double value);
+  double execute();
 };
 //constructors
 minVal::minVal(String opName):operation(opName){
   minValue=10000;
 }
-minVal::minVal(double initValue, String opName):operation(opName){
+minVal::minVal(String opName, double initValue ):operation(opName){
   minValue=initValue;
 }
 
 //methods
-double minVal::execute(double value){
-  if(value<minValue){
-    minValue=value;
+double minVal::execute(){
+  if(input!=NULL && input<minValue){
+    minValue=input;
     return minValue;
   }
   return NULL;//this should block the execution of the next operation
 }
-
 #endif 

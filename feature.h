@@ -15,7 +15,6 @@ class feature{
   //constructor
   feature(String);
   
-  
 };
 
 feature::feature(String featureStr){

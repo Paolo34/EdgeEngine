@@ -5,22 +5,29 @@
 
 class operation{
   private:
+ 
+  protected:
   //variables
-  String argument;
+  double input=NULL;
+  String opName;
+  String code;
   
   public:
   //variables
-  String opName;
   
   //constructors
   operation(String);
   operation(const operation&);
-
-  //setters
-  void setArgument(String);
-  //methods
-  virtual void parseArgument();//virtual method to be implementedin each derivated class
   
+  //setters
+  void setInput(double);
+  void setCode(String);
+  
+  //getters
+  String getName() const;
+  
+  //methods
+  virtual double execute();
 };
 
 operation::operation(String opName){
@@ -30,11 +37,20 @@ operation::operation(String opName){
 operation::operation(const operation &op){
   this->opName= op.opName;
 }
-void operation::setArgument(String argument){
-  this->argument=argument;
-  parseArgument();
+
+void operation::setInput(double input){
+    this->input=input;
+}
+String operation::getName() const{
+  return opName;
+}
+void operation::setCode(String code){
+  this->code=code;
 }
 
-
+double operation::execute(){
+  Serial.println("base execute");
+  //must be overridden
+}
 
 #endif 

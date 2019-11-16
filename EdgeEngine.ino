@@ -1,17 +1,18 @@
+using std::vector;
 
 #include <WiFi.h>
 #include <HTTPClient.h>
-//#include "operation.h"
+#include "operation.h"
 #include "script.h"
 #define MILLIS_PER_MIN 60000
 #define MILLIS_PER_SEC 1000
-
+/*
 const char* ssidWifi = "TIM-91746045";
 const char* passWifi = "1Oj3eyR5qHD3jAaT5Jfj1Ooh";
-/*
+*/
 const char* ssidWifi = "TORNATOREwifi";
 const char* passWifi =  "finalborgo";
-*/
+
 const String username = "riccardo-office-temperature-sensor-username";
 const String password =  "riccardo-office-temperature-sensor-password";
 const String url = "http://students.atmosphere.tools";
@@ -25,14 +26,15 @@ const String thing = "riccardo-office";
 const String device = "temperature-sensor-riccardo-office";
 const String id = "temperature-sensor-riccardo-office";
 const String feature="temperature";
-
+//vector<operation> allowedOperations {maxVal("max"),minVal("min"),isAccepted("accept"),postVal("send",thing,device,url+"/"+ver+"/"+measurements)};
+vector<String> allowedOperations {"accept","max","min","send"};
 
 String token;
 int httpsCode;
 String response;
-script* scripts;
+vector<script> scripts;
 String scriptsId; // id of the scripts
-String scriptsCode; // code of the scripts
+//String scriptsCode; // code of the scripts
 
 //String scriptsCounters; //contains time counters of each script
 //String measureIntervals; //contains time interval of each script
@@ -97,11 +99,10 @@ void setup() {
   period = ParseResponse(response,"period")!="" ? ParseResponse(response,"period").toInt():600; // 10 minutes
   scriptsId = ParseResponse(response,"scripts");
   
-  //fake the name of the scripts since now there are no scripts
-  //scriptsId="\"average-hourly-temperature\", \"max-temperature\"";
+  //fake the name of the scripts since now there are no scripts       \"average-hourly-temperature\", 
+  scriptsId="\"max-temperature\"";
   
   retrieveScriptsCode(token, scriptsId);
-  
   /*POSTvalues(token,"2","temperature","average-hourly-temperature"); // Post measurement
   startPostCount = millis();*/
 }
@@ -125,7 +126,7 @@ void loop() {
       //fake the name of the scripts since now there are no scripts
       scriptsId="\"average-hourly-temperature\", \"max-temperature\"";
   
-      scriptsCode= retrieveScriptsCode(token, scriptsId);
+      retrieveScriptsCode(token, scriptsId);
     }
     
     logCount = (double)( millis()-startLogCount )/MILLIS_PER_SEC;      
@@ -134,7 +135,7 @@ void loop() {
       token = POSTLogin(username, password); //Authentication
     }  
    
-    executeScripts(scriptsCode);
+    executeScripts();
   }
 }
 
@@ -180,33 +181,33 @@ String GETDescr(String token){
    return response;
 }
 
-void retrieveScriptsCode(String token, String scripts){
+void retrieveScriptsCode(String token, String scriptsId){
   int startIndex=1;
   int endIndex=1;
   int counter=0;
   String tempCode;
    
-  scripts.replace(" ","");//delete whitespace
+  scriptsId.replace(" ","");//delete whitespace
 
-  while( startIndex < scripts.length()-1 ){
+  while( startIndex < scriptsId.length()-1 ){
   
-    endIndex=scripts.indexOf("\"",startIndex+1); // start the search from the next charater
+    endIndex=scriptsId.indexOf("\"",startIndex+1); // start the search from the next charater
     
-    tempCode=ParseResponse(GETScript( token, scripts.substring(startIndex,endIndex) ),"code");
-    scripts[counter]=script(tempCode);
-    if(scripts[counter].isCreated==true)//if the creation of the script has been done, increment counter
-      counter++;
+    tempCode=ParseResponse(GETScript( token, scriptsId.substring(startIndex,endIndex) ),"code");
+    scripts.push_back( script(tempCode, thing, device, url+"/"+ver+"/"+measurements, token, feature, scriptsId.substring(startIndex,endIndex)) );
+    if(scripts[counter].isCreated()!=true){//if the creation of the script has failed
+      counter--;//since an incremenr is done after this "if", pre-decrement 
+      scripts.pop_back();//remove last script
+    }
+    counter++;
     startIndex=endIndex+3;//+3 because we want to avoid: "," characters between two scripts name
   }
   
 }
 
 void executeScripts(){
-  
-  int scriptIndex=0;
-  while( scripts[scriptIndex]!=NULL ){
-    //esegui scripts[scriptIndex]
-    scriptsIndex++;
+  for(int i=0;i<scripts.size();i++){
+    scripts[i].execute();
   }
 }
 
@@ -321,7 +322,7 @@ String ParseToken(String token){
 String ParseResponse( String response, String fieldName ){
   
   if( response.indexOf(fieldName) ==-1){
-    Serial.println("field name is not present!");
+    Serial.println(fieldName+" field is not present!");
     return "";
   }
   response.replace(" ","");//delete whitespace

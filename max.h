@@ -10,27 +10,31 @@ class maxVal : public operation{
   
   public:
   //constructors
-  maxVal();
-  maxVal(double);
+  maxVal(String);
+  maxVal(String,double);
   
   //methods
-  double execute(double value);
+  double execute() ;
 };
 //constructors
+
 maxVal::maxVal(String opName):operation(opName){
   maxValue=-10000;
 }
-maxVal::maxVal(double initValue, String opName):operation(opName){
+maxVal::maxVal( String opName,double initValue):operation(opName){
   maxValue=initValue;
 }
 
 //methods
-double maxVal::execute(double value){
-  if(value>maxValue){
-    maxValue=value;
+double maxVal::execute() {
+  if(input!=NULL && input>maxValue){
+    Serial.println("max value: "+(int)input);
+    maxValue=input;
     return maxValue;
   }
   return NULL;//this should block the execution of the next operation
 }
+
+
 
 #endif 
