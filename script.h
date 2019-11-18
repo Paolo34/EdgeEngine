@@ -29,12 +29,12 @@ class script{
   //methods
   void parseScript(String);
   int parseIntervalToSec(String);
-  operation createOperation(String);
+  operation* createOperation(String);
   
   public:
   //variables
   feature* myFeature;
-  vector<operation> operations;
+  vector<operation*> operations;
   String scriptStr;
   String interval;
   
@@ -83,9 +83,12 @@ void script::parseScript(String scriptString){
   
   endIndex = scriptString.indexOf(")",startIndex); //the second is the time interval
   interval = scriptString.substring(startIndex,endIndex);
+  
+  //isAccepted acc=isAccepted("accept");
+  //operations.push_back( &acc );//the first operation is always "accept" which verify the time elapsed
+
   operations.push_back( createOperation("accept("+interval+")") );//the first operation is always "accept" which verify the time elapsed
   counter++;
-  
   startIndex = endIndex+2;//+2 because there is also the point in the syntax
   
   while( endIndex!=-1 ){
@@ -93,7 +96,8 @@ void script::parseScript(String scriptString){
     endIndex = scriptString.indexOf(".",startIndex+1); // start the search from the next charater
 
     operations.push_back( createOperation(scriptString.substring(startIndex,endIndex)) ); //Add element at the end
-    if(operations[counter].getName()=="none"){//if something is wrong in the script
+    
+    if(operations[counter]->getName()=="none"){//if something is wrong in the script
       operations.clear();// Removes all elements from the vector (which are destroyed), leaving the container with a size of 0.
       return;//end here the parsing
     }
@@ -106,35 +110,28 @@ void script::parseScript(String scriptString){
 }
 
 //this way we have to add manually every operation we want to implement
-operation script::createOperation(String op){
+operation* script::createOperation(String op){
   int endIndex=op.indexOf("(");
   String opName=op.substring(0,endIndex);
-
+  operation* opPtr; 
+  
   if(opName.compareTo("accept")==0){
-    isAccepted acc =isAccepted(opName);
-    acc.setCode(op);
-    operation* opPtr=&acc;
-    return *opPtr;    
-    
-  }else if(opName.compareTo("min")==0){
-    minVal minV =minVal(opName);
-    operation* opPtr=&minV;
-    return *opPtr; 
+    opPtr = new isAccepted(opName);
+    opPtr->setCode(op);
+  }
+  else if(opName.compareTo("min")==0){
+    opPtr = new minVal(opName);
     
   }else if(opName.compareTo("max")==0){
-    maxVal maxV =maxVal(opName);
-    operation* opPtr=&maxV;
-    return *opPtr;
+    opPtr = new maxVal(opName);
     
   }else if(opName.compareTo("send")==0){
-    postVal postV =postVal(opName,thing, device, url, token, feat, scriptId);
-    operation* opPtr=&postV;
-    return *opPtr;
-    
+    opPtr = new postVal(opName,thing, device, url, token, feat, scriptId);    
   }else{
     Serial.println("wrong operation: "+op);
-    return operation("none");// if is not among the allowed operations
+    opPtr = new operation("none");// if is not among the allowed operations
   }
+  return opPtr;
 }
 /*
 operation script::createOperation(String op){
@@ -159,8 +156,10 @@ void script::execute(){
   double nextInput=rand() % 30 + 1;
   
   for(int i=0;i<operations.size();i++){
-    operations[i].setInput(nextInput);
-    nextInput = operations[i].execute();
+    operations[i]->setInput(nextInput);
+    //operation* op=&operations[i];
+    //nextInput = op->execute();
+    nextInput = operations[i]->execute();
     if(nextInput==NULL)
       return;// if an operation return NULL stop executing the script
   }

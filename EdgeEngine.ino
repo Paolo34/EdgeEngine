@@ -99,8 +99,8 @@ void setup() {
   period = ParseResponse(response,"period")!="" ? ParseResponse(response,"period").toInt():600; // 10 minutes
   scriptsId = ParseResponse(response,"scripts");
   
-  //fake the name of the scripts since now there are no scripts       \"average-hourly-temperature\", 
-  scriptsId="\"max-temperature\"";
+  //fake the name of the scripts   \"average-hourly-temperature\",
+  scriptsId=" \"max-temperature\"";
   
   retrieveScriptsCode(token, scriptsId);
   /*POSTvalues(token,"2","temperature","average-hourly-temperature"); // Post measurement
@@ -123,8 +123,8 @@ void loop() {
       period = ParseResponse(response,"period")!="" ? ParseResponse(response,"period").toInt():5;
       scriptsId = ParseResponse(response,"scripts");
       
-      //fake the name of the scripts since now there are no scripts
-      scriptsId="\"average-hourly-temperature\", \"max-temperature\"";
+      //fake the name of the scripts  \"average-hourly-temperature\",
+      scriptsId=" \"max-temperature\"";
   
       retrieveScriptsCode(token, scriptsId);
     }

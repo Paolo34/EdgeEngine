@@ -50,6 +50,7 @@ void operation::setCode(String code){
 
 double operation::execute(){
   Serial.println("base execute");
+  return 2;
   //must be overridden
 }
 
