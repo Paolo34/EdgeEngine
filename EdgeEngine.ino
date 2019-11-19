@@ -26,7 +26,6 @@ const String thing = "riccardo-office";
 const String device = "temperature-sensor-riccardo-office";
 const String id = "temperature-sensor-riccardo-office";
 const String feature="temperature";
-//vector<operation> allowedOperations {maxVal("max"),minVal("min"),isAccepted("accept"),postVal("send",thing,device,url+"/"+ver+"/"+measurements)};
 vector<String> allowedOperations {"accept","max","min","send"};
 
 String token;
@@ -34,23 +33,15 @@ int httpsCode;
 String response;
 vector<script> scripts;
 String scriptsId; // id of the scripts
-//String scriptsCode; // code of the scripts
-
-//String scriptsCounters; //contains time counters of each script
-//String measureIntervals; //contains time interval of each script
-//String readyToSend; // contains a variable for each script which says if that script is ready
 
 double startLogCount=0;// starting instant of counter of Login
 double startGetCount=0;// starting instant of counter of Get scripts
-//double startPostCount=0;
 
 int tokenDuration=1800;//30 minutes= 1800 seconds; interval between two login
-int period=10;// interval between two GET script
+int period=600;// interval between two GET script
 
 double logCount=(double)tokenDuration;
 double getCount=(double)period;
-//double postCount=(double)postInterval;
-
 
 /*
 const char* ssid = "S7Chicco";
@@ -96,7 +87,7 @@ void setup() {
   
   startGetCount = millis();
   response = GETDescr(token); // Get the virtual description
-  period = ParseResponse(response,"period")!="" ? ParseResponse(response,"period").toInt():600; // 10 minutes
+  period = ParseResponse(response,"period")!="" ? ParseResponse(response,"period").toInt():600; // default 10 minutes
   scriptsId = ParseResponse(response,"scripts");
   
   //fake the name of the scripts   \"average-hourly-temperature\",
@@ -120,7 +111,8 @@ void loop() {
     if( getCount >= period ){
       startGetCount = millis(); 
       response = GETDescr(token); // Get the scripts
-      period = ParseResponse(response,"period")!="" ? ParseResponse(response,"period").toInt():5;
+      period = ParseResponse(response,"period")!="" ? ParseResponse(response,"period").toInt():600; //default 10 minutes
+      Serial.println("period: "+String(period) );
       scriptsId = ParseResponse(response,"scripts");
       
       //fake the name of the scripts  \"average-hourly-temperature\",
@@ -186,15 +178,32 @@ void retrieveScriptsCode(String token, String scriptsId){
   int endIndex=1;
   int counter=0;
   String tempCode;
-   
+  String scriptId;
+
+  Serial.println("retrieveScriptsCode");
+  
   scriptsId.replace(" ","");//delete whitespace
 
   while( startIndex < scriptsId.length()-1 ){
   
     endIndex=scriptsId.indexOf("\"",startIndex+1); // start the search from the next charater
     
-    tempCode=ParseResponse(GETScript( token, scriptsId.substring(startIndex,endIndex) ),"code");
-    scripts.push_back( script(tempCode, thing, device, url+"/"+ver+"/"+measurements, token, feature, scriptsId.substring(startIndex,endIndex)) );
+    scriptId= scriptsId.substring(startIndex,endIndex);
+    tempCode=ParseResponse(GETScript( token, scriptId ),"code");
+    
+    //verify if it is a new script
+    for(int i=0;i<scripts.size();i++){
+      if(scripts[i].scriptId==scriptId && scripts[i].scriptStr==tempCode ){ //if there is already this script
+        Serial.println("Script Unchanged: "+scriptId);
+        return;//is already present so do nothing
+      }
+      else if(scripts[i].scriptId==scriptId){ //if there is already this script but the code has changed
+        scripts.erase(scripts.begin()+i); // delete the old version of the script and then create the new version of it  
+        Serial.println("Script changed: "+scriptId);
+      }
+    }
+    //create the script
+    scripts.push_back( script(scriptId,tempCode, thing, device, url+"/"+ver+"/"+measurements, token, feature) );
     if(scripts[counter].isCreated()!=true){//if the creation of the script has failed
       counter--;//since an incremenr is done after this "if", pre-decrement 
       scripts.pop_back();//remove last script
@@ -202,49 +211,12 @@ void retrieveScriptsCode(String token, String scriptsId){
     counter++;
     startIndex=endIndex+3;//+3 because we want to avoid: "," characters between two scripts name
   }
-  
 }
 
 void executeScripts(){
   for(int i=0;i<scripts.size();i++){
     scripts[i].execute();
   }
-}
-
-
-int ParseIntervalToSec(int index, String numString){
-  int startIndex=-1;
-  int endIndex=-1;
-  int interval=0;
-  String stringInterval="";
-  int numberValue=0;
-  char unit;
-  
-  for(int i=0;i<=index;i++){
-    startIndex=endIndex+1;
-    endIndex=numString.indexOf(",",startIndex+1);
-  }
-  stringInterval= numString.substring(startIndex,endIndex);
-  
-  numberValue = ( stringInterval.substring(0,stringInterval.length()-1) ).toInt();
-  unit=stringInterval.charAt(stringInterval.length()-1);
-  
-  switch( unit ){
-    case 's'://do nothing is already in Second
-      break;
-    case 'm':// minutes
-      numberValue*=60;
-      break;
-    case 'h':// hours
-      numberValue*=60*60;
-      break;
-    case 'd':// days
-      numberValue*=60*60*24;
-      break;
-    default:// if no measure unit is indicate, interpreted as Seconds
-      break;
-  }
-  return numberValue;
 }
 
 String GETScript(String token, String script){
@@ -267,28 +239,7 @@ String GETScript(String token, String script){
 
    return response;
 }
-/*String POSTNewMeasurement (String token){
-    HTTPClient https;
-    https.begin(url+"/"+ver+"/"+measurements, root_ca); //Specify the URL and certificate
-   
-    https.addHeader("Content-Type","application/json");
-    https.addHeader("Authorization",token);
-    
-    httpsCode = https.POST("{\"thing\": \"Smart_Home\", \"tag\": \"Edge_Device\", \"feature\": \"Heating\", \"device\": \"Thermostat\", \"samples\": {\"numbers\":[1]}}" );//this is the body
-    if (httpsCode > 0) { //Check for the returning code
-        response = https.getString();
-        Serial.println(httpsCode);
-        Serial.println(response);
-    }
-    else {
-      response="none";
-      Serial.printf("[HTTPS] POST NewMeas... failed, error: %s\n", https.errorToString(httpsCode).c_str());
-    }
 
-    https.end(); //Free the resources
-    
-    return response;
-}*/
 
 String POSTvalues (String token, String values, String feature, String script){
     HTTPClient https;

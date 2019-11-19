@@ -44,27 +44,29 @@ void isAccepted::initializeCounter(){
 double isAccepted::execute(){
   
   if( (double)( millis()-startInstant )/MILLIS_PER_SEC < interval){ //if not elapsed enough time 
-    Serial.println("time elapsed: "+(int)( millis()-startInstant )/MILLIS_PER_SEC );
+    //Serial.println("time elapsed: "+(int)( millis()-startInstant )/MILLIS_PER_SEC );
     return NULL;//this should block the execution of the next operation
   }
-  Serial.println("accepted value: "+(int)input);
+  //Serial.println("time elapsed: "+(int)( millis()-startInstant )/MILLIS_PER_SEC );
+  //Serial.println("accepted value: "+(int)input);
   initializeCounter(); // reinitialize counter
   return input;
 }
 
-
+/*
 void isAccepted::setCode(String code){
   this->code=code;
   interval=parseIntervalToSec(code.substring( code.indexOf("(")+1, code.indexOf(")") ));
-}
+}*/
 
 int isAccepted::parseIntervalToSec( String numString){
   int numberValue=0;
   char unit;
-  numberValue = ( numString.substring(0,numString.length()-1) ).toInt();
-  unit=numString.charAt(numString.length()-1);
-  
-  switch( unit ){
+  if (numString.charAt(numString.length()-1)>'9'){//if the last char is not a number we try to interpret it as a measure unit
+    numberValue = ( numString.substring(0,numString.length()-1) ).toInt();
+    unit=numString.charAt(numString.length()-1);
+    
+    switch( unit ){
     case 's'://do nothing is already in Second
       break;
     case 'm':// minutes
@@ -79,6 +81,10 @@ int isAccepted::parseIntervalToSec( String numString){
       break;
     default:// if no measure unit is indicate, interpreted as Seconds
       break;
+    }
+  }
+  else{
+    numberValue = ( numString.substring(0,numString.length()) ).toInt();
   }
   return numberValue;
 }

@@ -23,7 +23,6 @@ class script{
   String thing;
   String device;
   String feat;// feature is also a class
-  String scriptId;
   String url;
   
   //methods
@@ -36,6 +35,7 @@ class script{
   feature* myFeature;
   vector<operation*> operations;
   String scriptStr;
+  String scriptId;
   String interval;
   
   //constructor
@@ -47,14 +47,14 @@ class script{
   
 };
 
-script::script( String scriptStr, String thing, String device, String url, String token, String feat, String scriptId){
+script::script( String scriptId,String scriptStr, String thing, String device, String url, String token, String feat){
+  this->scriptId=scriptId;
   this->scriptStr=scriptStr; //save the string
   this->thing=thing;
   this->device=device;
   this->url=url;
   this->token=token;
   this->feat=feat;
-  this->scriptId=scriptId;
   
   /* initialize random seed: */
   srand (time(NULL));
@@ -83,10 +83,6 @@ void script::parseScript(String scriptString){
   
   endIndex = scriptString.indexOf(")",startIndex); //the second is the time interval
   interval = scriptString.substring(startIndex,endIndex);
-  
-  //isAccepted acc=isAccepted("accept");
-  //operations.push_back( &acc );//the first operation is always "accept" which verify the time elapsed
-
   operations.push_back( createOperation("accept("+interval+")") );//the first operation is always "accept" which verify the time elapsed
   counter++;
   startIndex = endIndex+2;//+2 because there is also the point in the syntax
@@ -116,17 +112,17 @@ operation* script::createOperation(String op){
   operation* opPtr; 
   
   if(opName.compareTo("accept")==0){
-    opPtr = new isAccepted(opName);
-    opPtr->setCode(op);
+    opPtr = new isAccepted(op);
+    //opPtr->setCode(op);
   }
   else if(opName.compareTo("min")==0){
-    opPtr = new minVal(opName);
+    opPtr = new minVal(op);
     
   }else if(opName.compareTo("max")==0){
-    opPtr = new maxVal(opName);
+    opPtr = new maxVal(op);
     
   }else if(opName.compareTo("send")==0){
-    opPtr = new postVal(opName,thing, device, url, token, feat, scriptId);    
+    opPtr = new postVal(op,thing, device, url, token, feat, scriptId);    
   }else{
     Serial.println("wrong operation: "+op);
     opPtr = new operation("none");// if is not among the allowed operations
@@ -153,13 +149,13 @@ boolean script::isCreated(){
 }
 
 void script::execute(){
-  double nextInput=rand() % 30 + 1;
+  
+  double nextInput=rand() % 30 + 1;// to be substituted with sensor measurement
   
   for(int i=0;i<operations.size();i++){
     operations[i]->setInput(nextInput);
-    //operation* op=&operations[i];
-    //nextInput = op->execute();
     nextInput = operations[i]->execute();
+
     if(nextInput==NULL)
       return;// if an operation return NULL stop executing the script
   }

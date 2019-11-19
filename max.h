@@ -28,7 +28,6 @@ maxVal::maxVal( String opName,double initValue):operation(opName){
 //methods
 double maxVal::execute() {
   if(input!=NULL && input>maxValue){
-    Serial.println("max value: "+(int)input);
     maxValue=input;
     return maxValue;
   }
