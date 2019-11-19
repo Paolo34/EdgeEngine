@@ -20,7 +20,6 @@ class isAccepted : public operation{
   isAccepted(String);
 
   //setters
-  void setCode(String);
   void setInterval(int);
   
   //methods
@@ -52,12 +51,6 @@ double isAccepted::execute(){
   initializeCounter(); // reinitialize counter
   return input;
 }
-
-/*
-void isAccepted::setCode(String code){
-  this->code=code;
-  interval=parseIntervalToSec(code.substring( code.indexOf("(")+1, code.indexOf(")") ));
-}*/
 
 int isAccepted::parseIntervalToSec( String numString){
   int numberValue=0;

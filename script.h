@@ -11,6 +11,8 @@ using std::vector;
 #include "accept.h"
 #include "max.h"
 #include "min.h"
+#include "window.h"
+#include "map.h"
 #include "send.h"
 
 
@@ -43,8 +45,10 @@ class script{
   
   //methods
   boolean isCreated();
-  void execute();
+  void execute(); 
   
+  //setters
+  void setToken(String);
 };
 
 script::script( String scriptId,String scriptStr, String thing, String device, String url, String token, String feat){
@@ -68,7 +72,10 @@ script::script( String scriptId,String scriptStr, String thing, String device, S
     Serial.println("The script was created succesfully!");
   }
 }
-
+void script::setToken(String token){
+   this->token=token;
+   operations[operations.size()-1]->setToken(token);//the last one is the send operation which needs the token
+ }
 void script::parseScript(String scriptString){
   int startIndex=0;
   int endIndex=1;
@@ -123,7 +130,14 @@ operation* script::createOperation(String op){
     
   }else if(opName.compareTo("send")==0){
     opPtr = new postVal(op,thing, device, url, token, feat, scriptId);    
-  }else{
+  }
+  else if(opName.compareTo("window")==0){
+    opPtr = new window(op);    
+  }
+  else if(opName.compareTo("map")==0){
+    opPtr = new mapVal(op);    
+  }
+  else{
     Serial.println("wrong operation: "+op);
     opPtr = new operation("none");// if is not among the allowed operations
   }
@@ -150,7 +164,8 @@ boolean script::isCreated(){
 
 void script::execute(){
   
-  double nextInput=rand() % 30 + 1;// to be substituted with sensor measurement
+  //double nextInput=rand() % 30 + 1;// to be substituted with sensor measurement
+  double nextInput=10;
   
   for(int i=0;i<operations.size();i++){
     operations[i]->setInput(nextInput);

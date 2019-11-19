@@ -22,6 +22,7 @@ class operation{
   //setters
   void setInput(double);
   void setCode(String);
+  virtual void setToken(String);
   
   //getters
   String getName() const;
@@ -52,6 +53,9 @@ double operation::execute(){
   Serial.println("base execute");
   return 2;
   //must be overridden
+}
+void operation::setToken(String token){
+  Serial.println("base execute");
 }
 
 #endif 

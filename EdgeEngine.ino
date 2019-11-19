@@ -87,37 +87,22 @@ void setup() {
   
   startGetCount = millis();
   response = GETDescr(token); // Get the virtual description
-  period = ParseResponse(response,"period")!="" ? ParseResponse(response,"period").toInt():600; // default 10 minutes
+  //period = ParseResponse(response,"period")!="" ? ParseResponse(response,"period").toInt():600; // default 10 minutes
   scriptsId = ParseResponse(response,"scripts");
   
-  //fake the name of the scripts   \"average-hourly-temperature\",
-  scriptsId=" \"max-temperature\"";
-  
   retrieveScriptsCode(token, scriptsId);
-  /*POSTvalues(token,"2","temperature","average-hourly-temperature"); // Post measurement
-  startPostCount = millis();*/
 }
 
 void loop() {
   if ((WiFi.status() == WL_CONNECTED)) //Check the current connection status
   { 
-    /*postCount = (double)( millis()-startPostCount )/MILLIS_PER_SEC;
-    if( postCount >= postInterval ){
-      startPostCount = millis();
-      POSTvalues(token,"2","temperature","average-hourly-temperature"); // Post measurement
-    }*/
-    
     getCount = (double)( millis()-startGetCount )/MILLIS_PER_SEC;
     if( getCount >= period ){
       startGetCount = millis(); 
       response = GETDescr(token); // Get the scripts
-      period = ParseResponse(response,"period")!="" ? ParseResponse(response,"period").toInt():600; //default 10 minutes
-      Serial.println("period: "+String(period) );
+      //period = ParseResponse(response,"period")!="" ? ParseResponse(response,"period").toInt():600; //default 10 minutes
       scriptsId = ParseResponse(response,"scripts");
       
-      //fake the name of the scripts  \"average-hourly-temperature\",
-      scriptsId=" \"max-temperature\"";
-  
       retrieveScriptsCode(token, scriptsId);
     }
     
@@ -125,6 +110,7 @@ void loop() {
     if( logCount >= tokenDuration ){ //every "tokenDuration" authenticate
       startLogCount = millis();
       token = POSTLogin(username, password); //Authentication
+      setToken(token); // Update the token in each script
     }  
    
     executeScripts();
@@ -195,13 +181,14 @@ void retrieveScriptsCode(String token, String scriptsId){
     for(int i=0;i<scripts.size();i++){
       if(scripts[i].scriptId==scriptId && scripts[i].scriptStr==tempCode ){ //if there is already this script
         Serial.println("Script Unchanged: "+scriptId);
-        return;//is already present so do nothing
+        goto cnt; //is already present so do nothing an pass to retrieve next script
       }
       else if(scripts[i].scriptId==scriptId){ //if there is already this script but the code has changed
         scripts.erase(scripts.begin()+i); // delete the old version of the script and then create the new version of it  
         Serial.println("Script changed: "+scriptId);
       }
     }
+    
     //create the script
     scripts.push_back( script(scriptId,tempCode, thing, device, url+"/"+ver+"/"+measurements, token, feature) );
     if(scripts[counter].isCreated()!=true){//if the creation of the script has failed
@@ -209,13 +196,21 @@ void retrieveScriptsCode(String token, String scriptsId){
       scripts.pop_back();//remove last script
     }
     counter++;
-    startIndex=endIndex+3;//+3 because we want to avoid: "," characters between two scripts name
+    
+    cnt:; //go directly there if a script already exists and it is not changed
+    startIndex=endIndex+3;//+3 because we want to avoid: "," characters between two scripts id
   }
 }
 
 void executeScripts(){
   for(int i=0;i<scripts.size();i++){
     scripts[i].execute();
+  }
+}
+
+void setToken(String token){
+  for(int i=0;i<scripts.size();i++){
+    scripts[i].setToken(token);
   }
 }
 
@@ -301,19 +296,6 @@ String ParseResponse( String response, String fieldName ){
   return response.substring( beginOfValue+1, endOfValue);
 }
 
-String ParseInterval( String response, String feature ){
-  
-  if( response.indexOf(feature) ==-1){
-    Serial.println("feature is not present!");
-    return "";
-  }
-  response.replace(" ","");//delete whitespace
-  int beginOfValue = response.indexOf( "(", response.indexOf(feature) )+1;//find starting index of interval
-   
-  int endOfValue= response.indexOf( ")", response.indexOf(feature) );//find ending index of interval
-   
-  return response.substring( beginOfValue, endOfValue);
-}
 
 int FindEndIndex (char first,char last, int startIndex,String response){
   String delimiters="";
