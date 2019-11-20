@@ -12,15 +12,16 @@ using std::vector;
 #include "max.h"
 #include "min.h"
 #include "window.h"
+#include "slidingWindow.h"
 #include "map.h"
 #include "send.h"
+
 
 
 class script{
   private:
   //variables
   //vector<operation> allowedOperations; 
-  boolean created=false;
   String token;
   String thing;
   String device;
@@ -34,6 +35,8 @@ class script{
   
   public:
   //variables
+ // boolean created=false;
+  boolean valid;
   feature* myFeature;
   vector<operation*> operations;
   String scriptStr;
@@ -44,7 +47,7 @@ class script{
   script(String,String,String,String,String,String,String);
   
   //methods
-  boolean isCreated();
+  //boolean isCreated();
   void execute(); 
   
   //setters
@@ -59,17 +62,17 @@ script::script( String scriptId,String scriptStr, String thing, String device, S
   this->url=url;
   this->token=token;
   this->feat=feat;
-  
+  valid=false;
   /* initialize random seed: */
   srand (time(NULL));
   
   parseScript(scriptStr);
-  if(!created){
-    Serial.println("The script was not created!");
+  if(!valid){
+    Serial.println("The script was not created: "+scriptId);
   //IF SOMETHING GOES WRONG AND THE SCRIPT IS NOT CREATED GIVE SOME ERROR
   }
   else{
-    Serial.println("The script was created succesfully!");
+    Serial.println("New script: "+scriptId);
   }
 }
 void script::setToken(String token){
@@ -100,7 +103,7 @@ void script::parseScript(String scriptString){
 
     operations.push_back( createOperation(scriptString.substring(startIndex,endIndex)) ); //Add element at the end
     
-    if(operations[counter]->getName()=="none"){//if something is wrong in the script
+    if(!operations[counter]){ // if something is wrong in the script
       operations.clear();// Removes all elements from the vector (which are destroyed), leaving the container with a size of 0.
       return;//end here the parsing
     }
@@ -108,40 +111,41 @@ void script::parseScript(String scriptString){
       
     startIndex = endIndex+1;
   }
-
-  created=true;
+  valid=true;
+  //created=true;
 }
 
-//this way we have to add manually every operation we want to implement
+//These are the allowed opeartions; we have to add manually every operation we want to implement
 operation* script::createOperation(String op){
   int endIndex=op.indexOf("(");
   String opName=op.substring(0,endIndex);
-  operation* opPtr; 
   
   if(opName.compareTo("accept")==0){
-    opPtr = new isAccepted(op);
+    return new isAccepted(op);
     //opPtr->setCode(op);
   }
   else if(opName.compareTo("min")==0){
-    opPtr = new minVal(op);
+    return new minVal(op);
     
   }else if(opName.compareTo("max")==0){
-    opPtr = new maxVal(op);
+    return new maxVal(op);
     
   }else if(opName.compareTo("send")==0){
-    opPtr = new postVal(op,thing, device, url, token, feat, scriptId);    
+    return new postVal(op,thing, device, url, token, feat, scriptId);    
   }
   else if(opName.compareTo("window")==0){
-    opPtr = new window(op);    
+    return new window(op);    
+  }
+  else if(opName.compareTo("slidingWindow")==0){
+    return new slidingWindow(op);    
   }
   else if(opName.compareTo("map")==0){
-    opPtr = new mapVal(op);    
+    return new mapVal(op);    
   }
   else{
     Serial.println("wrong operation: "+op);
-    opPtr = new operation("none");// if is not among the allowed operations
+    return NULL;// if is not among the allowed operations
   }
-  return opPtr;
 }
 /*
 operation script::createOperation(String op){
@@ -156,11 +160,11 @@ operation script::createOperation(String op){
   }
   Serial.println("wrong operation inside the script");
   return operation("none");// if is not among the allowed operations
-}*/
-
+}
 boolean script::isCreated(){
   return created;
 }
+*/
 
 void script::execute(){
   

@@ -15,6 +15,7 @@ const char* passWifi =  "finalborgo";
 
 const String username = "riccardo-office-temperature-sensor-username";
 const String password =  "riccardo-office-temperature-sensor-password";
+//route
 const String url = "http://students.atmosphere.tools";
 const String ver = "v1";
 const String login = "login";
@@ -26,7 +27,8 @@ const String thing = "riccardo-office";
 const String device = "temperature-sensor-riccardo-office";
 const String id = "temperature-sensor-riccardo-office";
 const String feature="temperature";
-vector<String> allowedOperations {"accept","max","min","send"};
+//the operations allowed are in script.h
+//vector<String> allowedOperations {"accept","max","min","send"};
 
 String token;
 int httpsCode;
@@ -38,10 +40,12 @@ double startLogCount=0;// starting instant of counter of Login
 double startGetCount=0;// starting instant of counter of Get scripts
 
 int tokenDuration=1800;//30 minutes= 1800 seconds; interval between two login
-int period=600;// interval between two GET script
+int period=120;//2 minutes; interval between two GET script
 
 double logCount=(double)tokenDuration;
 double getCount=(double)period;
+
+int i;
 
 /*
 const char* ssid = "S7Chicco";
@@ -159,57 +163,74 @@ String GETDescr(String token){
    return response;
 }
 
+int startIndex;
+int endIndex;
+String tempCode;
+String scriptId;
+
 void retrieveScriptsCode(String token, String scriptsId){
-  int startIndex=1;
-  int endIndex=1;
-  int counter=0;
-  String tempCode;
-  String scriptId;
+  startIndex=1;
+  endIndex=1;
 
-  Serial.println("retrieveScriptsCode");
-  
+  Serial.println("retrieveScriptsCode :"+scriptsId);
   scriptsId.replace(" ","");//delete whitespace
-
-  while( startIndex < scriptsId.length()-1 ){
   
+  while( startIndex < scriptsId.length() ){
+    
     endIndex=scriptsId.indexOf("\"",startIndex+1); // start the search from the next charater
     
     scriptId= scriptsId.substring(startIndex,endIndex);
     tempCode=ParseResponse(GETScript( token, scriptId ),"code");
     
     //verify if it is a new script
-    for(int i=0;i<scripts.size();i++){
+    for(i=0;i<scripts.size();i++){
       if(scripts[i].scriptId==scriptId && scripts[i].scriptStr==tempCode ){ //if there is already this script
         Serial.println("Script Unchanged: "+scriptId);
+        scripts[i].valid=true; // set it to valid because it is already in the API
         goto cnt; //is already present so do nothing an pass to retrieve next script
       }
       else if(scripts[i].scriptId==scriptId){ //if there is already this script but the code has changed
-        scripts.erase(scripts.begin()+i); // delete the old version of the script and then create the new version of it  
         Serial.println("Script changed: "+scriptId);
+        scripts[i].valid=false;// delete the old version of the script and then create the new version of it  
+        //scripts.erase(scripts.begin()+i); // delete the old version of the script and then create the new version of it  
       }
-    }
+    }    
     
     //create the script
     scripts.push_back( script(scriptId,tempCode, thing, device, url+"/"+ver+"/"+measurements, token, feature) );
-    if(scripts[counter].isCreated()!=true){//if the creation of the script has failed
-      counter--;//since an incremenr is done after this "if", pre-decrement 
+    if(scripts.back().valid==false){//if the creation of the script has failed      
       scripts.pop_back();//remove last script
     }
-    counter++;
     
     cnt:; //go directly there if a script already exists and it is not changed
+    
     startIndex=endIndex+3;//+3 because we want to avoid: "," characters between two scripts id
   }
+  
+  //  delete scripts that are not valid anymore (deleted)
+  for(i=0;i<scripts.size();i++){
+    if(scripts[i].valid==false){
+      Serial.println("Script deleted: "+scripts[i].scriptId);
+      scripts.erase(scripts.begin()+i);
+      i--; //since we deleted a script even if the scripts size stays unchanged every position is shifted by one
+    }
+    else{
+      Serial.println("Script valid: "+scripts[i].scriptId);
+      scripts[i].valid=false;// preset valid to false, to be reconfirmed on the next check in the API
+    }
+  }
+  Serial.println("There are: "+String(scripts.size())+" scripts");
 }
 
+
 void executeScripts(){
-  for(int i=0;i<scripts.size();i++){
+  for(i=0;i<scripts.size();i++){
     scripts[i].execute();
   }
 }
 
 void setToken(String token){
-  for(int i=0;i<scripts.size();i++){
+  for(i=0;i<scripts.size();i++){
     scripts[i].setToken(token);
   }
 }
@@ -264,7 +285,9 @@ String ParseToken(String token){
   return token.substring( token.indexOf("J"), token.lastIndexOf("\"") );
 }
 
-//NOT WORKS WITH CUSTOM BECAUSE IT DELETE ANY WHITESPACES
+int beginOfValue;
+int endOfValue;
+//NOT WORKS WITH CUSTOM BECAUSE IT DELETES ANY WHITESPACES
 String ParseResponse( String response, String fieldName ){
   
   if( response.indexOf(fieldName) ==-1){
@@ -272,14 +295,11 @@ String ParseResponse( String response, String fieldName ){
     return "";
   }
   response.replace(" ","");//delete whitespace
-  int beginOfValue = response.indexOf( ":", response.indexOf(fieldName) )+1;//find starting index of field value
-   
-  char firstChar = response.charAt( beginOfValue );//this is a delimiter: " or [ or {
-  int endOfValue;
+  beginOfValue = response.indexOf( ":", response.indexOf(fieldName) )+1;//find starting index of field value
   
-  switch (firstChar){
+  switch ( response.charAt( beginOfValue ) ){
     case '\"':
-      endOfValue = response.indexOf(firstChar,beginOfValue+1);// start looking for the last delimiter from the next value
+      endOfValue = response.indexOf('\"',beginOfValue+1);// start looking for the last delimiter from the next value
       break;
     case '(':
       endOfValue = FindEndIndex('(',')', beginOfValue+1,response);
@@ -296,15 +316,14 @@ String ParseResponse( String response, String fieldName ){
   return response.substring( beginOfValue+1, endOfValue);
 }
 
+int nextClose;
+int nextOpen;
+String delimiters="";
 
-int FindEndIndex (char first,char last, int startIndex,String response){
-  String delimiters="";
-  
-  int nextClose;
-  int nextOpen;
+int FindEndIndex (char first,char last, int start,String response){
   while(true){
-    nextOpen = response.indexOf( first, startIndex );
-    nextClose = response.indexOf( last, startIndex );
+    nextOpen = response.indexOf( first, start );
+    nextClose = response.indexOf( last, start );
     //if no more open/close bracket is found it returns -1 
     if(nextOpen==-1)
       nextOpen=nextClose+1;
@@ -317,15 +336,13 @@ int FindEndIndex (char first,char last, int startIndex,String response){
     }
       //if the next one is a close bracket and an open bracket is at the end of the stack  delimiters.charAt(delimiters.length()-1)==first){
     else if( nextClose<nextOpen && delimiters.length()!=0){
-       Serial.println(delimiters);
        delimiters.remove(delimiters.length()-1);
-       Serial.println(delimiters);
-       startIndex=nextClose+1;
+       start=nextClose+1;
     }
     //if the next one is a open bracket
     else{
       delimiters.concat(first);
-      startIndex=nextOpen+1;
+      start=nextOpen+1;
     }
   }
   return nextClose;
