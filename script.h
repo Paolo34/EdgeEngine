@@ -6,7 +6,6 @@
 using std::vector;
 #include <time.h> 
 
-#include "feature.h"
 #include "operation.h"
 #include "accept.h"
 #include "max.h"
@@ -37,7 +36,7 @@ class script{
   //variables
  // boolean created=false;
   boolean valid;
-  feature* myFeature;
+  String myFeature;
   vector<operation*> operations;
   String scriptStr;
   String scriptId;
@@ -87,7 +86,7 @@ void script::parseScript(String scriptString){
   scriptString.replace(" ","");//delete whitespace
   
   endIndex = scriptString.indexOf("(",startIndex); 
-  myFeature = new feature( scriptString.substring(startIndex,endIndex) );//the first is the feature
+  myFeature =  scriptString.substring(startIndex,endIndex);//the first is the feature
   //HERE CHECK IF THIS FEATURE IS SUPPORTED ELSE RETURN
   startIndex = endIndex+1;
   
@@ -121,8 +120,7 @@ operation* script::createOperation(String op){
   String opName=op.substring(0,endIndex);
   
   if(opName.compareTo("accept")==0){
-    return new isAccepted(op);
-    //opPtr->setCode(op);
+    return new reception(op);
   }
   else if(opName.compareTo("min")==0){
     return new minVal(op);

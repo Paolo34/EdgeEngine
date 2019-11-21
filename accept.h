@@ -1,12 +1,12 @@
 //accept.h
 
-#ifndef isAccepted_h
-#define isAccepted_h
+#ifndef reception_h
+#define reception_h
 
 #include "operation.h"
 #define MILLIS_PER_SEC 1000
 
-class isAccepted : public operation{
+class reception : public operation{
   private:
   //variables
   int interval;// always in seconds
@@ -17,7 +17,7 @@ class isAccepted : public operation{
   
   public:
   //constructors
-  isAccepted(String);
+  reception(String);
 
   //setters
   void setInterval(int);
@@ -29,18 +29,18 @@ class isAccepted : public operation{
 };
 
 //constructors
-isAccepted::isAccepted(String opName):operation(opName){
+reception::reception(String opName):operation(opName){
   interval=parseIntervalToSec(opName.substring( opName.indexOf("(")+1, opName.indexOf(")") ));
   initializeCounter();
 }
 
 
 //methods
-void isAccepted::initializeCounter(){
+void reception::initializeCounter(){
   startInstant = millis();
 }
 
-double isAccepted::execute(){
+double reception::execute(){
   
   if( (double)( millis()-startInstant )/MILLIS_PER_SEC < interval){ //if not elapsed enough time 
     //Serial.println("time elapsed: "+(int)( millis()-startInstant )/MILLIS_PER_SEC );
@@ -52,7 +52,7 @@ double isAccepted::execute(){
   return input;
 }
 
-int isAccepted::parseIntervalToSec( String numString){
+int reception::parseIntervalToSec( String numString){
   int numberValue=0;
   char unit;
   if (numString.charAt(numString.length()-1)>'9'){//if the last char is not a number we try to interpret it as a measure unit
