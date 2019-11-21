@@ -5,7 +5,6 @@ using std::vector;
 #include "sample.h"
 
 
-
 /*
 const char* ssidWifi = "TIM-91746045";
 const char* passWifi = "1Oj3eyR5qHD3jAaT5Jfj1Ooh";
@@ -13,21 +12,9 @@ const char* passWifi = "1Oj3eyR5qHD3jAaT5Jfj1Ooh";
 const char* ssidWifi = "TORNATOREwifi";
 const char* passWifi = "finalborgo";
 
-options opts;
+Options opts;
 
-opts.username = "riccardo-office-temperature-sensor-username";
-opts.password =  "riccardo-office-temperature-sensor-password";
 
-opts.url = "http://students.atmosphere.tools";
-opts.ver = "v1";
-opts.login = "login";
-opts.devs = "devices";
-opts.scps = "scripts";
-opts.measurements = "measurements";
-
-opts.thing = "riccardo-office";
-opts.device = "temperature-sensor-riccardo-office";
-opts.id = "temperature-sensor-riccardo-office";
 
 edgine* Edge;
 vector<sample> samples;
@@ -69,10 +56,28 @@ void setup() {
     Serial.println("Connecting to WiFi..");
   }
   Serial.println("Connected to the WiFi network");
+  //login
+  opts.username = "riccardo-office-temperature-sensor-username";
+  opts.password =  "riccardo-office-temperature-sensor-password";
+  //route
+  opts.url = "http://students.atmosphere.tools";
+  opts.ver = "v1";
+  opts.login = "login";
+  opts.devs = "devices";
+  opts.scps = "scripts";
+  opts.measurements = "measurements";
+  //Edgine identifiers
+  opts.thing = "riccardo-office";
+  opts.device = "temperature-sensor-riccardo-office";
+  opts.id = "temperature-sensor-riccardo-office";
 
   Edge=edgine::getInstance();
-  
   Edge->init(opts);
+
+  sample sam = sample("temperature");
+  sam.setValue(10);
+  samples.push_back(sam);
+
   
 }
 
@@ -81,5 +86,6 @@ void loop() {
   { 
     //now samples is empty, creation of values is inside script->execute() method
     Edge->evaluate(samples);
+    delay(Edge->period);
   }
 }

@@ -54,7 +54,7 @@ double postVal::execute() {
     https.begin(url); //Specify the URL and certificate
     https.addHeader("Content-Type","application/json");
     https.addHeader("Authorization",token);
-    int httpsCode = https.POST("{\"thing\": \""+thing+"\", \"feature\": \""+feature+"\", \"device\": \""+device+"\", \"script\": \""+scriptId+"\", \"samples\": {\"values\":["+input+"]}}" );//this is the body
+    int httpsCode = https.POST("{\"thing\": \""+thing+"\", \"feature\": \""+feature+"\", \"device\": \""+device+"\", \"script\": \""+scriptId+"\", \"samples\": {\"values\":"+input+"}}" );//this is the body
     if (httpsCode > 0) { //Check for the returning code
         Serial.println(httpsCode);
         Serial.println(https.getString());

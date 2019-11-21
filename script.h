@@ -14,29 +14,30 @@ using std::vector;
 #include "slidingWindow.h"
 #include "map.h"
 #include "send.h"
+#include "sample.h"
 
 
 
 class script{
   private:
   //variables
-  //vector<operation> allowedOperations; 
   String token;
   String thing;
   String device;
-  String feat;// feature is also a class
+  String featuresAllowed;// features allowed for this device
+  
   String url;
   
   //methods
   void parseScript(String);
   int parseIntervalToSec(String);
   operation* createOperation(String);
+  boolean isAllowed(String, String);
   
   public:
   //variables
- // boolean created=false;
   boolean valid;
-  String myFeature;
+  String feature; //feature of this script
   vector<operation*> operations;
   String scriptStr;
   String scriptId;
@@ -46,21 +47,20 @@ class script{
   script(String,String,String,String,String,String,String);
   
   //methods
-  //boolean isCreated();
-  void execute(); 
+  void execute(double); 
   
   //setters
   void setToken(String);
 };
 
-script::script( String scriptId,String scriptStr, String thing, String device, String url, String token, String feat){
+script::script( String scriptId,String scriptStr, String thing, String device, String url, String token, String features){
   this->scriptId=scriptId;
   this->scriptStr=scriptStr; //save the string
   this->thing=thing;
   this->device=device;
   this->url=url;
   this->token=token;
-  this->feat=feat;
+  this->featuresAllowed=features;
   valid=false;
   /* initialize random seed: */
   srand (time(NULL));
@@ -86,7 +86,13 @@ void script::parseScript(String scriptString){
   scriptString.replace(" ","");//delete whitespace
   
   endIndex = scriptString.indexOf("(",startIndex); 
-  myFeature =  scriptString.substring(startIndex,endIndex);//the first is the feature
+  feature =  scriptString.substring(startIndex,endIndex);//the first is the feature
+
+  if(!isAllowed(feature, featuresAllowed)){
+    Serial.println(feature+" is not allowed!");
+    return;
+  }
+    
   //HERE CHECK IF THIS FEATURE IS SUPPORTED ELSE RETURN
   startIndex = endIndex+1;
   
@@ -114,6 +120,12 @@ void script::parseScript(String scriptString){
   //created=true;
 }
 
+boolean script::isAllowed(String feature,String featuresAllowed){
+
+  return featuresAllowed.indexOf(feature)!=-1? true:false;
+  
+}
+
 //These are the allowed opeartions; we have to add manually every operation we want to implement
 operation* script::createOperation(String op){
   int endIndex=op.indexOf("(");
@@ -129,7 +141,7 @@ operation* script::createOperation(String op){
     return new maxVal(op);
     
   }else if(opName.compareTo("send")==0){
-    return new postVal(op,thing, device, url, token, feat, scriptId);    
+    return new postVal(op,thing, device, url, token, feature, scriptId);    
   }
   else if(opName.compareTo("window")==0){
     return new window(op);    
@@ -145,29 +157,11 @@ operation* script::createOperation(String op){
     return NULL;// if is not among the allowed operations
   }
 }
-/*
-operation script::createOperation(String op){
-  int endIndex=op.indexOf("(");
-  
-  for (int i=0; i<sizeof(allowedOperations); i++){
-    if( op.substring(0,endIndex).compareTo(allowedOperations[i].getName()) == 0 ){//if have the same name are the same operation
-      operation newOp = allowedOperations[i]; //copy constructor
-      newOp.setCode(op);
-      return newOp;
-    }
-  }
-  Serial.println("wrong operation inside the script");
-  return operation("none");// if is not among the allowed operations
-}
-boolean script::isCreated(){
-  return created;
-}
-*/
 
-void script::execute(){
+void script::execute(double value){
   
   //double nextInput=rand() % 30 + 1;// to be substituted with sensor measurement
-  double nextInput=10;
+  double nextInput=value;
   
   for(int i=0;i<operations.size();i++){
     operations[i]->setInput(nextInput);

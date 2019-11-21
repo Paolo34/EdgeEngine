@@ -2,13 +2,8 @@
 
 #ifndef edgine_h
 #define edgine_h
-#include <HTTPClient.h>
-#include "script.h"
-#include "operation.h"
-#include "sample.h"
-#define MILLIS_PER_SEC 1000
 
-typedef struct {
+struct options{
   String username;
   String password;
   //route
@@ -22,9 +17,17 @@ typedef struct {
   String thing;
   String device;
   String id;
-}options;
+};
+typedef struct options Options;
+
+#include <HTTPClient.h>
+#include "script.h"
+#include "operation.h"
+#include "sample.h"
+#define MILLIS_PER_SEC 1000
 
 
+//SINGLETON
 class edgine{
   private:
   //constructor
@@ -33,7 +36,7 @@ class edgine{
   //variables
   static edgine* instance;
   //typedef struct options opts;
-  options opts;
+  Options opts;
   
   
   String token;
@@ -51,7 +54,7 @@ class edgine{
   double logCount=(double)tokenDuration;
   double getCount=(double)cycle;
 
-  int i;
+  int i,j;
   int startIndex;
   int endIndex;
   String tempCode;
@@ -67,7 +70,7 @@ class edgine{
   String GETDescr(String);
   String GETScript(String, String);
   void retrieveScriptsCode(String, String);
-  void executeScripts();
+  void executeScripts(vector<sample>);
   String ParseResponse( String, String);
   int FindEndIndex (char, char, int, String);
   String ParseToken(String);
@@ -75,16 +78,17 @@ class edgine{
   
   public:
   //variables
-
+  double period;
+  
   //methods
   static edgine* getInstance();
-  void init(options);
+  void init(Options);
   void evaluate(vector<sample>);
   
   
 };
 
-edgine* edgine::instance=0;
+edgine* edgine::instance=NULL;
 
 edgine* edgine::getInstance(){
   if(instance==0){
@@ -94,9 +98,10 @@ edgine* edgine::getInstance(){
 }
 
 edgine::edgine(){
+  period=5;
 }
 
-void edgine::init( options opts){
+void edgine::init( Options opts){
 
   this->opts=opts; 
   startLogCount = millis();      
@@ -106,35 +111,38 @@ void edgine::init( options opts){
   response = GETDescr(token); // Get the virtual description
   //cycle = ParseResponse(response,"cycle")!="" ? ParseResponse(response,"cycle").toInt():600; // default 10 minutes
   scriptsId = ParseResponse(response,"scripts");
-
-  ////////////GESTIRE LA STRINGA features CHE VIENE PASSATA AL COSTRUTTORE DI SCRIPT
   features= ParseResponse(response,"features");
-  
   retrieveScriptsCode(token, scriptsId);
 }
 
 void edgine::evaluate(vector<sample> samples){
+  
+  //Check if we have to update scripts
   getCount = (double)( millis()-startGetCount )/MILLIS_PER_SEC;
   if( getCount >= cycle ){
     startGetCount = millis(); 
     response = GETDescr(token); // Get the scripts
+    //if(response!="none) 
+    /////////////////////  COSA FARE SE LA RICHIESTA DELLO DESCRIZIONE FALLISCE  /////////////////////////////////////////////////////////////////////////////////////////////////
+    
     //cycle = ParseResponse(response,"cycle")!="" ? ParseResponse(response,"cycle").toInt():600; //default 10 minutes
     scriptsId = ParseResponse(response,"scripts");
-    
-     ////////////GESTIRE LA STRINGA features CHE VIENE PASSATA AL COSTRUTTORE DI SCRIPT
     features= ParseResponse(response,"features");
-
     retrieveScriptsCode(token, scriptsId);
   }
-  
+  //Check if we have to request a new TOKEN
   logCount = (double)( millis()-startLogCount )/MILLIS_PER_SEC;      
   if( logCount >= tokenDuration ){ //every "tokenDuration" authenticate
     startLogCount = millis();
     token = POSTLogin(opts.username, opts.password); //Authentication
+    
+    //if(token!="none) 
+    /////////////////////  COSA FARE SE LA RICHIESTA DELLO DESCRIZIONE FALLISCE  /////////////////////////////////////////////////////////////////////////////////////////////////
+    
     setToken(token); // Update the token in each script
   }  
  
-  executeScripts();
+  executeScripts(samples);
 }
 
 
@@ -173,7 +181,7 @@ String edgine::GETDescr(String token){
    }
    else {
      response="none";
-     Serial.printf("[HTTPS] GET Script... failed, error: %s\n", https.errorToString(httpsCode).c_str());
+     Serial.printf("[HTTPS] GET Description... failed, error: %s\n", https.errorToString(httpsCode).c_str());
    }
    https.end(); //Free the resources
 
@@ -193,7 +201,12 @@ void edgine::retrieveScriptsCode(String token, String scriptsId){
     endIndex=scriptsId.indexOf("\"",startIndex+1); // start the search from the next charater
     
     scriptId= scriptsId.substring(startIndex,endIndex);
-    tempCode=ParseResponse(GETScript( token, scriptId ),"code");
+
+    String code = GETScript( token, scriptId );
+    //if (code!="none")
+    //////////////////////////// COSA FARE SE FALLISCE LA RICHIESTA DEL CODICE DI UNO SCRIPT ///////////////////////////////////////////////////////////////////////////////////
+    
+    tempCode=ParseResponse( code,"code");
     
     //verify if it is a new script
     for(i=0;i<scripts.size();i++){
@@ -236,9 +249,14 @@ void edgine::retrieveScriptsCode(String token, String scriptsId){
 }
 
 
-void edgine::executeScripts(){
+void edgine::executeScripts(vector<sample> samples){
   for(i=0;i<scripts.size();i++){
-    scripts[i].execute();
+    for(j=0;j<samples.size();j++){
+      
+      if(scripts[i].feature==samples[j].feature)
+        scripts[i].execute(samples[j].getValue());
+        
+    }
   }
 }
 

@@ -6,17 +6,18 @@
 class sample{
   private:
   //variables
-  String feature;
+  
   double value;
   
   //methods
   
   public:
-  
+  //variables
+  String feature;
   
   //methods 
   void setValue(double);
-  
+  double getValue();
   //constructor
   sample(String);
   
@@ -28,6 +29,9 @@ sample::sample(String feature){
 
 void sample::setValue(double value){
   this->value=value;
+}
+double sample::getValue(){
+  return value;
 }
 
 
