@@ -10,13 +10,13 @@ class slidingWindow : public operation{
   char function;
   double initial;
   double accumulator;
+  vector<double> values;
   int windowSize;
   int counter;
 
   //methods
   void parseArgument(String);
-  double calculate(double);
-  double calculateInverse(double);
+  double calculate(vector<double>);
   
   public:
   //constructors
@@ -35,13 +35,19 @@ slidingWindow::slidingWindow(String opName):operation(opName){
 
 //methods
 double slidingWindow::execute() {
+  if(input!=NULL ){
+    values.push_back(input);
+  }
+    
+    
   if(input!=NULL && counter < windowSize){ // untill we have not enough values
-    accumulator = calculate(input);
+    //accumulator = calculate(input);
     counter++;
   }
   if(input!=NULL && counter >= windowSize){ // when the value are enough (at regime)
-    accumulator = calculate(input);//add last value to the window
-    accumulator = calculateInverse(input);//remove last value from the window
+    accumulator = calculate(values);//add last value to the window
+    //accumulator = calculateInverse( values.front() );//remove first value from the window
+    values.erase( values.begin() );//delete first value from the queue
     
     return accumulator;
   }
@@ -65,44 +71,42 @@ void slidingWindow::parseArgument(String arguments){
   endIndex=arguments.length();
   windowSize=arguments.substring(firstIndex,endIndex).toInt();
 }
-double slidingWindow::calculate(double input) {
+double slidingWindow::calculate(vector<double> values) {
+  accumulator=initial;
   switch(function){
     case '+':
-      return accumulator+input;
+      for(int i=0;i<values.size();i++){
+        accumulator+=values[i];
+      }
+      return accumulator;
       break;
     case '*':
-      return accumulator*input;
+      for(int i=0;i<values.size();i++){
+        accumulator*=values[i];
+      }
+      return accumulator;
       break;
     case '-':
-      return accumulator-input;
+      for(int i=0;i<values.size();i++){
+        accumulator-=values[i];
+      }
+      return accumulator;
       break;
     case '/':
-      return accumulator/input;
+      for(int i=0;i<values.size();i++){
+        accumulator/=values[i];
+      }
+      return accumulator;
       break;
     default: //this is a free choice
-      return accumulator+input;
+      for(int i=0;i<values.size();i++){
+        accumulator+=values[i];
+      }
+      return accumulator;
       break;
   }
 }
-double slidingWindow::calculateInverse(double input) {
-  switch(function){
-    case '+':
-      return accumulator-input;
-      break;
-    case '*':
-      return accumulator/input;
-      break;
-    case '-':
-      return accumulator+input;
-      break;
-    case '/':
-      return accumulator*input;
-      break;
-    default: //this is a free choice
-      return accumulator-input;
-      break;
-  }
-}
+
 
 
 

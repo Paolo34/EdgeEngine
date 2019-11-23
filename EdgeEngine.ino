@@ -1,27 +1,28 @@
 using std::vector;
 
-#include <WiFi.h>
+#include "connection.h"
 #include "edgine.h"
 #include "sample.h"
 
+int pirPin = 34;
+double pirCounter;
+sample motion = sample("temperature");
 
-/*
 const char* ssidWifi = "TIM-91746045";
 const char* passWifi = "1Oj3eyR5qHD3jAaT5Jfj1Ooh";
-*/
+/*
 const char* ssidWifi = "TORNATOREwifi";
 const char* passWifi = "finalborgo";
-
-Options opts;
-
-
-
-edgine* Edge;
-vector<sample> samples;
+*/
 /*
 const char* ssid = "S7Chicco";
 const char* password = "LLLLLLLL";
 */
+Options opts;
+
+edgine* Edge;
+connection* Connection; //Wrapper for the wifi connection
+vector<sample> samples;
 /*
 const char* root_ca= \
 "-----BEGIN CERTIFICATE-----\n" \
@@ -44,18 +45,18 @@ const char* root_ca= \
 "66BLarM52c/65MkI8e9XnjXpeSGQ4x6+4qKpapQyj3xOLKqVEYnEZbM=\n" \
 "-----END CERTIFICATE-----\n"; //Atmosphere CA
 */
+
 /**
  * setup
  */
 void setup() {
+  
   Serial.begin(115200);
-  delay(2000);
-  WiFi.begin(ssidWifi, passWifi); 
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(2000);
-    Serial.println("Connecting to WiFi..");
-  }
-  Serial.println("Connected to the WiFi network");
+
+  //setup connection
+  Connection = connection::getInstance();
+  Connection->setupConnection(ssidWifi, passWifi);
+  
   //login
   opts.username = "riccardo-office-temperature-sensor-username";
   opts.password =  "riccardo-office-temperature-sensor-password";
@@ -71,21 +72,48 @@ void setup() {
   opts.device = "temperature-sensor-riccardo-office";
   opts.id = "temperature-sensor-riccardo-office";
 
+  //initialize Edge engine
   Edge=edgine::getInstance();
   Edge->init(opts);
+  
+  //Interrupt sensor
+  pinMode(pirPin, INPUT);
+  attachInterrupt(digitalPinToInterrupt(pirPin), detectedMotion, FALLING);
+}
 
-  sample sam = sample("temperature");
-  sam.setValue(10);
-  samples.push_back(sam);
+int counter=0;
 
+void loop() {
+  
+  if ( Connection->isConnected() ) //Check the current connection status
+  { 
+    //create a fake temperature measurement
+    //sample temperature = sample("temperature");
+    //temperature.setValue(counter++);
+    //samples.push_back(temperature);
+    Edge->evaluate(samples);
+    samples.clear(); // after evaluated all samples delete them
+    //Serial.println(analogRead(pirPin));
+
+    if((millis()-pirCounter)>=2000){
+      attachInterrupt(digitalPinToInterrupt(pirPin), detectedMotion, FALLING);
+      Serial.println("attachInterrupt");
+    }
+      
+    delay(Edge->getPeriod()*1000);//delay in milliseconds
+    
+  }
+  else{
+    Serial.println("Device disconnected");
+  }
   
 }
 
-void loop() {
-  if ((WiFi.status() == WL_CONNECTED)) //Check the current connection status
-  { 
-    //now samples is empty, creation of values is inside script->execute() method
-    Edge->evaluate(samples);
-    delay(Edge->period);
-  }
+void detectedMotion(){
+  detachInterrupt(digitalPinToInterrupt(pirPin)); //PIR sensor needs 2 seconds to take an image to compare to
+  pirCounter=millis();
+  Serial.println("Motion detected");
+  motion.setValue(1);
+  samples.push_back(motion);
+  
 }

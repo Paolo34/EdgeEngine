@@ -160,7 +160,6 @@ operation* script::createOperation(String op){
 
 void script::execute(double value){
   
-  //double nextInput=rand() % 30 + 1;// to be substituted with sensor measurement
   double nextInput=value;
   
   for(int i=0;i<operations.size();i++){

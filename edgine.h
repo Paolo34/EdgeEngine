@@ -20,7 +20,7 @@ struct options{
 };
 typedef struct options Options;
 
-#include <HTTPClient.h>
+#include "APIRest.h"
 #include "script.h"
 #include "operation.h"
 #include "sample.h"
@@ -36,11 +36,10 @@ class edgine{
   //variables
   static edgine* instance;
   //typedef struct options opts;
+  APIRest* Api; //Wrapper for the Rest API
   Options opts;
   
-  
   String token;
-  int httpsCode;
   String response;
   vector<script> scripts;
   String scriptsId; // id of the scripts
@@ -49,7 +48,8 @@ class edgine{
   double startGetCount=0;// starting instant of counter of Get scripts
   
   int tokenDuration=1800;//30 minutes= 1800 seconds; interval between two login
-  int cycle=120;//2 minutes; interval between two GET script
+  int cycle=60;//1 minutes; interval between two GET script
+  double period= 5;//interval between two loop execution: max speed of loop
   
   double logCount=(double)tokenDuration;
   double getCount=(double)cycle;
@@ -66,9 +66,6 @@ class edgine{
   String delimiters="";
   
   //methods
-  String POSTLogin (String, String);
-  String GETDescr(String);
-  String GETScript(String, String);
   void retrieveScriptsCode(String, String);
   void executeScripts(vector<sample>);
   String ParseResponse( String, String);
@@ -78,37 +75,41 @@ class edgine{
   
   public:
   //variables
-  double period;
+  
   
   //methods
   static edgine* getInstance();
   void init(Options);
   void evaluate(vector<sample>);
-  
-  
+
+  //getters
+  double getPeriod();
 };
 
 edgine* edgine::instance=NULL;
 
 edgine* edgine::getInstance(){
-  if(instance==0){
+  if(instance==NULL){
     instance= new edgine();
   }
   return instance;
 }
 
 edgine::edgine(){
-  period=5;
+  Api=APIRest::getInstance();
 }
 
 void edgine::init( Options opts){
 
   this->opts=opts; 
   startLogCount = millis();      
-  token = POSTLogin(opts.username, opts.password); // Authentication
+  response=Api->POSTLogin(opts.url+"/"+opts.ver+"/"+opts.login, opts.username, opts.password); // Authentication
+  token= ParseToken(response);
+  //token = POSTLogin(opts.username, opts.password); // Authentication
   
   startGetCount = millis();
-  response = GETDescr(token); // Get the virtual description
+  response = Api->GETDescr(opts.url+"/"+opts.ver+"/"+opts.devs+"/"+opts.id, token); // Get the scripts
+  //response = GETDescr(token); // Get the virtual description
   //cycle = ParseResponse(response,"cycle")!="" ? ParseResponse(response,"cycle").toInt():600; // default 10 minutes
   scriptsId = ParseResponse(response,"scripts");
   features= ParseResponse(response,"features");
@@ -121,7 +122,9 @@ void edgine::evaluate(vector<sample> samples){
   getCount = (double)( millis()-startGetCount )/MILLIS_PER_SEC;
   if( getCount >= cycle ){
     startGetCount = millis(); 
-    response = GETDescr(token); // Get the scripts
+    response = Api->GETDescr(opts.url+"/"+opts.ver+"/"+opts.devs+"/"+opts.id, token); // Get the scripts
+    //response = GETDescr(token); // Get the virtual description
+    
     //if(response!="none) 
     /////////////////////  COSA FARE SE LA RICHIESTA DELLO DESCRIZIONE FALLISCE  /////////////////////////////////////////////////////////////////////////////////////////////////
     
@@ -134,7 +137,9 @@ void edgine::evaluate(vector<sample> samples){
   logCount = (double)( millis()-startLogCount )/MILLIS_PER_SEC;      
   if( logCount >= tokenDuration ){ //every "tokenDuration" authenticate
     startLogCount = millis();
-    token = POSTLogin(opts.username, opts.password); //Authentication
+    response=Api->POSTLogin(opts.url+"/"+opts.ver+"/"+opts.login, opts.username, opts.password); // Authentication
+    token= ParseToken(response);
+    //token = POSTLogin(opts.username, opts.password); // Authentication    
     
     //if(token!="none) 
     /////////////////////  COSA FARE SE LA RICHIESTA DELLO DESCRIZIONE FALLISCE  /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -143,49 +148,6 @@ void edgine::evaluate(vector<sample> samples){
   }  
  
   executeScripts(samples);
-}
-
-
-String edgine::POSTLogin (String username, String password){
-  HTTPClient https;
-  https.begin(opts.url+"/"+opts.ver+"/"+opts.login); //Specify the URL and certificate
-  
-  https.addHeader("Content-Type","application/json");
-  httpsCode = https.POST("{\"username\": \"" + username + "\",\"password\": \"" + password + "\"}");//this is the body
-
-  if (httpsCode > 0) { //Check for the returning code
-      response = https.getString();
-      Serial.println(httpsCode);
-      Serial.println(response);
-  }
-  else {
-    response="none";
-    Serial.printf("[HTTPS] POST Login... failed, error: %s\n", https.errorToString(httpsCode).c_str());
-  }
-  
-  https.end(); //Free the resources
-  return ParseToken( response );
-}
-
-String edgine::GETDescr(String token){
-   HTTPClient https;
-   https.begin(opts.url+"/"+opts.ver+"/"+opts.devs+"/"+opts.id); //Specify the URL and certificate
-
-   https.addHeader("Authorization",token);
-   
-   httpsCode = https.GET();//the body is empty
-   if (httpsCode > 0) { //Check for the returning code
-        response = https.getString();
-        Serial.println(httpsCode);
-        Serial.println(response);
-   }
-   else {
-     response="none";
-     Serial.printf("[HTTPS] GET Description... failed, error: %s\n", https.errorToString(httpsCode).c_str());
-   }
-   https.end(); //Free the resources
-
-   return response;
 }
 
 
@@ -202,7 +164,7 @@ void edgine::retrieveScriptsCode(String token, String scriptsId){
     
     scriptId= scriptsId.substring(startIndex,endIndex);
 
-    String code = GETScript( token, scriptId );
+    String code = Api->GETScript(opts.url + "/" + opts.ver + "/" + opts.scps + "?filter={\"_id\":\"" + scriptId + "\"}", token);
     //if (code!="none")
     //////////////////////////// COSA FARE SE FALLISCE LA RICHIESTA DEL CODICE DI UNO SCRIPT ///////////////////////////////////////////////////////////////////////////////////
     
@@ -250,11 +212,11 @@ void edgine::retrieveScriptsCode(String token, String scriptsId){
 
 
 void edgine::executeScripts(vector<sample> samples){
-  for(i=0;i<scripts.size();i++){
-    for(j=0;j<samples.size();j++){
+  for(j=0;j<samples.size();j++){
+    for(i=0;i<scripts.size();i++){
       
       if(scripts[i].feature==samples[j].feature)
-        scripts[i].execute(samples[j].getValue());
+        scripts[i].execute( samples[j].getValue() );
         
     }
   }
@@ -266,26 +228,7 @@ void edgine::setToken(String token){
   }
 }
 
-String edgine::GETScript(String token, String script){
-   HTTPClient https;
-   https.begin(opts.url+"/"+opts.ver+"/"+opts.scps+"?filter={\"_id\":\""+script+"\"}"); //Specify the URL and certificate
 
-   https.addHeader("Authorization",token);
-   
-   httpsCode = https.GET();//the body is empty
-   if (httpsCode > 0) { //Check for the returning code
-        response = https.getString();
-        Serial.println(httpsCode);
-        Serial.println(response);
-   }
-   else {
-     response="none";
-     Serial.printf("[HTTPS] GET Script... failed, error: %s\n", https.errorToString(httpsCode).c_str());
-   }
-   https.end(); //Free the resources
-
-   return response;
-}
 
 
 String edgine::ParseToken(String token){
@@ -348,5 +291,9 @@ int edgine::FindEndIndex (char first,char last, int start,String response){
     }
   }
   return nextClose;
+}
+
+double edgine::getPeriod(){
+  return period;
 }
 #endif 

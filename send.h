@@ -12,6 +12,7 @@ class postVal : public operation{
   String feature;
   String scriptId;
   String url;
+  APIRest* Api;
 
   public:
   //constructors
@@ -34,6 +35,7 @@ postVal::postVal(String opName, String thing, String device, String url, String 
   this->token=token;
   this->feature=feature;
   this->scriptId=scriptId;
+  Api=APIRest::getInstance();
 }
 //setters
  void postVal::setToken(String token){
@@ -50,22 +52,7 @@ postVal::postVal(String opName, String thing, String device, String url, String 
 double postVal::execute() {
   
   if( input!=NULL ){
-    HTTPClient https;
-    https.begin(url); //Specify the URL and certificate
-    https.addHeader("Content-Type","application/json");
-    https.addHeader("Authorization",token);
-    int httpsCode = https.POST("{\"thing\": \""+thing+"\", \"feature\": \""+feature+"\", \"device\": \""+device+"\", \"script\": \""+scriptId+"\", \"samples\": {\"values\":"+input+"}}" );//this is the body
-    if (httpsCode > 0) { //Check for the returning code
-        Serial.println(httpsCode);
-        Serial.println(https.getString());
-    }
-    else {
-      Serial.printf("[HTTPS] POST NewMeas... failed, error: %s\n", https.errorToString(httpsCode).c_str());
-    }
-
-    https.end(); //Free the resources
-    
-    return httpsCode;
+    Api->POSTMeasurement(url,token,thing,feature,device,scriptId,input);
   }
   return NULL;//this should block the execution of the next operation
 }
