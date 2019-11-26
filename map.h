@@ -19,7 +19,7 @@ class mapVal : public operation{
   mapVal(String);
   
   //methods
-  double execute() ;
+  double* execute();
 };
 //constructors
 
@@ -28,9 +28,9 @@ mapVal::mapVal(String opName):operation(opName){
 }
 
 //methods
-double mapVal::execute() {
-  if(input!=NULL ){
-    return calculate(input);
+double* mapVal::execute() {
+  if(&input!=NULL ){
+    return new double(calculate(input));
   }
  
   return NULL;//this should block the execution of the next operation

@@ -3,7 +3,7 @@
 #ifndef edgine_h
 #define edgine_h
 
-struct options{
+typedef struct{
   String username;
   String password;
   //route
@@ -17,10 +17,20 @@ struct options{
   String thing;
   String device;
   String id;
-};
-typedef struct options Options;
+}options;
 
-#include "APIRest.h"
+typedef struct {
+  double value;
+  String date;
+  String url;
+  String thing;
+  String feature;
+  String device;
+  String scriptId;
+  // other info about the measurement
+}measureData;
+
+#include "APIRest.h" //API wrapper
 #include "script.h"
 #include "operation.h"
 #include "sample.h"
@@ -37,7 +47,7 @@ class edgine{
   static edgine* instance;
   //typedef struct options opts;
   APIRest* Api; //Wrapper for the Rest API
-  Options opts;
+  options opts;
   
   String token;
   String response;
@@ -79,8 +89,9 @@ class edgine{
   
   //methods
   static edgine* getInstance();
-  void init(Options);
+  void init(options);
   void evaluate(vector<sample>);
+  boolean retryPOST();
 
   //getters
   double getPeriod();
@@ -99,7 +110,7 @@ edgine::edgine(){
   Api=APIRest::getInstance();
 }
 
-void edgine::init( Options opts){
+void edgine::init( options opts){
 
   this->opts=opts; 
   startLogCount = millis();      
@@ -148,6 +159,10 @@ void edgine::evaluate(vector<sample> samples){
   }  
  
   executeScripts(samples);
+}
+
+boolean edgine::retryPOST(){
+    Api->rePOSTMeasurement(token);
 }
 
 

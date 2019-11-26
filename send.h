@@ -20,7 +20,7 @@ class postVal : public operation{
   postVal(String,String,String,String,String,String,String);
   
   //methods
-  double execute();
+  double* execute();
 
   //setters
   void setToken(String);
@@ -49,9 +49,9 @@ postVal::postVal(String opName, String thing, String device, String url, String 
  }
 
 //methods
-double postVal::execute() {
+double* postVal::execute() {
   
-  if( input!=NULL ){
+  if( &input!=NULL ){
     Api->POSTMeasurement(url,token,thing,feature,device,scriptId,input);
   }
   return NULL;//this should block the execution of the next operation

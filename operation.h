@@ -8,13 +8,14 @@ class operation{
  
   protected:
   //variables
-  double input=NULL;
   String opName;
   String code;
+  double input;
   
   public:
   //variables
   
+
   //constructors
   operation(String);
   operation(const operation&);
@@ -28,7 +29,7 @@ class operation{
   String getName() const;
   
   //methods
-  virtual double execute();
+  virtual double* execute();
 };
 
 operation::operation(String opName){
@@ -40,7 +41,9 @@ operation::operation(const operation &op){
 }
 
 void operation::setInput(double input){
-    this->input=input;
+  
+  this->input=input;
+  
 }
 String operation::getName() const{
   return opName;
@@ -49,9 +52,9 @@ void operation::setCode(String code){
   this->code=code;
 }
 
-double operation::execute(){
+double* operation::execute(){
   Serial.println("base execute");
-  return 2;
+  return NULL;
   //must be overridden
 }
 void operation::setToken(String token){

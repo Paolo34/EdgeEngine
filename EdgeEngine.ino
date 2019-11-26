@@ -1,11 +1,17 @@
 using std::vector;
 
+#include <DHT.h>
 #include "connection.h"
 #include "edgine.h"
 #include "sample.h"
 
-int pirPin = 34;
+int pirPin = 35;
+int thPin = 12;
+int lightPin = 34;// pin 27 not working with this sketch
+int potPin = 32;
+
 double pirCounter;
+DHT dht(thPin, DHT22);
 sample motion = sample("temperature");
 
 const char* ssidWifi = "TIM-91746045";
@@ -18,7 +24,7 @@ const char* passWifi = "finalborgo";
 const char* ssid = "S7Chicco";
 const char* password = "LLLLLLLL";
 */
-Options opts;
+options opts;
 
 edgine* Edge;
 connection* Connection; //Wrapper for the wifi connection
@@ -79,25 +85,51 @@ void setup() {
   //Interrupt sensor
   pinMode(pirPin, INPUT);
   attachInterrupt(digitalPinToInterrupt(pirPin), detectedMotion, FALLING);
+  dht.begin();
+  
 }
 
-int counter=0;
+
 
 void loop() {
   
   if ( Connection->isConnected() ) //Check the current connection status
   { 
-    //create a fake temperature measurement
-    //sample temperature = sample("temperature");
-    //temperature.setValue(counter++);
-    //samples.push_back(temperature);
+    //create a temperature measurement sample
+    /*sample temperature = sample("temperature");
+    float t = dht.readTemperature();
+    Serial.println(t);
+    temperature.setValue(t);
+    samples.push_back(temperature);
+
+    //create a humidity measurement sample
+    sample humidity = sample("humidity");
+    
+    humidity.setValue(1);
+    samples.push_back(humidity);
+    */
+   
+    //create a light measurement sample
+    sample light = sample("temperature");
+    int lig=analogRead(lightPin);
+    //Serial.println(lig);
+    light.setValue( lig );
+   // samples.push_back(light);
+    
+    //create a potentiometer measurement sample
+    sample potentiometer = sample("temperature");
+    int pot=analogRead(potPin);
+    potentiometer.setValue( pot );
+    samples.push_back(potentiometer);
+
     Edge->evaluate(samples);
     samples.clear(); // after evaluated all samples delete them
+    Edge->retryPOST(); // retry to send data that are in local database
     //Serial.println(analogRead(pirPin));
-
+    
     if((millis()-pirCounter)>=2000){
       attachInterrupt(digitalPinToInterrupt(pirPin), detectedMotion, FALLING);
-      Serial.println("attachInterrupt");
+      //Serial.println("attachInterrupt");
     }
       
     delay(Edge->getPeriod()*1000);//delay in milliseconds

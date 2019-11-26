@@ -22,7 +22,7 @@ class window : public operation{
   window(String);
   
   //methods
-  double execute() ;
+  double* execute() ;
 };
 //constructors
 
@@ -33,8 +33,8 @@ window::window(String opName):operation(opName){
 }
 
 //methods
-double window::execute() {
-  if(input!=NULL ){
+double* window::execute() {
+  if(&input!=NULL ){
     accumulator = calculate(input);
     counter++;
   }
@@ -44,7 +44,7 @@ double window::execute() {
     accumulator = initial;
     counter=0;
     
-    return result;
+    return new double(result);
   }
   return NULL;//this should block the execution of the next operation
 }

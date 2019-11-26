@@ -14,7 +14,7 @@ class maxVal : public operation{
   maxVal(String,double);
   
   //methods
-  double execute() ;
+  double* execute() ;
 };
 //constructors
 
@@ -26,10 +26,10 @@ maxVal::maxVal( String opName,double initValue):operation(opName){
 }
 
 //methods
-double maxVal::execute() {
-  if(input!=NULL && input>maxValue){
+double* maxVal::execute() {
+  if(&input!=NULL && input>maxValue){
     maxValue=input;
-    return maxValue;
+    return new double(maxValue);
   }
   return NULL;//this should block the execution of the next operation
 }

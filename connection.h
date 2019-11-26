@@ -5,7 +5,7 @@
 
 #include <WiFi.h>
 
-//SINGLETON
+//SINGLETON wrapper
 class connection{
   private:
   //constructor

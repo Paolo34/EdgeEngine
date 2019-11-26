@@ -23,7 +23,7 @@ class reception : public operation{
   void setInterval(int);
   
   //methods
-  double execute();
+  double* execute();
   int parseIntervalToSec(String);
   
 };
@@ -40,16 +40,14 @@ void reception::initializeCounter(){
   startInstant = millis();
 }
 
-double reception::execute(){
+double* reception::execute(){
   
   if( (double)( millis()-startInstant )/MILLIS_PER_SEC < interval){ //if not elapsed enough time 
-    //Serial.println("time elapsed: "+(int)( millis()-startInstant )/MILLIS_PER_SEC );
+    
     return NULL;//this should block the execution of the next operation
   }
-  //Serial.println("time elapsed: "+(int)( millis()-startInstant )/MILLIS_PER_SEC );
-  //Serial.println("accepted value: "+(int)input);
   initializeCounter(); // reinitialize counter
-  return input;
+  return new double(input);
 }
 
 int reception::parseIntervalToSec( String numString){

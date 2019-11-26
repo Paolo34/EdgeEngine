@@ -23,7 +23,7 @@ class slidingWindow : public operation{
   slidingWindow(String);
   
   //methods
-  double execute() ;
+  double* execute() ;
 };
 //constructors
 
@@ -34,22 +34,19 @@ slidingWindow::slidingWindow(String opName):operation(opName){
 }
 
 //methods
-double slidingWindow::execute() {
-  if(input!=NULL ){
+double* slidingWindow::execute() {
+  if(&input!=NULL ){
     values.push_back(input);
   }
     
-    
-  if(input!=NULL && counter < windowSize){ // untill we have not enough values
-    //accumulator = calculate(input);
+  if(&input!=NULL && counter < windowSize){ // untill we have not enough values 
     counter++;
   }
-  if(input!=NULL && counter >= windowSize){ // when the value are enough (at regime)
+  if(&input!=NULL && counter >= windowSize){ // when the value are enough (at regime)
     accumulator = calculate(values);//add last value to the window
-    //accumulator = calculateInverse( values.front() );//remove first value from the window
     values.erase( values.begin() );//delete first value from the queue
     
-    return accumulator;
+    return new double(accumulator);
   }
   return NULL;//this should block the execution of the next operation
 }
@@ -78,33 +75,29 @@ double slidingWindow::calculate(vector<double> values) {
       for(int i=0;i<values.size();i++){
         accumulator+=values[i];
       }
-      return accumulator;
       break;
     case '*':
       for(int i=0;i<values.size();i++){
         accumulator*=values[i];
       }
-      return accumulator;
       break;
     case '-':
       for(int i=0;i<values.size();i++){
         accumulator-=values[i];
       }
-      return accumulator;
       break;
     case '/':
       for(int i=0;i<values.size();i++){
         accumulator/=values[i];
       }
-      return accumulator;
       break;
     default: //this is a free choice
       for(int i=0;i<values.size();i++){
         accumulator+=values[i];
       }
-      return accumulator;
       break;
   }
+  return accumulator;
 }
 
 

@@ -25,8 +25,8 @@ class script{
   String thing;
   String device;
   String featuresAllowed;// features allowed for this device
-  
   String url;
+  
   
   //methods
   void parseScript(String);
@@ -42,7 +42,7 @@ class script{
   String scriptStr;
   String scriptId;
   String interval;
-  
+  double* nextInput;
   //constructor
   script(String,String,String,String,String,String,String);
   
@@ -62,8 +62,6 @@ script::script( String scriptId,String scriptStr, String thing, String device, S
   this->token=token;
   this->featuresAllowed=features;
   valid=false;
-  /* initialize random seed: */
-  srand (time(NULL));
   
   parseScript(scriptStr);
   if(!valid){
@@ -160,12 +158,11 @@ operation* script::createOperation(String op){
 
 void script::execute(double value){
   
-  double nextInput=value;
+  nextInput=new double(value);
   
   for(int i=0;i<operations.size();i++){
-    operations[i]->setInput(nextInput);
+    operations[i]->setInput(*nextInput);
     nextInput = operations[i]->execute();
-
     if(nextInput==NULL)
       return;// if an operation return NULL stop executing the script
   }
