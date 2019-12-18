@@ -1,17 +1,16 @@
 using std::vector;
 
-#include <DHT.h>
-#include "connection.h"
-#include "edgine.h"
-#include "sample.h"
+#include "src/connection.h"
+#include "src/edgine.h"
+#include "src/sample.h"
+
+
 
 int pirPin = 35;
-int thPin = 12;
 int lightPin = 34;// pin 27 not working with this sketch
 int potPin = 32;
 
 double pirCounter;
-DHT dht(thPin, DHT22);
 sample motion = sample("temperature");
 
 const char* ssidWifi = "TIM-91746045";
@@ -73,6 +72,7 @@ void setup() {
   opts.devs = "devices";
   opts.scps = "scripts";
   opts.measurements = "measurements";
+  opts.dateUrl= "URL OF THE DATE";
   //Edgine identifiers
   opts.thing = "riccardo-office";
   opts.device = "temperature-sensor-riccardo-office";
@@ -82,10 +82,10 @@ void setup() {
   Edge=edgine::getInstance();
   Edge->init(opts);
   
-  //Interrupt sensor
+  //Interrupt sensor setup
   pinMode(pirPin, INPUT);
-  attachInterrupt(digitalPinToInterrupt(pirPin), detectedMotion, FALLING);
-  dht.begin();
+  //attachInterrupt(digitalPinToInterrupt(pirPin), detectedMotion, FALLING);
+  
   
 }
 
@@ -95,8 +95,9 @@ void loop() {
   
   if ( Connection->isConnected() ) //Check the current connection status
   { 
+    /*
     //create a temperature measurement sample
-    /*sample temperature = sample("temperature");
+    sample temperature = sample("temperature");
     float t = dht.readTemperature();
     Serial.println(t);
     temperature.setValue(t);
@@ -124,11 +125,9 @@ void loop() {
 
     Edge->evaluate(samples);
     samples.clear(); // after evaluated all samples delete them
-    Edge->retryPOST(); // retry to send data that are in local database
-    //Serial.println(analogRead(pirPin));
     
-    if((millis()-pirCounter)>=2000){
-      attachInterrupt(digitalPinToInterrupt(pirPin), detectedMotion, FALLING);
+    if((millis()-pirCounter)>=2000){// pir sensor needs 2 seconds to be ready to give another measurement
+      //attachInterrupt(digitalPinToInterrupt(pirPin), detectedMotion, FALLING);
       //Serial.println("attachInterrupt");
     }
       
@@ -147,5 +146,4 @@ void detectedMotion(){
   Serial.println("Motion detected");
   motion.setValue(1);
   samples.push_back(motion);
-  
 }

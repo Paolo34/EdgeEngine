@@ -13,6 +13,7 @@ class slidingWindow : public operation{
   vector<double> values;
   int windowSize;
   int counter;
+  int i;
 
   //methods
   void parseArgument(String);
@@ -48,7 +49,7 @@ double* slidingWindow::execute() {
     
     return new double(accumulator);
   }
-  return NULL;//this should block the execution of the next operation
+  return NULL; // this should block the execution of the next operation
 }
 
 void slidingWindow::parseArgument(String arguments){
@@ -72,27 +73,27 @@ double slidingWindow::calculate(vector<double> values) {
   accumulator=initial;
   switch(function){
     case '+':
-      for(int i=0;i<values.size();i++){
+      for(i=0;i<values.size();i++){
         accumulator+=values[i];
       }
       break;
     case '*':
-      for(int i=0;i<values.size();i++){
+      for(i=0;i<values.size();i++){
         accumulator*=values[i];
       }
       break;
     case '-':
-      for(int i=0;i<values.size();i++){
+      for(i=0;i<values.size();i++){
         accumulator-=values[i];
       }
       break;
     case '/':
-      for(int i=0;i<values.size();i++){
+      for(i=0;i<values.size();i++){
         accumulator/=values[i];
       }
       break;
     default: //this is a free choice
-      for(int i=0;i<values.size();i++){
+      for(i=0;i<values.size();i++){
         accumulator+=values[i];
       }
       break;

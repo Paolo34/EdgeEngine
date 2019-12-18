@@ -15,6 +15,9 @@ class minVal : public operation{
   
   //methods
   double* execute();
+  
+  //getters
+  double getMin();
 };
 //constructors
 minVal::minVal(String opName):operation(opName){
@@ -31,5 +34,9 @@ double* minVal::execute(){
     return new double(minValue);
   }
   return NULL;//this should block the execution of the next operation
+}
+
+double minVal::getMin(){
+	return minValue;
 }
 #endif 

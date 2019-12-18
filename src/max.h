@@ -15,6 +15,9 @@ class maxVal : public operation{
   
   //methods
   double* execute() ;
+  
+  //getters
+  double getMax();
 };
 //constructors
 
@@ -34,6 +37,8 @@ double* maxVal::execute() {
   return NULL;//this should block the execution of the next operation
 }
 
-
+double maxVal::getMax(){
+	return maxValue;
+}
 
 #endif 

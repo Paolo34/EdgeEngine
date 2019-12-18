@@ -13,6 +13,7 @@ typedef struct{
   String devs;
   String scps;
   String measurements;
+  String dateUrl;
   
   String thing;
   String device;
@@ -46,7 +47,6 @@ class edgine{
   //variables
   static edgine* instance;
   //typedef struct options opts;
-  APIRest* Api; //Wrapper for the Rest API
   options opts;
   
   String token;
@@ -85,13 +85,12 @@ class edgine{
   
   public:
   //variables
-  
+  APIRest* Api; //Wrapper for the Rest API
   
   //methods
   static edgine* getInstance();
   void init(options);
   void evaluate(vector<sample>);
-  boolean retryPOST();
 
   //getters
   double getPeriod();
@@ -116,7 +115,9 @@ void edgine::init( options opts){
   startLogCount = millis();      
   response=Api->POSTLogin(opts.url+"/"+opts.ver+"/"+opts.login, opts.username, opts.password); // Authentication
   token= ParseToken(response);
-  //token = POSTLogin(opts.username, opts.password); // Authentication
+
+  ///////////////  WHAT IF THE GETDATE FAILS????????  ////////////////////////////
+  //Api->GETDate(opts.dateUrl,token);
   
   startGetCount = millis();
   response = Api->GETDescr(opts.url+"/"+opts.ver+"/"+opts.devs+"/"+opts.id, token); // Get the scripts
@@ -161,11 +162,6 @@ void edgine::evaluate(vector<sample> samples){
   executeScripts(samples);
 }
 
-boolean edgine::retryPOST(){
-    Api->rePOSTMeasurement(token);
-}
-
-
 void edgine::retrieveScriptsCode(String token, String scriptsId){
   startIndex=1;
   endIndex=1;
@@ -200,7 +196,7 @@ void edgine::retrieveScriptsCode(String token, String scriptsId){
     }    
     
     //create the script
-    scripts.push_back( script(scriptId,tempCode, opts.thing, opts.device, opts.url+"/"+opts.ver+"/"+opts.measurements, token, features) );
+    scripts.push_back( script(scriptId, tempCode, opts.thing, opts.device, opts.url+"/"+opts.ver+"/"+opts.measurements, token, features) );
     if(scripts.back().valid==false){//if the creation of the script has failed      
       scripts.pop_back();//remove last script
     }

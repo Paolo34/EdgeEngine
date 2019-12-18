@@ -18,6 +18,7 @@ class sample{
   //methods 
   void setValue(double);
   double getValue();
+  
   //constructor
   sample(String);
   

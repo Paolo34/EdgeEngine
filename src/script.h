@@ -26,7 +26,7 @@ class script{
   String device;
   String featuresAllowed;// features allowed for this device
   String url;
-  
+  int i;
   
   //methods
   void parseScript(String);
@@ -160,7 +160,7 @@ void script::execute(double value){
   
   nextInput=new double(value);
   
-  for(int i=0;i<operations.size();i++){
+  for(i=0;i<operations.size();i++){
     operations[i]->setInput(*nextInput);
     nextInput = operations[i]->execute();
     if(nextInput==NULL)
