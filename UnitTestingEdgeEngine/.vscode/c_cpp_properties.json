@@ -3,18 +3,20 @@
         {
             "name": "Win32",
             "includePath": [
+                "${workspaceFolder}\\..",
                 "C:\\Users\\chicc\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\**",
                 "C:\\Users\\chicc\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\1.0.3\\**",
                 "C:\\Users\\chicc\\Documents\\Arduino\\libraries\\**",
-                "C:\\Program Files (x86)\\Arduino\\hardware\\espressif\\esp32\\libraries\\**",
-                "C:\\Users\\chicc\\Desktop\\Università\\5\\TESI MAGISTRALE\\ESP32\\EdgeEngine\\src\\*",
-                "${workspaceFolder}"
+                "C:\\Program Files (x86)\\Arduino\\hardware\\espressif\\esp32\\libraries\\**"
+                
             ],
             "browse": {
                 "limitSymbolsToIncludedHeaders": false,
                 "path": [
-                    "${workspaceFolder}",
+                    "${workspaceFolder}\\..",
+                    "C:\\Users\\chicc\\Documents\\Arduino\\libraries\\**",
                     "C:\\Program Files (x86)\\Arduino\\hardware\\espressif\\esp32\\libraries\\**"
+                    
                 ]
             },
             "forcedInclude": [],

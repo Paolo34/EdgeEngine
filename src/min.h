@@ -21,7 +21,7 @@ class minVal : public operation{
 };
 //constructors
 minVal::minVal(String opName):operation(opName){
-  minValue=10000;
+  minValue=9999999999;
 }
 minVal::minVal(String opName, double initValue ):operation(opName){
   minValue=initValue;

@@ -22,7 +22,7 @@ class maxVal : public operation{
 //constructors
 
 maxVal::maxVal(String opName):operation(opName){
-  maxValue=-10000;
+  maxValue=-9999999999;
 }
 maxVal::maxVal( String opName,double initValue):operation(opName){
   maxValue=initValue;

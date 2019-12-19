@@ -23,7 +23,6 @@ class postVal : public operation{
 
   public:
   //constructors
-  postVal(String);
   postVal(String,String,String,String,String,String,String);
   
   //methods

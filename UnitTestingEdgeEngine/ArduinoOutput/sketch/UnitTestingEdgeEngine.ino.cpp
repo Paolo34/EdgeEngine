@@ -1,19 +1,18 @@
+#include <Arduino.h>
+#line 1 "c:\\Users\\chicc\\Desktop\\Università\\5\\TESI MAGISTRALE\\ESP32\\EdgeEngine\\UnitTestingEdgeEngine\\UnitTestingEdgeEngine.ino"
 // UNIT TESTING OF EDGE ENGINE
+
 #include <AUnit.h>
 using std::vector;
-
-#include "sample.h"
-#include "edgine.h"
-#include "connection.h"
-
+#include "src/edgine.h"
+#include "src/sample.h"
+#include "src/connection.h"
 
 test(operation){
   operation* op= new operation("operation");
   assertEqual(op->getName(),"operation");
-  
 }
 test(reception){
-  
   reception* rec= new reception("accept(10)");
   assertNotEqual(rec->getInterval(),0);
   assertEqual(rec->getInterval(),10);
@@ -81,8 +80,27 @@ test(postVal){
                       
 }
 
+test(edgine){
+  edgine* Edge=edgine::getInstance();
 
+  options opts;
+  opts.username = "riccardo-office-temperature-sensor-username";
+  opts.password =  "riccardo-office-temperature-sensor-password";
+  //route
+  opts.url = "http://students.atmosphere.tools";
+  opts.ver = "v1";
+  opts.login = "login";
+  opts.devs = "devices";
+  opts.scps = "scripts";
+  opts.measurements = "measurements";
+  opts.dateUrl= "URL OF THE DATE";
+  //Edgine identifiers
+  opts.thing = "riccardo-office";
+  opts.device = "temperature-sensor-riccardo-office";
+  opts.id = "temperature-sensor-riccardo-office";
 
+  Edge->init(opts);
+}
 void setup() {
   delay(1000); // wait for stability on some boards to prevent garbage Serial
   Serial.begin(115200); // ESP8266 default of 74880 not supported on Linux
@@ -92,3 +110,4 @@ void setup() {
 void loop() {
   aunit::TestRunner::run();
 }
+

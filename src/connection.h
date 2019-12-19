@@ -1,6 +1,6 @@
 //connection.h
 
-#ifndef conncetion_h
+#ifndef connection_h
 #define connection_h
 
 #include <WiFi.h>

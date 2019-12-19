@@ -62,7 +62,7 @@ void slidingWindow::parseArgument(String arguments){
   
   //second argument is the accumulator
   endIndex = arguments.indexOf(",",firstIndex+1);
-  initial=arguments.substring(firstIndex,endIndex).toDouble();
+  initial=arguments.substring(firstIndex+1,endIndex).toDouble();
 
   //third argument is the size
   firstIndex = endIndex+1;

@@ -1,0 +1,11 @@
+{
+  "additionalFiles": "",
+  "builtInLibrariesFolders": "C:\\Program Files (x86)\\Arduino\\libraries",
+  "customBuildProperties": "build.path=c:\\Users\\chicc\\Desktop\\Università\\5\\TESI MAGISTRALE\\ESP32\\EdgeEngine\\UnitTestingEdgeEngine\\ArduinoOutput,build.warn_data_percentage=75,runtime.tools.esptool_py.path=C:\\Users\\chicc\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esptool_py\\2.6.1,runtime.tools.esptool_py-2.6.1.path=C:\\Users\\chicc\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\esptool_py\\2.6.1,runtime.tools.xtensa-esp32-elf-gcc.path=C:\\Users\\chicc\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\xtensa-esp32-elf-gcc\\1.22.0-80-g6c4433a-5.2.0,runtime.tools.xtensa-esp32-elf-gcc-1.22.0-80-g6c4433a-5.2.0.path=C:\\Users\\chicc\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\xtensa-esp32-elf-gcc\\1.22.0-80-g6c4433a-5.2.0,runtime.tools.mkspiffs.path=C:\\Users\\chicc\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\mkspiffs\\0.2.3,runtime.tools.mkspiffs-0.2.3.path=C:\\Users\\chicc\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\mkspiffs\\0.2.3",
+  "fqbn": "esp32:esp32:m5stack-core-esp32:FlashMode=qio,FlashFreq=80,PartitionScheme=default,UploadSpeed=921600,DebugLevel=none",
+  "hardwareFolders": "C:\\Program Files (x86)\\Arduino\\hardware,C:\\Users\\chicc\\AppData\\Local\\Arduino15\\packages",
+  "otherLibrariesFolders": "C:\\Users\\chicc\\Documents\\Arduino\\libraries",
+  "runtime.ide.version": "10810",
+  "sketchLocation": "c:\\Users\\chicc\\Desktop\\Università\\5\\TESI MAGISTRALE\\ESP32\\EdgeEngine\\UnitTestingEdgeEngine\\UnitTestingEdgeEngine.ino",
+  "toolsFolders": "C:\\Program Files (x86)\\Arduino\\tools-builder,C:\\Program Files (x86)\\Arduino\\hardware\\tools\\avr,C:\\Users\\chicc\\AppData\\Local\\Arduino15\\packages"
+}

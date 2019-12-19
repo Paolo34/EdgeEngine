@@ -41,9 +41,7 @@ operation::operation(const operation &op){
 }
 
 void operation::setInput(double input){
-  
-  this->input=input;
-  
+  this->input=input;  
 }
 String operation::getName() const{
   return opName;

@@ -4,21 +4,19 @@ using std::vector;
 #include "src/edgine.h"
 #include "src/sample.h"
 
-
-
 int pirPin = 35;
 int lightPin = 34;// pin 27 not working with this sketch
 int potPin = 32;
 
 double pirCounter;
 sample motion = sample("temperature");
-
+/*
 const char* ssidWifi = "TIM-91746045";
 const char* passWifi = "1Oj3eyR5qHD3jAaT5Jfj1Ooh";
-/*
+*/
 const char* ssidWifi = "TORNATOREwifi";
 const char* passWifi = "finalborgo";
-*/
+
 /*
 const char* ssid = "S7Chicco";
 const char* password = "LLLLLLLL";
@@ -61,7 +59,6 @@ void setup() {
   //setup connection
   Connection = connection::getInstance();
   Connection->setupConnection(ssidWifi, passWifi);
-  
   //login
   opts.username = "riccardo-office-temperature-sensor-username";
   opts.password =  "riccardo-office-temperature-sensor-password";

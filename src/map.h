@@ -38,7 +38,7 @@ double* mapVal::execute() {
 
 void mapVal::parseArgument(String arguments){
   arguments.replace(" ","");//delete whitespace
-  
+  //arguments example : "a/6" so charAt(0) is useless
   //first argument is the operation type
   function=arguments.charAt(1);
   
