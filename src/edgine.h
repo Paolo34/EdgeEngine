@@ -114,7 +114,7 @@ void edgine::init( options opts){
   this->opts=opts; 
   startLogCount = millis();      
   response=Api->POSTLogin(opts.url+"/"+opts.ver+"/"+opts.login, opts.username, opts.password); // Authentication
-  token= ParseToken(response);
+  token = ParseToken(response);
 
   ///////////////  WHAT IF THE GETDATE FAILS????????  ////////////////////////////
   //Api->GETDate(opts.dateUrl,token);
@@ -135,9 +135,8 @@ void edgine::evaluate(vector<sample> samples){
   if( getCount >= cycle ){
     startGetCount = millis(); 
     response = Api->GETDescr(opts.url+"/"+opts.ver+"/"+opts.devs+"/"+opts.id, token); // Get the scripts
-    //response = GETDescr(token); // Get the virtual description
     
-    //if(response!="none) 
+    //if(response!="none") 
     /////////////////////  COSA FARE SE LA RICHIESTA DELLO DESCRIZIONE FALLISCE  /////////////////////////////////////////////////////////////////////////////////////////////////
     
     //cycle = ParseResponse(response,"cycle")!="" ? ParseResponse(response,"cycle").toInt():600; //default 10 minutes
@@ -153,7 +152,7 @@ void edgine::evaluate(vector<sample> samples){
     token= ParseToken(response);
     //token = POSTLogin(opts.username, opts.password); // Authentication    
     
-    //if(token!="none) 
+    //if(token!="none") 
     /////////////////////  COSA FARE SE LA RICHIESTA DELLO DESCRIZIONE FALLISCE  /////////////////////////////////////////////////////////////////////////////////////////////////
     
     setToken(token); // Update the token in each script
@@ -246,7 +245,7 @@ String edgine::ParseToken(String token){
   return token.substring( token.indexOf("J"), token.lastIndexOf("\"") );
 }
 
-//NOT WORKS WITH CUSTOM BECAUSE IT DELETES ANY WHITESPACES
+//NOT WORKS WITH CUSTOM OPERATIONS BECAUSE IT DELETES ANY WHITESPACES
 String edgine::ParseResponse( String response, String fieldName ){
   
   if( response.indexOf(fieldName) ==-1){
@@ -276,7 +275,7 @@ String edgine::ParseResponse( String response, String fieldName ){
 }
 
 
-int edgine::FindEndIndex (char first,char last, int start,String response){
+int edgine::FindEndIndex (char first,char last, int start, String response){
   while(true){
     nextOpen = response.indexOf( first, start );
     nextClose = response.indexOf( last, start );

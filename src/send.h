@@ -16,6 +16,7 @@ class postVal : public operation{
   APIRest* Api;
   int numOfSamples;
   int counter;
+  int numberValue;
   int j;
 
   //methods
@@ -29,7 +30,7 @@ class postVal : public operation{
   double* execute();
 
   //variables
-  vector<measureData> database;
+  vector<measureData> batch;
   
   //setters
   void setToken(String);
@@ -71,17 +72,17 @@ double* postVal::execute() {
     datum.feature=feature;
     datum.device=device;
     datum.scriptId=scriptId;
-    database.push_back(datum);// save the datum in a local database
+    batch.push_back(datum);// save the datum in a local batch
     counter++;
   }
   
   if( &input!=NULL && counter >= numOfSamples){
     counter=0;
-    // j is useful to count the number of iteration equal to database size; 
-    // since after post the first element we erase it, the next one shift to the first position so access database[0] till end
+    // j is useful to count the number of iteration equal to batch size; 
+    // since after post the first element we erase it, the next one shift to the first position so access batch[0] till end
     for(j=0; j<numOfSamples; j++){
-      Api->POSTMeasurement(database[0].url, token, database[0].thing, database[0].feature, database[0].device, database[0].scriptId, database[0].value, database[0].date);
-      database.erase( database.begin() );
+      Api->POSTMeasurement(batch[0].url, token, batch[0].thing, batch[0].feature, batch[0].device, batch[0].scriptId, batch[0].value, batch[0].date);
+      batch.erase( batch.begin() );
     }
     
   }
@@ -89,9 +90,14 @@ double* postVal::execute() {
 }
 
 int postVal::parseNumOfSamples( String numString){
-  int numberValue=1; 
+  numberValue=1; 
   
   if(numString!="") // if there is no number we assign 1 because we post one measurement at a time 
+    if(!isaNumber(numString))
+    {
+      valid=false;
+      return numberValue;
+    }
     numberValue = numString.toInt();
   
   return numberValue;

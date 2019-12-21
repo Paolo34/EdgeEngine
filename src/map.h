@@ -9,6 +9,8 @@ class mapVal : public operation{
   //variable
   char function;
   double operand;
+  int i;
+  char c;
 
   //methods
   void parseArgument(String);
@@ -41,7 +43,15 @@ void mapVal::parseArgument(String arguments){
   //arguments example : "a/6" so charAt(0) is useless
   //first argument is the operation type
   function=arguments.charAt(1);
-  
+  if(function!='+' && function!='*' && function!='-' && function!='/' && function!='^'){
+    valid=false;
+    return;
+  }
+  if(!isaNumber(arguments.substring(2,arguments.length())))
+  {
+    valid=false;
+    return;
+  }
   //second argument is the operand
   operand=arguments.substring(2,arguments.length()).toDouble();
 }

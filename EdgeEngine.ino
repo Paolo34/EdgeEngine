@@ -83,7 +83,6 @@ void setup() {
   pinMode(pirPin, INPUT);
   //attachInterrupt(digitalPinToInterrupt(pirPin), detectedMotion, FALLING);
   
-  
 }
 
 

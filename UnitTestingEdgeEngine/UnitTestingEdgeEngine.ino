@@ -8,6 +8,11 @@ using std::vector;
 
 using namespace aunit;
 
+class Credentials: public TestOnce{
+  protected:
+   String ssidWIFI="TORNATOREwifi";
+   String passWIFI="finalborgo";
+};
 
 class Options :public TestOnce{
   protected:
@@ -33,11 +38,14 @@ class Options :public TestOnce{
 test(operation){
   operation* op= new operation("operation");
   assertEqual(op->getName(),"operation");
+  assertTrue(op->valid);
   
 }
 test(reception){
   
   reception* rec= new reception("accept(10)");
+  assertTrue(rec->valid);
+  assertEqual(rec->getName(),"accept(10)");
   rec->setInput(3436);
   assertNotEqual(rec->getInterval(),0);
   assertEqual(rec->getInterval(),10);
@@ -63,16 +71,17 @@ test(reception){
   assertEqual(rec->getInterval(),0);
   assertEqual(*(rec->execute()),(double)3);
 
-  //if time has typo time interval is set to 0
+  //if time has typo 
   rec= new reception("accept(aaa)");
-  rec->setInput(3);
-  assertEqual(rec->getInterval(),0);
-  assertEqual(*(rec->execute()),(double)3);
-  
+  assertFalse(rec->valid);
+  rec= new reception("accept(10aa)");
+  assertFalse(rec->valid);
 }
 
 test(mapVal){
   mapVal* mapV = new mapVal("map(a/6)");
+  assertTrue(mapV->valid);
+  assertEqual(mapV->getName(),"map(a/6)");  
   mapV->setInput(6);
   assertEqual(*(mapV->execute()),(double)1);
   mapV->setInput(23);  
@@ -103,15 +112,19 @@ test(mapVal){
   assertEqual(*(mapV->execute()),(double)(pow(45,4)));
 
   mapV= new mapVal("map(a4)");
-  mapV->setInput(1);
-  assertEqual(*(mapV->execute()),(double)1);
-  mapV->setInput(0);  
-  assertEqual(*(mapV->execute()),(double)0);
-
+  assertFalse(mapV->valid);
+  mapV= new mapVal("map(a?4)");
+  assertFalse(mapV->valid);
+  mapV= new mapVal("map(a/22a)");
+  assertFalse(mapV->valid);
+  mapV= new mapVal("map(a/a22)");
+  assertFalse(mapV->valid);
 }
 
 test(maxVal){
   maxVal* maxV= new maxVal("max()");
+  assertTrue(maxV->valid);
+  assertEqual(maxV->getName(),"max()");  
   maxV->setInput(-10);
   assertEqual(*(maxV->execute()),(double)-10);
   maxV->setInput(-110);
@@ -126,9 +139,13 @@ test(maxVal){
   assertEqual(*(maxV->execute()),(double)110);
   maxV->setInput(0);
   assertEqual(maxV->execute(),NULL);
+  maxV =new maxVal("max(a)");
+  assertFalse(maxV->valid);
 }
 test(minVal){
   minVal* minV = new minVal("min()");
+  assertTrue(minV->valid);
+  assertEqual(minV->getName(),"min()");  
   minV->setInput(8);
   assertEqual(*(minV->execute()),(double)8);
   minV->setInput(-2340);
@@ -143,9 +160,14 @@ test(minVal){
   assertEqual(minV->execute(),NULL);
   minV->setInput(0);
   assertEqual(*(minV->execute()),(double)0);
+  minV =new minVal("min(19)");
+  assertFalse(minV->valid);
 }
+
 test(window){
   window* wind = new window("window(+,1,10)");
+  assertTrue(wind->valid);
+  assertEqual(wind->getName(),"window(+,1,10)");  
   for (int i = 1; i < 10; i++)
   {
     wind->setInput(i);
@@ -188,10 +210,21 @@ test(window){
   }
   wind->setInput(1);
   assertEqual(*(wind->execute()),(double)1/1/2/3/4/1);
+
+  wind = new window("window(?,1,10)");
+  assertFalse(wind->valid);
+  wind = new window("window(*,a,10)");
+  assertFalse(wind->valid);
+  wind = new window("window(+,1,1e0)");
+  assertFalse(wind->valid);
+  wind = new window("window(*,110)");
+  assertFalse(wind->valid);
 }
 
 test(slidingWindow){
   slidingWindow* slidWind = new slidingWindow("slidingWindow(+,1,5)");
+  assertTrue(slidWind->valid);
+  assertEqual(slidWind->getName(),"slidingWindow(+,1,5)");  
   for (int i = 1; i < 5; i++)
   {
     slidWind->setInput(i);
@@ -242,36 +275,111 @@ test(slidingWindow){
   assertEqual(*(slidWind->execute()),(double)100/2/3/4/5/10/3);
   slidWind->setInput(1);
   assertEqual(*(slidWind->execute()),(double)100/3/4/5/10/3/1);
+
+  slidWind = new slidingWindow("slidingWindow(?,1,10)");
+  assertFalse(slidWind->valid);
+  slidWind = new slidingWindow("slidingWindow(*,a,10)");
+  assertFalse(slidWind->valid);
+  slidWind = new slidingWindow("slidingWindow(+,1,1e0)");
+  assertFalse(slidWind->valid);
+  slidWind = new slidingWindow("slidingWindow(*,*,110)");
+  assertFalse(slidWind->valid);
+  slidWind = new slidingWindow("slidingWindow()");
+  assertFalse(slidWind->valid);
 }
 
 testF(Options,script){
-  script* scrp=new script("average-temperature","temperature(10).slidingWindow(+, 0, 6).map(a/6).send()",
-                            opts.thing.c_str(), opts.device.c_str(), "url", "token", "temperature");
-  assertTrue(scrp->valid);
-  assertEqual(scrp->feature,"temperature");
-  assertEqual(scrp->scriptId,"average-temperature");
-  assertEqual(scrp->scriptStr,"temperature(10).slidingWindow(+, 0, 6).map(a/6).send()");
-  assertEqual(scrp->interval,"10");
-  assertEqual(scrp->feature,"temperature");
+  script scrp= script("average-temperature","temperature(10).slidingWindow(+, 0, 6).map(a/6).send()",
+                            opts.thing.c_str(), opts.device.c_str(), "url", "token", "temperature, humidity");
+  assertTrue(scrp.valid);
+  assertEqual(scrp.feature,"temperature");
+  assertEqual(scrp.scriptId,"average-temperature");
+  assertEqual(scrp.scriptStr,"temperature(10).slidingWindow(+, 0, 6).map(a/6).send()");
+  assertEqual(scrp.interval,"10");
+  assertEqual(scrp.feature,"temperature");
 
+  vector<operation*> ops=scrp.operations;
+  int size=ops.size();
+  assertEqual(size, 4); 
+  assertEqual(ops[0]->getName(),"accept(10)");
+  assertEqual(ops[1]->getName(),"slidingWindow(+,0,6)");//spaces are deleted by the parser
+  assertEqual(ops[2]->getName(),"map(a/6)");
+  assertEqual(ops[3]->getName(),"send()");
+
+
+  scrp= script("average-temperature","temperatur(10).slidingWindow(+, 0, 6).map(a/6).send()",
+                            opts.thing.c_str(), opts.device.c_str(), "url", "token", "temperature");
+  assertFalse(scrp.valid); // typo in "temperatur" -> script not valid
+  scrp= script("average-temperature","temperatures(10).slidingWindow(+, 0, 6).map(a/6).send()",
+                            opts.thing.c_str(), opts.device.c_str(), "url", "token", "temperature");
+  assertFalse(scrp.valid); // typo in "temperatures" -> script not valid
+  scrp= script("average-temperature","temperature(10).sliding(+, 0, 6).map(a/6).send()",
+                            opts.thing.c_str(), opts.device.c_str(), "url", "token", "temperature");
+  assertFalse(scrp.valid); // "sliding" is not an operations -> script not valid
+  scrp= script("average-temperature","temperature(10a).sliding(+, 0, 6).map(a/6).send()",
+                            opts.thing.c_str(), opts.device.c_str(), "url", "token", "temperature");
+  assertFalse(scrp.valid); // typo in "temperature(10a)" -> script not valid
+  scrp= script("average-temperature","temperature(10a).sliding(+, 0, 6).map(a/6).send",
+                            opts.thing.c_str(), opts.device.c_str(), "url", "token", "temperature");
+  assertFalse(scrp.valid); // typo in "send" -> script not valid
+  scrp= script("average-temperature","temperature.sliding(+, 0, 6).map(a/6).send()",
+                            opts.thing.c_str(), opts.device.c_str(), "url", "token", "temperature");
+  assertFalse(scrp.valid); // typo in "temperature" -> script not valid
 }
 
 testF(Options,postVal){
   postVal* postV =new postVal("send()", opts.thing.c_str(), opts.device.c_str(), opts.url.c_str(),"token",
                              "temperature", "average-temperature" );
-                  
+  assertEqual(postV->getName(),"send()");
+  assertTrue(postV->valid);
+  
+
+  postV =new postVal("send(aa)", opts.thing.c_str(), opts.device.c_str(), opts.url.c_str(),"token",
+                             "temperature", "average-temperature" );
+  assertFalse(postV->valid); 
+  postV =new postVal("send(1aa)", opts.thing.c_str(), opts.device.c_str(), opts.url.c_str(),"token",
+                             "temperature", "average-temperature" );
+  assertFalse(postV->valid);  
+  postV =new postVal("send(1a1)", opts.thing.c_str(), opts.device.c_str(), opts.url.c_str(),"token",
+                             "temperature", "average-temperature" );
+  assertFalse(postV->valid);            
+}
+
+test(sample){
+  sample sam= sample("temperature");
+  sam.setValue(19);
+  assertEqual(sam.getValue(),(double)19);
+  assertEqual(sam.feature,"temperature");
 }
 
 testF(Options,edgine){
   edgine* Edge=edgine::getInstance();
   Edge->init(opts);
+
+  
+
+
 }
+
+test(APIRest){
+  APIRest* Api=APIRest::getInstance();
+
+}
+
+testF(Credentials, connection){
+  connection* conn=connection::getInstance();
+  assertFalse(conn->isConnected());
+  conn->setupConnection(ssidWIFI.c_str(),passWIFI.c_str());
+  assertTrue(conn->isConnected());
+}
+
+
 
 
 void setup() {
   delay(1000); // wait for stability on some boards to prevent garbage Serial
-  Serial.begin(115200); // ESP8266 default of 74880 not supported on Linux
-  while (!Serial); // for the Arduino Leonardo/Micro only
+  Serial.begin(115200);
+  while (!Serial); 
 }
 
 void loop() {

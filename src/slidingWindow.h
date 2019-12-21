@@ -59,14 +59,27 @@ void slidingWindow::parseArgument(String arguments){
   
   //first argument is the operation type
   function=arguments.charAt(0);
-  
+  if(function!='+' && function!='*' && function!='-' && function!='/' && function!='^'){
+    valid=false;
+    return;
+  }
   //second argument is the accumulator
   endIndex = arguments.indexOf(",",firstIndex+1);
+  if(!isaNumber(arguments.substring(firstIndex+1,endIndex)))
+  {
+    valid=false;
+    return;
+  }
   initial=arguments.substring(firstIndex+1,endIndex).toDouble();
 
   //third argument is the size
   firstIndex = endIndex+1;
   endIndex=arguments.length();
+  if(!isaNumber(arguments.substring(firstIndex+1,endIndex)))
+  {
+    valid=false;
+    return;
+  }
   windowSize=arguments.substring(firstIndex,endIndex).toInt();
 }
 double slidingWindow::calculate(vector<double> values) {

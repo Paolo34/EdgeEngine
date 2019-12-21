@@ -21,9 +21,13 @@ class minVal : public operation{
 };
 //constructors
 minVal::minVal(String opName):operation(opName){
+  if(opName!="min()")
+    valid=false;
   minValue=9999999999;
 }
 minVal::minVal(String opName, double initValue ):operation(opName){
+  if(opName!="min()")
+    valid=false;
   minValue=initValue;
 }
 

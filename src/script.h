@@ -97,6 +97,11 @@ void script::parseScript(String scriptString){
   endIndex = scriptString.indexOf(")",startIndex); //the second is the time interval
   interval = scriptString.substring(startIndex,endIndex);
   operations.push_back( createOperation("accept("+interval+")") );//the first operation is always "accept" which verify the time elapsed
+  if(!operations[counter]->valid){
+    operations.clear();
+    return;
+  }
+	  
   counter++;
   startIndex = endIndex+2;//+2 because there is also the point in the syntax
   
@@ -106,7 +111,7 @@ void script::parseScript(String scriptString){
 
     operations.push_back( createOperation(scriptString.substring(startIndex,endIndex)) ); //Add element at the end
     
-    if(!operations[counter]){ // if something is wrong in the script
+    if(!operations[counter] || !operations[counter]->valid){ // if something is wrong in the script
       operations.clear();// Removes all elements from the vector (which are destroyed), leaving the container with a size of 0.
       return;//end here the parsing
     }
@@ -119,9 +124,13 @@ void script::parseScript(String scriptString){
 }
 
 boolean script::isAllowed(String feature,String featuresAllowed){
-
-  return featuresAllowed.indexOf(feature)!=-1? true:false;
-  
+  int startIndex=featuresAllowed.indexOf(feature);
+  if(startIndex!=-1){
+	  int endIndex=featuresAllowed.indexOf(",",startIndex);
+	  if( featuresAllowed.substring(startIndex, (endIndex!=-1? endIndex : featuresAllowed.length()-startIndex))== feature )
+		  return true;
+  }
+  return false;
 }
 
 //These are the allowed opeartions; we have to add manually every operation we want to implement

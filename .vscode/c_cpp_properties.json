@@ -12,6 +12,8 @@
             "browse": {
                 "limitSymbolsToIncludedHeaders": false,
                 "path": [
+                    "C:\\Users\\chicc\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\**",
+                    "C:\\Users\\chicc\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\1.0.3\\**",
                     "C:\\Users\\chicc\\Documents\\Arduino\\libraries\\**",
                     "C:\\Program Files (x86)\\Arduino\\hardware\\espressif\\esp32\\libraries\\**",
                     "${workspaceFolder}"

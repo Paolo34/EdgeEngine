@@ -22,9 +22,13 @@ class maxVal : public operation{
 //constructors
 
 maxVal::maxVal(String opName):operation(opName){
+  if(opName!="max()")
+    valid=false;
   maxValue=-9999999999;
 }
 maxVal::maxVal( String opName,double initValue):operation(opName){
+  if(opName!="max()")
+    valid=false;
   maxValue=initValue;
 }
 
