@@ -74,10 +74,11 @@ class edgine{
   int nextClose;
   int nextOpen;
   String delimiters="";
+  int samplesSent=0;
   
   //methods
   void retrieveScriptsCode(String, String);
-  void executeScripts(vector<sample>);
+  int executeScripts(vector<sample>);
   String ParseResponse( String, String);
   int FindEndIndex (char, char, int, String);
   String ParseToken(String);
@@ -90,7 +91,7 @@ class edgine{
   //methods
   static edgine* getInstance();
   void init(options);
-  void evaluate(vector<sample>);
+  int evaluate(vector<sample>);
 
   //getters
   double getPeriod();
@@ -106,7 +107,7 @@ edgine* edgine::getInstance(){
 }
 
 edgine::edgine(){
-  Api=APIRest::getInstance();
+  Api=APIRest::getInstance();  
 }
 
 void edgine::init( options opts){
@@ -115,6 +116,7 @@ void edgine::init( options opts){
   startLogCount = millis();      
   response=Api->POSTLogin(opts.url+"/"+opts.ver+"/"+opts.login, opts.username, opts.password); // Authentication
   token = ParseToken(response);
+  ///////////////  WHAT IF THE LOGIN FAILS????????  ////////////////////////////
 
   ///////////////  WHAT IF THE GETDATE FAILS????????  ////////////////////////////
   //Api->GETDate(opts.dateUrl,token);
@@ -128,7 +130,7 @@ void edgine::init( options opts){
   retrieveScriptsCode(token, scriptsId);
 }
 
-void edgine::evaluate(vector<sample> samples){
+int edgine::evaluate(vector<sample> samples){
   
   //Check if we have to update scripts
   getCount = (double)( millis()-startGetCount )/MILLIS_PER_SEC;
@@ -158,14 +160,14 @@ void edgine::evaluate(vector<sample> samples){
     setToken(token); // Update the token in each script
   }  
  
-  executeScripts(samples);
+  return executeScripts(samples);
 }
 
 void edgine::retrieveScriptsCode(String token, String scriptsId){
   startIndex=1;
   endIndex=1;
 
-  Serial.println("retrieveScriptsCode :"+scriptsId);
+  //Serial.println("retrieveScriptsCode :"+scriptsId);
   scriptsId.replace(" ","");//delete whitespace
   
   while( startIndex < scriptsId.length() ){
@@ -221,15 +223,17 @@ void edgine::retrieveScriptsCode(String token, String scriptsId){
 }
 
 
-void edgine::executeScripts(vector<sample> samples){
-  for(j=0;j<samples.size();j++){
-    for(i=0;i<scripts.size();i++){
-      
-      if(scripts[i].feature==samples[j].feature)
-        scripts[i].execute( samples[j].getValue() );
-        
-    }
-  }
+int edgine::executeScripts(vector<sample> samples){
+	samplesSent=0;
+	for(j=0;j<samples.size();j++){
+		for(i=0;i<scripts.size();i++){
+			if(scripts[i].feature==samples[j].feature){
+				if( scripts[i].execute( samples[j].getValue() ) )
+					samplesSent++;
+			}
+		}
+	}
+    return samplesSent;
 }
 
 void edgine::setToken(String token){
@@ -237,8 +241,6 @@ void edgine::setToken(String token){
     scripts[i].setToken(token);
   }
 }
-
-
 
 
 String edgine::ParseToken(String token){
@@ -270,7 +272,6 @@ String edgine::ParseResponse( String response, String fieldName ){
       break;
   }
     
-  
   return response.substring( beginOfValue+1, endOfValue);
 }
 

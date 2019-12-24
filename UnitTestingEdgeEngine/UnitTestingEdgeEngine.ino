@@ -8,18 +8,18 @@ using std::vector;
 
 using namespace aunit;
 
-class Credentials: public TestOnce{
-  protected:
-   String ssidWIFI="TORNATOREwifi";
-   String passWIFI="finalborgo";
-};
-
-class Options :public TestOnce{
+class Settings :public TestOnce{
   protected:
     options opts;
+    APIRest* Api;
+    connection* conn;
+    String ssidWIFI;
+    String passWIFI;
+    String token;
+
     void setup() override{
-      opts.username = "riccardo-office-temperature-sensor-username";
-      opts.password =  "riccardo-office-temperature-sensor-password";
+      opts.username = "username";
+      opts.password =  "password";
       //route
       opts.url = "http://students.atmosphere.tools";
       opts.ver = "v1";
@@ -32,6 +32,16 @@ class Options :public TestOnce{
       opts.thing = "riccardo-office";
       opts.device = "temperature-sensor-riccardo-office";
       opts.id = "temperature-sensor-riccardo-office";
+
+      ssidWIFI="ssid";
+      passWIFI="pass";
+      token="JWT token";
+
+      Api=APIRest::getInstance();
+      Api->TESTING=true;
+          
+      conn=connection::getInstance();
+      conn->TESTING=true;
     }
 };
 
@@ -288,9 +298,9 @@ test(slidingWindow){
   assertFalse(slidWind->valid);
 }
 
-testF(Options,script){
+testF(Settings,script){
   script scrp= script("average-temperature","temperature(10).slidingWindow(+, 0, 6).map(a/6).send()",
-                            opts.thing.c_str(), opts.device.c_str(), "url", "token", "temperature, humidity");
+                            opts.thing.c_str(), opts.device.c_str(), "url", token.c_str(), "temperature, humidity");
   assertTrue(scrp.valid);
   assertEqual(scrp.feature,"temperature");
   assertEqual(scrp.scriptId,"average-temperature");
@@ -306,41 +316,96 @@ testF(Options,script){
   assertEqual(ops[2]->getName(),"map(a/6)");
   assertEqual(ops[3]->getName(),"send()");
 
+  scrp= script("average-temperature","temperature().slidingWindow(+, 0, 6).map(a/6).send()",
+                            opts.thing.c_str(), opts.device.c_str(), "url", token.c_str(), "temperature, humidity");
+  assertTrue(scrp.valid);
+  assertEqual(scrp.feature,"temperature");
+  assertEqual(scrp.scriptId,"average-temperature");
+  assertEqual(scrp.scriptStr,"temperature().slidingWindow(+, 0, 6).map(a/6).send()");
+  assertEqual(scrp.interval,"");
+  assertEqual(scrp.feature,"temperature");
+  assertFalse(scrp.execute(1));
+  assertFalse(scrp.execute(2));
+  assertFalse(scrp.execute(3));
+  assertFalse(scrp.execute(4));
+  assertFalse(scrp.execute(5));
+  assertTrue(scrp.execute(6));// only after 6 input the value is sent to the api
+  assertTrue(scrp.execute(7));
+
+  scrp= script("average-temperature","temperature().window(+, 0, 4).map(a/4).send()",
+                            opts.thing.c_str(), opts.device.c_str(), "url", token.c_str(), "temperature, humidity");
+  assertTrue(scrp.valid);
+  assertEqual(scrp.feature,"temperature");
+  assertEqual(scrp.scriptId,"average-temperature");
+  assertEqual(scrp.scriptStr,"temperature().window(+, 0, 4).map(a/4).send()");
+  assertEqual(scrp.interval,"");
+  assertEqual(scrp.feature,"temperature");
+  assertFalse(scrp.execute(1));
+  assertFalse(scrp.execute(2));
+  assertFalse(scrp.execute(3));
+  assertTrue(scrp.execute(4));// only after 4 input the value is sent to the api
+  assertFalse(scrp.execute(5));
+  assertFalse(scrp.execute(6));
+  assertFalse(scrp.execute(7));
+  assertTrue(scrp.execute(4));// only after 4 input the value is sent to the api
+
 
   scrp= script("average-temperature","temperatur(10).slidingWindow(+, 0, 6).map(a/6).send()",
-                            opts.thing.c_str(), opts.device.c_str(), "url", "token", "temperature");
+                            opts.thing.c_str(), opts.device.c_str(), "url", token.c_str(), "temperature");
   assertFalse(scrp.valid); // typo in "temperatur" -> script not valid
   scrp= script("average-temperature","temperatures(10).slidingWindow(+, 0, 6).map(a/6).send()",
-                            opts.thing.c_str(), opts.device.c_str(), "url", "token", "temperature");
+                            opts.thing.c_str(), opts.device.c_str(), "url", token.c_str(), "temperature");
   assertFalse(scrp.valid); // typo in "temperatures" -> script not valid
   scrp= script("average-temperature","temperature(10).sliding(+, 0, 6).map(a/6).send()",
-                            opts.thing.c_str(), opts.device.c_str(), "url", "token", "temperature");
+                            opts.thing.c_str(), opts.device.c_str(), "url", token.c_str(), "temperature");
   assertFalse(scrp.valid); // "sliding" is not an operations -> script not valid
   scrp= script("average-temperature","temperature(10a).sliding(+, 0, 6).map(a/6).send()",
-                            opts.thing.c_str(), opts.device.c_str(), "url", "token", "temperature");
+                            opts.thing.c_str(), opts.device.c_str(), "url", token.c_str(), "temperature");
   assertFalse(scrp.valid); // typo in "temperature(10a)" -> script not valid
   scrp= script("average-temperature","temperature(10a).sliding(+, 0, 6).map(a/6).send",
-                            opts.thing.c_str(), opts.device.c_str(), "url", "token", "temperature");
+                            opts.thing.c_str(), opts.device.c_str(), "url", token.c_str(), "temperature");
   assertFalse(scrp.valid); // typo in "send" -> script not valid
   scrp= script("average-temperature","temperature.sliding(+, 0, 6).map(a/6).send()",
-                            opts.thing.c_str(), opts.device.c_str(), "url", "token", "temperature");
+                            opts.thing.c_str(), opts.device.c_str(), "url", token.c_str(), "temperature");
   assertFalse(scrp.valid); // typo in "temperature" -> script not valid
 }
 
-testF(Options,postVal){
-  postVal* postV =new postVal("send()", opts.thing.c_str(), opts.device.c_str(), opts.url.c_str(),"token",
+testF(Settings,postVal){
+  postVal* postV =new postVal("send()", opts.thing.c_str(), opts.device.c_str(), opts.url.c_str(),token.c_str(),
                              "temperature", "average-temperature" );
   assertEqual(postV->getName(),"send()");
   assertTrue(postV->valid);
-  
+  postV->setInput(5);
+  assertEqual(*(postV->execute()),(double)5);
+  assertEqual(postV->batch.size(),(size_t)(0));
 
-  postV =new postVal("send(aa)", opts.thing.c_str(), opts.device.c_str(), opts.url.c_str(),"token",
+  postV =new postVal("send(5)", opts.thing.c_str(), opts.device.c_str(), opts.url.c_str(),token.c_str(),
+                             "temperature", "average-temperature" );
+  assertEqual(postV->getName(),"send(5)");
+  assertTrue(postV->valid);
+  postV->setInput(5);
+  assertEqual(postV->execute(),NULL);
+  assertEqual(postV->batch.size(),(size_t)(1));
+  postV->setInput(3);
+  assertEqual(postV->execute(),NULL);
+  assertEqual(postV->batch.size(),(size_t)(2));
+  postV->setInput(0);
+  assertEqual(postV->execute(),NULL);
+  assertEqual(postV->batch.size(),(size_t)(3));
+  postV->setInput(34);
+  assertEqual(postV->execute(),NULL);
+  assertEqual(postV->batch.size(),(size_t)(4));
+  postV->setInput(5);
+  assertEqual(*(postV->execute()),(double)5);
+  assertEqual(postV->batch.size(),(size_t)(0));  
+
+  postV =new postVal("send(aa)", opts.thing.c_str(), opts.device.c_str(), opts.url.c_str(),token.c_str(),
                              "temperature", "average-temperature" );
   assertFalse(postV->valid); 
-  postV =new postVal("send(1aa)", opts.thing.c_str(), opts.device.c_str(), opts.url.c_str(),"token",
+  postV =new postVal("send(1aa)", opts.thing.c_str(), opts.device.c_str(), opts.url.c_str(),token.c_str(),
                              "temperature", "average-temperature" );
   assertFalse(postV->valid);  
-  postV =new postVal("send(1a1)", opts.thing.c_str(), opts.device.c_str(), opts.url.c_str(),"token",
+  postV =new postVal("send(1a1)", opts.thing.c_str(), opts.device.c_str(), opts.url.c_str(),token.c_str(),
                              "temperature", "average-temperature" );
   assertFalse(postV->valid);            
 }
@@ -352,29 +417,109 @@ test(sample){
   assertEqual(sam.feature,"temperature");
 }
 
-testF(Options,edgine){
+testF(Settings,edgine){
   edgine* Edge=edgine::getInstance();
-  Edge->init(opts);
-
-  
-
+  Edge->init(opts);// in the mocked init we retrieve 2 scripts: "temperature().send(5)"" and 
+                      // "temperature(10).window(+, 0, 60).map(a/60).send()""
+  sample sam= sample("temperature");
+  sam.setValue(19);
+  vector<sample> samples;
+  samples.push_back(sam);//use this sample all the times
+  for (int i = 0; i < 4; i++)
+  { // for 4 times no data are sent to the API
+    assertEqual(Edge->evaluate(samples), 0);
+  }
+  assertEqual(Edge->evaluate(samples), 1); // 5th time the first script send the datum
+  assertEqual(Edge->evaluate(samples), 0);
 
 }
 
-test(APIRest){
-  APIRest* Api=APIRest::getInstance();
+testF(Settings,APIRest){
+  String response=Api->POSTLogin(opts.url.c_str()+String("/")+opts.ver.c_str()+String("/")+opts.login.c_str(), opts.username.c_str(), opts.password.c_str());
+  assertEqual(response, " {\"token\": \"JWT token\"}");
+  response=Api->POSTLogin(opts.url.c_str()+String("/")+opts.ver.c_str()+String("/")+opts.login.c_str(), "aa","bb");
+  assertEqual(response, "none");
+
+  response= Api->GETDate(opts.url,token);
+  assertEqual(response,"2019-12-14T12:25:06.324Z");
+  response= Api->GETDate(opts.url.c_str(),"token");
+  assertEqual(response,"none");
+
+  response=Api->GETDescr(opts.url,token);
+  assertEqual(response,"{"
+        "\"features\": ["
+          " \"temperature\""
+        "],"
+        "\"tags\": [],"
+        "\"scripts\": ["
+          "\"average-hourly-temperature\","
+            "\"group-temperature\""
+        "],"
+        "\"visibility\": \"private\","
+        "\"period\": 10,"
+        "\"_id\": \"temperature-sensor-riccardo-office\","
+        "\"owner\": {"
+            "\"_id\": \"5dcec66bc67ed54963bc865c\","
+            "\"username\": \"riccardo-office-temperature-sensor-username\","
+            "\"type\": \"provider\""
+        "}"
+      "}");
+  response=Api->GETDescr(opts.url.c_str(),"token");
+  assertEqual(response,"none");
+
+  response=Api->GETScript(opts.url.c_str()+String("/v1/scripts?filter={\"_id\":\"group-temperature\"}"),token.c_str());
+  assertEqual(response,"{\"docs\": ["
+					  "{"
+						  "\"visibility\": \"private\","
+						  "\"tags\": [],"
+						  "\"_id\": \"group-temperature\","
+						  "\"code\": \"temperature().send(5)\","
+						  "\"owner\": {"
+							  "\"_id\": \"5dcec66bc67ed54963bc865c\","
+							  "\"username\": \"riccardo-office-temperature-sensor-username\","
+							  "\"type\": \"provider\"}"
+					  "}"
+					"],"
+					"\"totalDocs\": 1, \"limit\": 10, \"hasPrevPage\": false, \"hasNextPage\": false, \"page\": 1, \"totalPages\": 1, \"pagingCounter\": 1, \"prevPage\": null, \"nextPage\": null}");
+  response=Api->GETScript(opts.url.c_str()+String("/v1/scripts?filter={\"_id\":\"average-hourly-temperature\"}"),token.c_str());
+  assertEqual(response,"{\"docs\": ["
+					  "{"
+						  "\"visibility\": \"private\","
+						  "\"tags\": [],"
+						  "\"_id\": \"average-hourly-temperature\","
+						  "\"code\": \"temperature(10).window(+, 0, 60).map(a/60).send()\","
+						  "\"owner\": {"
+							  "\"_id\": \"5dcec66bc67ed54963bc865c\","
+							  "\"username\": \"riccardo-office-temperature-sensor-username\","
+							  "\"type\": \"provider\"}"
+						  "}"
+					  "],"
+					"\"totalDocs\": 1, \"limit\": 10, \"hasPrevPage\": false, \"hasNextPage\": false, \"page\": 1, \"totalPages\": 1, \"pagingCounter\": 1, \"prevPage\": null, \"nextPage\": null}");
+    
+  response=Api->GETScript(opts.url.c_str(),"token");
+  assertEqual(response,"none");
+
+  boolean success= Api->POSTMeasurement(opts.url.c_str(),token.c_str(),opts.thing.c_str(),
+                          "temperature",opts.device.c_str(),"group-temperature",(double)5);
+  assertTrue(success);
+  success= Api->POSTMeasurement(opts.url.c_str(),"token",opts.thing.c_str(),
+                          "temperature",opts.device.c_str(),"group-temperature",(double)5);
+  assertFalse(success);
+
+  success=Api->POSTError(opts.url.c_str(),token.c_str(),opts.thing.c_str(),
+                          "temperature",opts.device.c_str(),"group-temperature");
+  assertTrue(success);
+  success=Api->POSTError(opts.url.c_str(),"token",opts.thing.c_str(),
+                          "temperature",opts.device.c_str(),"group-temperature");
+  assertFalse(success);
 
 }
 
-testF(Credentials, connection){
-  connection* conn=connection::getInstance();
+testF(Settings, connection){
   assertFalse(conn->isConnected());
   conn->setupConnection(ssidWIFI.c_str(),passWIFI.c_str());
   assertTrue(conn->isConnected());
 }
-
-
-
 
 void setup() {
   delay(1000); // wait for stability on some boards to prevent garbage Serial

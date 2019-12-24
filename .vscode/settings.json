@@ -1,5 +1,8 @@
 {
     "files.associations": {
-        "vector": "cpp"
+        "vector": "cpp",
+        "future": "cpp",
+        "regex": "cpp",
+        "system_error": "cpp"
     }
 }

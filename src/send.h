@@ -84,7 +84,7 @@ double* postVal::execute() {
       Api->POSTMeasurement(batch[0].url, token, batch[0].thing, batch[0].feature, batch[0].device, batch[0].scriptId, batch[0].value, batch[0].date);
       batch.erase( batch.begin() );
     }
-    
+     return new double(input);//return last input
   }
   return NULL;//this should block the execution of the next operation
 }
@@ -92,14 +92,15 @@ double* postVal::execute() {
 int postVal::parseNumOfSamples( String numString){
   numberValue=1; 
   
-  if(numString!="") // if there is no number we assign 1 because we post one measurement at a time 
-    if(!isaNumber(numString))
+  if(numString!="")// if there is no number we assign 1 because we post one measurement at a time 
+  {
+	if(!isaNumber(numString))
     {
       valid=false;
       return numberValue;
     }
     numberValue = numString.toInt();
-  
+  }	 
   return numberValue;
 }
 

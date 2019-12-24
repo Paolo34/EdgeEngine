@@ -8,7 +8,7 @@
                 "C:\\Users\\chicc\\Documents\\Arduino\\libraries\\**",
                 "C:\\Program Files (x86)\\Arduino\\hardware\\espressif\\esp32\\libraries\\**",
                 "${workspaceFolder}"
-        ],
+            ],
             "browse": {
                 "limitSymbolsToIncludedHeaders": false,
                 "path": [

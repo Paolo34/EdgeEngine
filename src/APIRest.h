@@ -44,6 +44,8 @@ class APIRest{
   String actualDate;
   int j;
   boolean reposting;
+  int beginOfValue;
+  int endOfValue;
   
   //constructor
   APIRest();
@@ -52,8 +54,10 @@ class APIRest{
   static APIRest* instance;
   
   //methods
-  boolean isCodeOk(int);
+  boolean isHTTPCodeOk(int);
   String errorToString(int);
+  String ParseResponse(String,String);
+  void rePOSTMeasurement(String);
   
   public:
   //variables
@@ -65,9 +69,9 @@ class APIRest{
   String GETDescr(String,String);
   String GETScript(String,String);
   boolean POSTMeasurement(String,String,String,String,String,String,double,String);
-  void rePOSTMeasurement(String);
   boolean POSTError(String,String,String,String,String,String,String);
   String getActualDate();
+  boolean TESTING;
   
   
 };
@@ -86,131 +90,254 @@ APIRest::APIRest(){
   //DELETE THIS WHEN THE DATE ROUTE IS WORKING
   startingDate="2019-12-14T12:25:06.324Z";
   startingTime = millis();
+  TESTING=false;
 }
 
 String APIRest::POSTLogin (String url, String username, String password){
-  HTTPClient https;
-  https.begin(url); //Specify the URL and certificate
-  
-  https.addHeader("Content-Type","application/json");
-  httpsCode = https.POST("{\"username\": \"" + username + "\",\"password\": \"" + password + "\"}");//this is the body
+  if(!TESTING){
+    HTTPClient https;
+    https.begin(url); //Specify the URL and certificate
+    
+    https.addHeader("Content-Type","application/json");
+    httpsCode = https.POST("{\"username\": \"" + username + "\",\"password\": \"" + password + "\"}");//this is the body
 
-  if (isCodeOk(httpsCode)) { //Check for the returning code
-      response = https.getString();
-      Serial.println(httpsCode);
-      Serial.println(response);
+    if (isHTTPCodeOk(httpsCode)) { //Check for the returning code
+        response = https.getString();
+        Serial.println(httpsCode);
+        Serial.println(response);
+    }
+    else {
+      response="none";
+      Serial.printf("[HTTPS] POST Login... failed, error: %s\n", https.errorToString(httpsCode).c_str());
+    }
+    
+    https.end(); //Free the resources
+    
+    return response;
   }
-  else {
-    response="none";
-    Serial.printf("[HTTPS] POST Login... failed, error: %s\n", https.errorToString(httpsCode).c_str());
+  else  // Mocking for the Unit Test
+  { //example of token response
+    if(username=="username" && password =="password")
+      return " {\"token\": \"JWT token\"}";
+      else
+      {
+        return "none";
+      }
+      
   }
   
-  https.end(); //Free the resources
-  
-  return response;
 }
 String APIRest::GETDate(String url, String token){
-   HTTPClient https;
-   https.begin(url); //Specify the URL and certificate
-   https.addHeader("Authorization",token);
-   httpsCode = https.GET();//the body is empty
-   
-   if (isCodeOk(httpsCode)) { //Check for the returning code
-        response = https.getString();
-        Serial.println(httpsCode);
-        Serial.println(response);
-        
-        ////////////// WE HAVE TO PARSE THE GETDATE RESPONSE /////////////////
-        //startingDate = GETDate("url",token);
-        //startingTime = millis();
-   }
-   else {
-    ////////////// WHAT IF THE GET DATE FAILS?????? /////////////////
-     response="none";
-     Serial.printf("[HTTPS] GET Date... failed, error: %s\n", https.errorToString(httpsCode).c_str());
-   }
-   https.end(); //Free the resources
+  if(!TESTING)
+  {
+    HTTPClient https;
+    https.begin(url); //Specify the URL and certificate
+    https.addHeader("Authorization",token);
+    httpsCode = https.GET();//the body is empty
+    
+    if (isHTTPCodeOk(httpsCode)) { //Check for the returning code
+          response = https.getString();
+          Serial.println(httpsCode);
+          Serial.println(response);
+          
+          ////////////// WE HAVE TO PARSE THE GETDATE RESPONSE /////////////////
+          //startingDate = GETDate("url",token);
+          //startingTime = millis();
+    }
+    else {
+      ////////////// WHAT IF THE GET DATE FAILS?????? /////////////////
+      response="none";
+      Serial.printf("[HTTPS] GET Date... failed, error: %s\n", https.errorToString(httpsCode).c_str());
+    }
+    https.end(); //Free the resources
 
+    
+    return response;
+  }  
+  else  // Mocking for the Unit Test
+  {
+    if(token=="JWT token"){
+      return "2019-12-14T12:25:06.324Z";
+    }
+    else{
+      return "none";
+    }
+  }
    
-   return response;
 }
 String APIRest::GETDescr(String url, String token){
-   HTTPClient https;
-   https.begin(url); //Specify the URL and certificate
+  if(!TESTING){
+    HTTPClient https;
+    https.begin(url); //Specify the URL and certificate
 
-   https.addHeader("Authorization",token);
-   
-   httpsCode = https.GET();//the body is empty
-   if (isCodeOk(httpsCode)) { //Check for the returning code
+    https.addHeader("Authorization",token);
+    
+    httpsCode = https.GET();//the body is empty
+    if (isHTTPCodeOk(httpsCode)) { //Check for the returning code
         response = https.getString();
         Serial.println(httpsCode);
         Serial.println(response);
-   }
-   else {
-     response="none";
-     Serial.printf("[HTTPS] GET Description... failed, error: %s\n", https.errorToString(httpsCode).c_str());
-   }
-   https.end(); //Free the resources
+    }
+    else {
+      response="none";
+      Serial.printf("[HTTPS] GET Description... failed, error: %s\n", https.errorToString(httpsCode).c_str());
+    }
+    https.end(); //Free the resources
 
-   return response;
+    return response;
+  }
+  else{// Mocking for the Unit Test
+    if(token=="JWT token"){
+      return "{"
+        "\"features\": ["
+          " \"temperature\""
+        "],"
+        "\"tags\": [],"
+        "\"scripts\": ["
+          "\"average-hourly-temperature\","
+            "\"group-temperature\""
+        "],"
+        "\"visibility\": \"private\","
+        "\"period\": 10,"
+        "\"_id\": \"temperature-sensor-riccardo-office\","
+        "\"owner\": {"
+            "\"_id\": \"5dcec66bc67ed54963bc865c\","
+            "\"username\": \"riccardo-office-temperature-sensor-username\","
+            "\"type\": \"provider\""
+        "}"
+      "}";
+    }
+    else{
+      return "none";
+    }
+  }
+  
 }
 
 String APIRest::GETScript(String url, String token){
-   HTTPClient https;
-   https.begin(url); //Specify the URL and certificate
+  if(!TESTING){
+    HTTPClient https;
+    https.begin(url); //Specify the URL and certificate
 
-   https.addHeader("Authorization",token);
+    https.addHeader("Authorization",token);
+    
+    httpsCode = https.GET();//the body is empty
+    if (isHTTPCodeOk(httpsCode)) { //Check for the returning code
+          response = https.getString();
+          Serial.println(httpsCode);
+          Serial.println(response);
+    }
+    else {
+      response="none";
+      Serial.printf("[HTTPS] GET Script... failed, error: %s\n", https.errorToString(httpsCode).c_str());
+    }
+    https.end(); //Free the resources
+
+    return response;
+  }
+  else{
+    if(token=="JWT token"){
+		if( ParseResponse(url,"_id") == "group-temperature"){
+			return "{\"docs\": ["
+					  "{"
+						  "\"visibility\": \"private\","
+						  "\"tags\": [],"
+						  "\"_id\": \"group-temperature\","
+						  "\"code\": \"temperature().send(5)\","
+						  "\"owner\": {"
+							  "\"_id\": \"5dcec66bc67ed54963bc865c\","
+							  "\"username\": \"riccardo-office-temperature-sensor-username\","
+							  "\"type\": \"provider\"}"
+					  "}"
+					"],"
+					"\"totalDocs\": 1, \"limit\": 10, \"hasPrevPage\": false, \"hasNextPage\": false, \"page\": 1, \"totalPages\": 1, \"pagingCounter\": 1, \"prevPage\": null, \"nextPage\": null}";
+		}
+		else if(ParseResponse(url,"_id")=="average-hourly-temperature"){
+			return "{\"docs\": ["
+					  "{"
+						  "\"visibility\": \"private\","
+						  "\"tags\": [],"
+						  "\"_id\": \"average-hourly-temperature\","
+						  "\"code\": \"temperature(10).window(+, 0, 60).map(a/60).send()\","
+						  "\"owner\": {"
+							  "\"_id\": \"5dcec66bc67ed54963bc865c\","
+							  "\"username\": \"riccardo-office-temperature-sensor-username\","
+							  "\"type\": \"provider\"}"
+						  "}"
+					  "],"
+					"\"totalDocs\": 1, \"limit\": 10, \"hasPrevPage\": false, \"hasNextPage\": false, \"page\": 1, \"totalPages\": 1, \"pagingCounter\": 1, \"prevPage\": null, \"nextPage\": null}";
+    
+		}
+	}
+    else{
+      return "none";
+    }
+  }
    
-   httpsCode = https.GET();//the body is empty
-   if (isCodeOk(httpsCode)) { //Check for the returning code
-        response = https.getString();
-        Serial.println(httpsCode);
-        Serial.println(response);
-   }
-   else {
-     response="none";
-     Serial.printf("[HTTPS] GET Script... failed, error: %s\n", https.errorToString(httpsCode).c_str());
-   }
-   https.end(); //Free the resources
-
-   return response;
 }
 
-boolean APIRest::POSTMeasurement(String url,String token,String thing,String feature,String device,String scriptId,double input,String date=APIRest::getInstance()->getActualDate()){
-  HTTPClient https;
-  https.begin(url); //Specify the URL and certificate 
-  https.addHeader("Content-Type","application/json");
-  https.addHeader("Authorization",token);
-  httpsCode = https.POST("{\"thing\": \""+thing+"\", \"feature\": \""+feature+"\", \"device\": \""+device+"\", \"script\": \""+scriptId+"\", \"samples\": {\"values\":"+input+"}, \"startDate\": \""+date+"\", \"endDate\": \""+date+"\"}" );//this is the body
-  if (isCodeOk(httpsCode)) { //Check for the returning code
-    Serial.println(httpsCode);
-    Serial.println(https.getString());
-    success=true;
+boolean APIRest::POSTMeasurement(String url,String token,String thing,String feature,String device,String scriptId, double input,String date=APIRest::getInstance()->getActualDate()){
+  if(!TESTING){
+    HTTPClient https;
+    https.begin(url); //Specify the URL and certificate 
+    https.addHeader("Content-Type","application/json");
+    https.addHeader("Authorization",token);
+    httpsCode = https.POST("{\"thing\": \""+thing+"\", \"feature\": \""+feature+"\", \"device\": \""+device+"\", \"script\": \""+scriptId+"\", \"samples\": {\"values\":"+input+"}, \"startDate\": \""+date+"\", \"endDate\": \""+date+"\"}" );//this is the body
+    if (isHTTPCodeOk(httpsCode)) { //Check for the returning code
+      Serial.println(httpsCode);
+      Serial.println(https.getString());
+      success=true;
+    }
+    else {// something has gone wrong in the POST
+      measureData datum;// if the post has encoutered an error, we want to save datum that will be resent as soon as possible
+      datum.value=input;
+      datum.date=date;
+      datum.url=url;
+      datum.thing=thing;
+      datum.feature=feature;
+      datum.device=device;
+      datum.scriptId=scriptId;
+      database.push_back(datum);// save the datum in a local database
+      Serial.printf("[HTTPS] POST NewMeas... failed, error: %s\n", https.errorToString(httpsCode).c_str());
+      success=false;
+    }
+    https.end(); //Free the resources
+    
+    if(!reposting){
+      reposting=true;
+      rePOSTMeasurement(token); // every time we post a new measurement retry to post all the failed ones
+    }
+    
+    return success;
   }
-  else {// something has gone wrong in the POST
-    measureData datum;// if the post has encoutered an error, we want to save datum that will be resent as soon as possible
-    datum.value=input;
-    datum.date=date;
-    datum.url=url;
-    datum.thing=thing;
-    datum.feature=feature;
-    datum.device=device;
-    datum.scriptId=scriptId;
-    database.push_back(datum);// save the datum in a local database
-    Serial.printf("[HTTPS] POST NewMeas... failed, error: %s\n", https.errorToString(httpsCode).c_str());
-    success=false;
+  else{
+    if(token=="JWT token"){
+      success = true;
+    }
+    else{
+      measureData datum;// if the post has encoutered an error, we want to save datum that will be resent as soon as possible
+      datum.value=input;
+      datum.date=date;
+      datum.url=url;
+      datum.thing=thing;
+      datum.feature=feature;
+      datum.device=device;
+      datum.scriptId=scriptId;
+      database.push_back(datum);// save the datum in a local database
+      success = false;
+    }
+    if(!reposting){
+      reposting=true;
+      rePOSTMeasurement(token); // every time we post a new measurement retry to post all the failed ones
+    }
+    
+    return success;    
   }
-  https.end(); //Free the resources
   
-  if(!reposting){
-    reposting=true;
-    rePOSTMeasurement(token); // every time we post a new measurement retry to post all the failed ones
-  }
-  
-  return success;
 }
 
 void APIRest::rePOSTMeasurement(String token){
+  
   // j is useful to count the number of iteration equal to database size; 
   // since after repost the first element we erase it, the next one shift to the first position so access database[0] till end
   for(j=0; j<database.size(); j++){
@@ -220,30 +347,41 @@ void APIRest::rePOSTMeasurement(String token){
   }
   
   reposting=false;
+  
 } 
 
 boolean APIRest::POSTError(String url,String token,String thing,String feature,String device,String scriptId,String date=APIRest::getInstance()->getActualDate()){
-  HTTPClient https;
-  https.begin(url); //Specify the URL and certificate 
-  https.addHeader("Content-Type","application/json");
-  https.addHeader("Authorization",token);
-  httpsCode = https.POST("{\"thing\": \""+thing+"\", \"feature\": \""+feature+"\", \"device\": \""+device+"\", \"script\": \""+scriptId+"\", \"startDate\": \""+date+"\", \"endDate\": \""+date+"\"}" );//this is the body
-  if (isCodeOk(httpsCode)) { //Check for the returning code
-    Serial.println(httpsCode);
-    Serial.println(https.getString());
-    success=true;
+  if(!TESTING){
+    HTTPClient https;
+    https.begin(url); //Specify the URL and certificate 
+    https.addHeader("Content-Type","application/json");
+    https.addHeader("Authorization",token);
+    httpsCode = https.POST("{\"thing\": \""+thing+"\", \"feature\": \""+feature+"\", \"device\": \""+device+"\", \"script\": \""+scriptId+"\", \"startDate\": \""+date+"\", \"endDate\": \""+date+"\"}" );//this is the body
+    if (isHTTPCodeOk(httpsCode)) { //Check for the returning code
+      Serial.println(httpsCode);
+      Serial.println(https.getString());
+      success=true;
+    }
+    else {// something has gone wrong in the POST
+      
+      Serial.printf("[HTTPS] POST Error... failed, error: %s\n", https.errorToString(httpsCode).c_str());
+      success=false;
+    }
+    https.end(); //Free the resources
+    return success;
   }
-  else {// something has gone wrong in the POST
-    
-    Serial.printf("[HTTPS] POST Error... failed, error: %s\n", https.errorToString(httpsCode).c_str());
-    success=false;
+  else{
+    if(token=="JWT token"){
+      return true; 
+    }
+    else{
+      return false;
+    }
   }
-  https.end(); //Free the resources
-  return success;
 }
 
 
-boolean APIRest::isCodeOk(int code){
+boolean APIRest::isHTTPCodeOk(int code){
   return code<210;
 }
 
@@ -379,6 +517,19 @@ String APIRest::getActualDate(){
   }
   
   return actualDate;
+}
+
+String APIRest::ParseResponse( String response, String fieldName ){
+  
+  if( response.indexOf(fieldName) ==-1){
+    return "";
+  }
+  response.replace(" ","");//delete whitespace
+  beginOfValue = response.indexOf( ":", response.indexOf(fieldName) )+1;//find starting index of field value
+  
+  endOfValue = response.indexOf('\"',beginOfValue+1);// start looking for the last delimiter from the next value
+  
+  return response.substring( beginOfValue+1, endOfValue);
 }
 
 #endif

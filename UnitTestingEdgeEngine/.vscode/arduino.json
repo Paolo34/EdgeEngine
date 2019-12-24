@@ -3,6 +3,5 @@
     "configuration": "FlashMode=qio,FlashFreq=80,PartitionScheme=default,UploadSpeed=921600,DebugLevel=none",
     "port": "COM18",
     "sketch": "UnitTestingEdgeEngine.ino",
-    "output": "ArduinoOutput",
-    "programmer": "AVRISP mkII"
+    "output": "ArduinoOutput"
 }

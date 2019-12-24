@@ -18,7 +18,9 @@ class connection{
   
   public:
   //variables
-  
+  boolean TESTING;
+  boolean connected;
+
   //methods
   static connection* getInstance();
   void setupConnection(const char*,const char*);
@@ -36,20 +38,33 @@ connection* connection::getInstance(){
 }
 
 connection::connection(){
+  TESTING=false;
+  connected=false;
 }
 
 void connection::setupConnection(const char* ssidWifi,const char* passWifi){
-  delay(1000);
-  WiFi.begin(ssidWifi, passWifi); 
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(2000);
-    Serial.println("Connecting to WiFi..");
+  if(!TESTING){
+    delay(1000);
+    WiFi.begin(ssidWifi, passWifi); 
+    while (WiFi.status() != WL_CONNECTED) {
+      delay(2000);
+      Serial.println("Connecting to WiFi..");
+    }
+    Serial.println("Connected to the WiFi network");
   }
-  Serial.println("Connected to the WiFi network");
+  else{
+	  connected=true;
+  }
+  
 }
 
 boolean connection::isConnected(){
-  return (WiFi.status() == WL_CONNECTED);
+	if(!TESTING){
+		return (WiFi.status() == WL_CONNECTED);
+	}
+	else{
+		return connected;
+	}
 }
 
 #endif

@@ -47,7 +47,7 @@ class script{
   script(String,String,String,String,String,String,String);
   
   //methods
-  void execute(double); 
+  boolean execute(double); 
   
   //setters
   void setToken(String);
@@ -85,13 +85,12 @@ void script::parseScript(String scriptString){
   
   endIndex = scriptString.indexOf("(",startIndex); 
   feature =  scriptString.substring(startIndex,endIndex);//the first is the feature
-
+  //Check if this feature is supported else return
   if(!isAllowed(feature, featuresAllowed)){
     Serial.println(feature+" is not allowed!");
     return;
   }
-    
-  //HERE CHECK IF THIS FEATURE IS SUPPORTED ELSE RETURN
+  
   startIndex = endIndex+1;
   
   endIndex = scriptString.indexOf(")",startIndex); //the second is the time interval
@@ -99,7 +98,7 @@ void script::parseScript(String scriptString){
   operations.push_back( createOperation("accept("+interval+")") );//the first operation is always "accept" which verify the time elapsed
   if(!operations[counter]->valid){
     operations.clear();
-    return;
+    return;//end here the parsing
   }
 	  
   counter++;
@@ -120,7 +119,6 @@ void script::parseScript(String scriptString){
     startIndex = endIndex+1;
   }
   valid=true;
-  //created=true;
 }
 
 boolean script::isAllowed(String feature,String featuresAllowed){
@@ -165,7 +163,7 @@ operation* script::createOperation(String op){
   }
 }
 
-void script::execute(double value){
+boolean script::execute(double value){
   
   nextInput=new double(value);
   
@@ -173,8 +171,9 @@ void script::execute(double value){
     operations[i]->setInput(*nextInput);
     nextInput = operations[i]->execute();
     if(nextInput==NULL)
-      return;// if an operation return NULL stop executing the script
+      return false;// if an operation return NULL stop executing the script
   }
+  return true;
 }
 
 #endif 
