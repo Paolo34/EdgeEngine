@@ -46,10 +46,9 @@ class edgine{
   
   //variables
   static edgine* instance;
-  //typedef struct options opts;
   options opts;
   
-  String token;
+  String token="none";
   String response;
   vector<script> scripts;
   String scriptsId; // id of the scripts
@@ -63,12 +62,15 @@ class edgine{
   
   double logCount=(double)tokenDuration;
   double getCount=(double)cycle;
+  int retryTime=10; //retry every 10 seconds if the login or the first GETDescr/GETScript fails
 
   int i,j;
   int startIndex;
   int endIndex;
   String tempCode;
+  String codeResponse;
   String scriptId;
+  String firstGetScriptsResponse;
   int beginOfValue;
   int endOfValue;
   int nextClose;
@@ -77,6 +79,7 @@ class edgine{
   int samplesSent=0;
   
   //methods
+  void authenticate();
   void retrieveScriptsCode(String, String);
   int executeScripts(vector<sample>);
   String ParseResponse( String, String);
@@ -113,22 +116,37 @@ edgine::edgine(){
 void edgine::init( options opts){
 
   this->opts=opts; 
-  startLogCount = millis();      
-  response=Api->POSTLogin(opts.url+"/"+opts.ver+"/"+opts.login, opts.username, opts.password); // Authentication
-  token = ParseToken(response);
-  ///////////////  WHAT IF THE LOGIN FAILS????????  ////////////////////////////
+  authenticate();
 
   ///////////////  WHAT IF THE GETDATE FAILS????????  ////////////////////////////
   //Api->GETDate(opts.dateUrl,token);
+
+  do{
+    if( (double)( millis()-startLogCount )/MILLIS_PER_SEC >= tokenDuration ){//verify token validity
+      authenticate();
+    }
+    startGetCount = millis();
+    response = Api->GETDescr(opts.url+"/"+opts.ver+"/"+opts.devs+"/"+opts.id, token); // Get the scripts
+    if(response!="none"){
+      //cycle = ParseResponse(response,"cycle")!="" ? ParseResponse(response,"cycle").toInt():600; // default 10 minutes
+      scriptsId = ParseResponse(response,"scripts");
+      features= ParseResponse(response,"features");
+    }
+    while(response=="none" && (double)( millis()-startGetCount )/MILLIS_PER_SEC < retryTime);//wait here "retryTime" if GETDescr failed, then retry GETDescr
+
+  }while(response=="none" );
   
-  startGetCount = millis();
-  response = Api->GETDescr(opts.url+"/"+opts.ver+"/"+opts.devs+"/"+opts.id, token); // Get the scripts
-  //response = GETDescr(token); // Get the virtual description
-  //cycle = ParseResponse(response,"cycle")!="" ? ParseResponse(response,"cycle").toInt():600; // default 10 minutes
-  scriptsId = ParseResponse(response,"scripts");
-  features= ParseResponse(response,"features");
-  retrieveScriptsCode(token, scriptsId);
+  do{
+    if( (double)( millis()-startLogCount )/MILLIS_PER_SEC >= tokenDuration ){ //verify token validity
+      authenticate();
+    }
+    startGetCount = millis();  
+    retrieveScriptsCode(token, scriptsId);  
+    while(firstGetScriptsResponse=="none" && (double)( millis()-startGetCount )/MILLIS_PER_SEC < retryTime);//wait here "retryTime" if login failed, then retry login
+  }while(firstGetScriptsResponse=="none" );
+ 
 }
+
 
 int edgine::evaluate(vector<sample> samples){
   
@@ -136,34 +154,38 @@ int edgine::evaluate(vector<sample> samples){
   getCount = (double)( millis()-startGetCount )/MILLIS_PER_SEC;
   if( getCount >= cycle ){
     startGetCount = millis(); 
-    response = Api->GETDescr(opts.url+"/"+opts.ver+"/"+opts.devs+"/"+opts.id, token); // Get the scripts
+    response = Api->GETDescr(opts.url+"/"+opts.ver+"/"+opts.devs+"/"+opts.id, token); // Get the description
+    //if GET fails does not matter, the engine use the previous description 
+    if (response!="none"){
+      //cycle = ParseResponse(response,"cycle")!="" ? ParseResponse(response,"cycle").toInt():600; //default 10 minutes
+      scriptsId = ParseResponse(response,"scripts");
+      features= ParseResponse(response,"features");
+      retrieveScriptsCode(token, scriptsId);
+      //if retrieve fails does not matter, the engine use the previous scripts
+    }
     
-    //if(response!="none") 
-    /////////////////////  COSA FARE SE LA RICHIESTA DELLO DESCRIZIONE FALLISCE  /////////////////////////////////////////////////////////////////////////////////////////////////
-    
-    //cycle = ParseResponse(response,"cycle")!="" ? ParseResponse(response,"cycle").toInt():600; //default 10 minutes
-    scriptsId = ParseResponse(response,"scripts");
-    features= ParseResponse(response,"features");
-    retrieveScriptsCode(token, scriptsId);
   }
   //Check if we have to request a new TOKEN
   logCount = (double)( millis()-startLogCount )/MILLIS_PER_SEC;      
   if( logCount >= tokenDuration ){ //every "tokenDuration" authenticate
-    startLogCount = millis();
-    response=Api->POSTLogin(opts.url+"/"+opts.ver+"/"+opts.login, opts.username, opts.password); // Authentication
-    token= ParseToken(response);
-    //token = POSTLogin(opts.username, opts.password); // Authentication    
-    
-    //if(token!="none") 
-    /////////////////////  COSA FARE SE LA RICHIESTA DELLO DESCRIZIONE FALLISCE  /////////////////////////////////////////////////////////////////////////////////////////////////
-    
+    authenticate();
     setToken(token); // Update the token in each script
   }  
  
   return executeScripts(samples);
 }
 
+void edgine::authenticate(){
+  do{
+    startLogCount = millis();      
+    response=Api->POSTLogin(opts.url+"/"+opts.ver+"/"+opts.login, opts.username, opts.password); // Authentication
+    token = ParseToken(response);
+    while(response=="none" && (double)( millis()-startLogCount )/MILLIS_PER_SEC < retryTime);//wait "retryTime" if login failed, then retry login
+  }while(response=="none");
+}
+
 void edgine::retrieveScriptsCode(String token, String scriptsId){
+  firstGetScriptsResponse="ok";
   startIndex=1;
   endIndex=1;
 
@@ -176,34 +198,41 @@ void edgine::retrieveScriptsCode(String token, String scriptsId){
     
     scriptId= scriptsId.substring(startIndex,endIndex);
 
-    String code = Api->GETScript(opts.url + "/" + opts.ver + "/" + opts.scps + "?filter={\"_id\":\"" + scriptId + "\"}", token);
-    //if (code!="none")
-    //////////////////////////// COSA FARE SE FALLISCE LA RICHIESTA DEL CODICE DI UNO SCRIPT ///////////////////////////////////////////////////////////////////////////////////
-    
-    tempCode=ParseResponse( code,"code");
-    
-    //verify if it is a new script
-    for(i=0;i<scripts.size();i++){
-      if(scripts[i].scriptId==scriptId && scripts[i].scriptStr==tempCode ){ //if there is already this script
-        Serial.println("Script Unchanged: "+scriptId);
-        scripts[i].valid=true; // set it to valid because it is already in the API
-        goto cnt; //is already present so do nothing an pass to retrieve next script
-      }
-      else if(scripts[i].scriptId==scriptId){ //if there is already this script but the code has changed
-        Serial.println("Script changed: "+scriptId);
-        scripts[i].valid=false;// delete the old version of the script and then create the new version of it  
-        //scripts.erase(scripts.begin()+i); // delete the old version of the script and then create the new version of it  
-      }
-    }    
-    
-    //create the script
-    scripts.push_back( script(scriptId, tempCode, opts.thing, opts.device, opts.url+"/"+opts.ver+"/"+opts.measurements, token, features) );
-    if(scripts.back().valid==false){//if the creation of the script has failed      
-      scripts.pop_back();//remove last script
+    codeResponse = Api->GETScript(opts.url + "/" + opts.ver + "/" + opts.scps + "?filter={\"_id\":\"" + scriptId + "\"}", token);   
+
+    if (codeResponse=="none"){//if any of the requests fails
+      firstGetScriptsResponse = "none";// THIS VARIABLE MATTERS ONLY THE FIRST TIME WE GET SCRIPTS
+      tempCode="none";
+    }
+    else{
+      tempCode=ParseResponse( codeResponse,"code");
     }
     
-    cnt:; //go directly there if a script already exists and it is not changed
+    if(tempCode!="none"){
+      //verify if it is a new script
+      for(i=0;i<scripts.size();i++){
+        if(scripts[i].scriptId==scriptId && scripts[i].scriptStr==tempCode ){ //if there is already this script
+          Serial.println("Script Unchanged: "+scriptId);
+          scripts[i].valid=true; // set it to valid because it is already in the API
+          goto cnt; //is already present so do nothing an pass to retrieve next script
+        }
+        else if(scripts[i].scriptId==scriptId){ //if there is already this script but the code has changed
+          Serial.println("Script changed: "+scriptId);
+          scripts[i].valid=false;// delete the old version of the script and then create the new version of it  
+          //scripts.erase(scripts.begin()+i); // delete the old version of the script and then create the new version of it  
+        }
+      }    
+      
+      //create the script
+      scripts.push_back( script(scriptId, tempCode, opts.thing, opts.device, opts.url+"/"+opts.ver+"/"+opts.measurements, token, features) );
+      if(scripts.back().valid==false){//if the creation of the script has failed      
+        scripts.pop_back();//remove last script
+      }
+      
+      cnt:; //go directly there if a script already exists and it is not changed
     
+    }
+
     startIndex=endIndex+3;//+3 because we want to avoid: "," characters between two scripts id
   }
   
@@ -243,8 +272,11 @@ void edgine::setToken(String token){
 }
 
 
-String edgine::ParseToken(String token){
-  return token.substring( token.indexOf("J"), token.lastIndexOf("\"") );
+String edgine::ParseToken(String response){
+  if(response.indexOf("J")!=-1){
+    return response.substring( response.indexOf("J"), response.lastIndexOf("\"") );
+  }
+  return "none";
 }
 
 //NOT WORKS WITH CUSTOM OPERATIONS BECAUSE IT DELETES ANY WHITESPACES
@@ -252,7 +284,7 @@ String edgine::ParseResponse( String response, String fieldName ){
   
   if( response.indexOf(fieldName) ==-1){
     Serial.println(fieldName+" field is not present!");
-    return "";
+    return "none";
   }
   response.replace(" ","");//delete whitespace
   beginOfValue = response.indexOf( ":", response.indexOf(fieldName) )+1;//find starting index of field value

@@ -82,7 +82,7 @@ double* postVal::execute() {
     // since after post the first element we erase it, the next one shift to the first position so access batch[0] till end
     for(j=0; j<numOfSamples; j++){
       Api->POSTMeasurement(batch[0].url, token, batch[0].thing, batch[0].feature, batch[0].device, batch[0].scriptId, batch[0].value, batch[0].date);
-      batch.erase( batch.begin() );
+      batch.erase( batch.begin() );//delete the first value from the batch
     }
      return new double(input);//return last input
   }

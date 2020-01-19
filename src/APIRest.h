@@ -28,6 +28,7 @@ class APIRest{
   boolean success;
   unsigned long startingTime;
   unsigned long timeElapsed;
+  String zone;
   int year;
   int month;
   int day;
@@ -87,9 +88,11 @@ APIRest* APIRest::getInstance(){
 //constructor
 APIRest::APIRest(){
   reposting=false;
-  //DELETE THIS WHEN THE DATE ROUTE IS WORKING
-  startingDate="2019-12-14T12:25:06.324Z";
-  startingTime = millis();
+
+  startingDate="2019-12-14T12:25:06.324Z"; //DELETE THIS WHEN THE DATE ROUTE IS WORKING
+  startingTime = millis();//DELETE THIS WHEN THE DATE ROUTE IS WORKING
+  zone =String("Z");//DELETE THIS WHEN THE DATE ROUTE IS WORKING
+
   TESTING=false;
 }
 
@@ -143,6 +146,7 @@ String APIRest::GETDate(String url, String token){
           ////////////// WE HAVE TO PARSE THE GETDATE RESPONSE /////////////////
           //startingDate = GETDate("url",token);
           //startingTime = millis();
+          //zone =startingDate.substring(23,startingDate.length());
     }
     else {
       ////////////// WHAT IF THE GET DATE FAILS?????? /////////////////
@@ -508,7 +512,7 @@ String APIRest::getActualDate(){
 
   actualDate = String(year) + "-" + ( month<10 ? "0"+String(month):String(month) ) + "-" + ( day<10 ? "0"+String(day):String(day) ) + "T" +
             ( hour<10 ? "0"+String(hour):String(hour) )+":"+( ( minute<10 ? "0"+String(minute):String(minute) ) )+":"+(( second<10 ? "0"+String(second):String(second) ) )+ // ( second<10 ? "0"+String(second):String(second) )
-            "." + ( milliSec<100 ? ( milliSec<10 ? "00"+String(milliSec):"0"+String(milliSec) ):String(milliSec) ) + "Z"; //( minute<10 ? "0"+String(minute):String(minute) )
+            "." + ( milliSec<100 ? ( milliSec<10 ? "00"+String(milliSec):"0"+String(milliSec) ):String(milliSec) ) + String(zone); //( minute<10 ? "0"+String(minute):String(minute) )
             
   
   if(dayElapsed>=40){//since millis() overflows after about 50 days 
