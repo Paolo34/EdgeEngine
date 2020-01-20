@@ -4,6 +4,7 @@
 #define APIRest_h
 
 #include <HTTPClient.h>
+#include "sample.h"
 
 #define DAY  86400000 // 86400000 milliseconds in a day
 #define HOUR  3600000 // 3600000 milliseconds in an hour
@@ -62,14 +63,14 @@ class APIRest{
   
   public:
   //variables
-  vector<measureData> database;
+  vector<sample> database;
   //methods
   static APIRest* getInstance();
   String POSTLogin(String,String,String);
   String GETDate(String,String);
   String GETDescr(String,String);
   String GETScript(String,String);
-  boolean POSTMeasurement(String,String,String,String,String,String,double,String);
+  boolean POSTMeasurement(sample,String);
   boolean POSTError(String,String,String,String,String,String,String);
   String getActualDate();
   boolean TESTING;
@@ -89,7 +90,7 @@ APIRest* APIRest::getInstance(){
 APIRest::APIRest(){
   reposting=false;
 
-  startingDate="2019-12-14T12:25:06.324Z"; //DELETE THIS WHEN THE DATE ROUTE IS WORKING
+  startingDate="2020-01-19T00:00:00.000Z"; //DELETE THIS WHEN THE DATE ROUTE IS WORKING
   startingTime = millis();//DELETE THIS WHEN THE DATE ROUTE IS WORKING
   zone =String("Z");//DELETE THIS WHEN THE DATE ROUTE IS WORKING
 
@@ -280,28 +281,21 @@ String APIRest::GETScript(String url, String token){
    
 }
 
-boolean APIRest::POSTMeasurement(String url,String token,String thing,String feature,String device,String scriptId, double input,String date=APIRest::getInstance()->getActualDate()){
+boolean APIRest::POSTMeasurement(sample sam,String token){
   if(!TESTING){
     HTTPClient https;
-    https.begin(url); //Specify the URL and certificate 
+    https.begin(sam.url); //Specify the URL and certificate 
     https.addHeader("Content-Type","application/json");
     https.addHeader("Authorization",token);
-    httpsCode = https.POST("{\"thing\": \""+thing+"\", \"feature\": \""+feature+"\", \"device\": \""+device+"\", \"script\": \""+scriptId+"\", \"samples\": {\"values\":"+input+"}, \"startDate\": \""+date+"\", \"endDate\": \""+date+"\"}" );//this is the body
+    httpsCode = https.POST("{\"thing\": \""+sam.thing+"\", \"feature\": \""+sam.feature+"\", \"device\": \""+sam.device+"\", \"script\": \""+sam.scriptId+"\", \"samples\": {\"values\":"+sam.value+"}, \"startDate\": \""+sam.date+"\", \"endDate\": \""+sam.date+"\"}" );//this is the body
     if (isHTTPCodeOk(httpsCode)) { //Check for the returning code
       Serial.println(httpsCode);
       Serial.println(https.getString());
       success=true;
     }
     else {// something has gone wrong in the POST
-      measureData datum;// if the post has encoutered an error, we want to save datum that will be resent as soon as possible
-      datum.value=input;
-      datum.date=date;
-      datum.url=url;
-      datum.thing=thing;
-      datum.feature=feature;
-      datum.device=device;
-      datum.scriptId=scriptId;
-      database.push_back(datum);// save the datum in a local database
+      // if the post has encoutered an error, we want to save datum that will be resent as soon as possible
+      database.push_back(sam);// save the datum in a local database
       Serial.printf("[HTTPS] POST NewMeas... failed, error: %s\n", https.errorToString(httpsCode).c_str());
       success=false;
     }
@@ -319,15 +313,8 @@ boolean APIRest::POSTMeasurement(String url,String token,String thing,String fea
       success = true;
     }
     else{
-      measureData datum;// if the post has encoutered an error, we want to save datum that will be resent as soon as possible
-      datum.value=input;
-      datum.date=date;
-      datum.url=url;
-      datum.thing=thing;
-      datum.feature=feature;
-      datum.device=device;
-      datum.scriptId=scriptId;
-      database.push_back(datum);// save the datum in a local database
+      // if the post has encoutered an error, we want to save datum that will be resent as soon as possible
+      database.push_back(sam);// save the datum in a local database
       success = false;
     }
     if(!reposting){
@@ -345,7 +332,15 @@ void APIRest::rePOSTMeasurement(String token){
   // j is useful to count the number of iteration equal to database size; 
   // since after repost the first element we erase it, the next one shift to the first position so access database[0] till end
   for(j=0; j<database.size(); j++){
-    APIRest::POSTMeasurement(database[0].url, token, database[0].thing, database[0].feature, database[0].device, database[0].scriptId, database[0].value, database[0].date);
+    APIRest::POSTMeasurement(database[0], token);
+    Serial.println(database[0].value);
+    Serial.println(database[0].date);
+    Serial.println(database[0].scriptId);
+    Serial.println(database[0].feature);
+    Serial.println(database[0].url);
+    Serial.println(database[0].thing);
+    Serial.println(database[0].device);
+
     //APIRest::POSTError(database[0].url, token, database[0].thing, database[0].feature, database[0].device, database[0].scriptId, database[0].value, database[0].date);
     database.erase( database.begin() );
   }

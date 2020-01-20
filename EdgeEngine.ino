@@ -109,14 +109,17 @@ void loop() {
     //create a light measurement sample
     sample light = sample("temperature");
     int lig=analogRead(lightPin);
+    light.date=Edge->Api->getActualDate();
     //Serial.println(lig);
-    light.setValue( lig );
+    light.value= lig;
+    
    // samples.push_back(light);
     
     //create a potentiometer measurement sample
     sample potentiometer = sample("temperature");
     int pot=analogRead(potPin);
-    potentiometer.setValue( pot );
+    potentiometer.date=Edge->Api->getActualDate();
+    potentiometer.value=pot;
     samples.push_back(potentiometer);
 
     Edge->evaluate(samples);
@@ -140,6 +143,6 @@ void detectedMotion(){
   detachInterrupt(digitalPinToInterrupt(pirPin)); //PIR sensor needs 2 seconds to take an image to compare to
   pirCounter=millis();
   Serial.println("Motion detected");
-  motion.setValue(1);
+  motion.value=1;
   samples.push_back(motion);
 }

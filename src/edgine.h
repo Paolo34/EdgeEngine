@@ -20,17 +20,6 @@ typedef struct{
   String id;
 }options;
 
-typedef struct {
-  double value;
-  String date;
-  String url;
-  String thing;
-  String feature;
-  String device;
-  String scriptId;
-  // other info about the measurement
-}measureData;
-
 #include "APIRest.h" //API wrapper
 #include "script.h"
 #include "operation.h"
@@ -257,7 +246,7 @@ int edgine::executeScripts(vector<sample> samples){
 	for(j=0;j<samples.size();j++){
 		for(i=0;i<scripts.size();i++){
 			if(scripts[i].feature==samples[j].feature){
-				if( scripts[i].execute( samples[j].getValue() ) )
+				if( scripts[i].execute( &samples[j] ) )
 					samplesSent++;
 			}
 		}

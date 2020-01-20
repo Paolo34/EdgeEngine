@@ -14,7 +14,7 @@ class minVal : public operation{
   minVal(String,double);
   
   //methods
-  double* execute();
+  sample* execute();
   
   //getters
   double getMin();
@@ -32,10 +32,10 @@ minVal::minVal(String opName, double initValue ):operation(opName){
 }
 
 //methods
-double* minVal::execute(){
-  if(&input!=NULL && input<minValue){
-    minValue=input;
-    return new double(minValue);
+sample* minVal::execute(){
+  if(&input!=NULL && input->value<minValue){
+    minValue=input->value;
+    return input;
   }
   return NULL;//this should block the execution of the next operation
 }

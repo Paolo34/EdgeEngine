@@ -42,12 +42,12 @@ class script{
   String scriptStr;
   String scriptId;
   String interval;
-  double* nextInput;
+  sample* nextInput;
   //constructor
   script(String,String,String,String,String,String,String);
   
   //methods
-  boolean execute(double); 
+  boolean execute(sample*); 
   
   //setters
   void setToken(String);
@@ -163,15 +163,18 @@ operation* script::createOperation(String op){
   }
 }
 
-boolean script::execute(double value){
+boolean script::execute(sample* value){
   
-  nextInput=new double(value);
-  
+  nextInput=new sample(*value);// pass a copy of the sample
+
   for(i=0;i<operations.size();i++){
-    operations[i]->setInput(*nextInput);
+    operations[i]->setInput(nextInput);
+    
     nextInput = operations[i]->execute();
+    
     if(nextInput==NULL)
       return false;// if an operation return NULL stop executing the script
+    
   }
   return true;
 }

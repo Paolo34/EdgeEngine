@@ -24,7 +24,7 @@ class slidingWindow : public operation{
   slidingWindow(String);
   
   //methods
-  double* execute() ;
+  sample* execute() ;
 };
 //constructors
 
@@ -35,9 +35,10 @@ slidingWindow::slidingWindow(String opName):operation(opName){
 }
 
 //methods
-double* slidingWindow::execute() {
+sample* slidingWindow::execute() {
+
   if(&input!=NULL ){
-    values.push_back(input);
+    values.push_back(input->value);
   }
     
   if(&input!=NULL && counter < windowSize){ // untill we have not enough values 
@@ -46,8 +47,9 @@ double* slidingWindow::execute() {
   if(&input!=NULL && counter >= windowSize){ // when the value are enough (at regime)
     accumulator = calculate(values);//add last value to the window
     values.erase( values.begin() );//delete first value from the queue
+    input->value=accumulator; //beacuse we want a sample (with all its info) with the script resulting value
     
-    return new double(accumulator);
+    return input;
   }
   return NULL; // this should block the execution of the next operation
 }

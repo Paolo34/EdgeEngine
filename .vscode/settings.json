@@ -26,6 +26,8 @@
         "iosfwd": "cpp",
         "istream": "cpp",
         "ratio": "cpp",
-        "cmath": "cpp"
+        "cmath": "cpp",
+        "optional": "cpp",
+        "xtr1common": "cpp"
     }
 }

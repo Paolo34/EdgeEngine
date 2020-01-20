@@ -27,10 +27,10 @@ class postVal : public operation{
   postVal(String,String,String,String,String,String,String);
   
   //methods
-  double* execute();
+  sample* execute();
 
   //variables
-  vector<measureData> batch;
+  vector<sample> batch;
   
   //setters
   void setToken(String);
@@ -61,18 +61,16 @@ postVal::postVal(String opName, String thing, String device, String url, String 
  }
 
 //methods
-double* postVal::execute() {
+sample* postVal::execute() {
   
   if(&input!=NULL && counter < numOfSamples){ // untill we have not enough values 
-    measureData datum; // we want to save datum that will be sent alone or in group
-    datum.value=input;
-    datum.date=Api->getActualDate();
-    datum.url=url;
-    datum.thing=thing;
-    datum.feature=feature;
-    datum.device=device;
-    datum.scriptId=scriptId;
-    batch.push_back(datum);// save the datum in a local batch
+    
+    input->url=url;
+    input->thing=thing;
+    input->device=device;
+    input->scriptId=scriptId;
+    batch.push_back(*input);// save the input in a local batch
+
     counter++;
   }
   
@@ -81,10 +79,10 @@ double* postVal::execute() {
     // j is useful to count the number of iteration equal to batch size; 
     // since after post the first element we erase it, the next one shift to the first position so access batch[0] till end
     for(j=0; j<numOfSamples; j++){
-      Api->POSTMeasurement(batch[0].url, token, batch[0].thing, batch[0].feature, batch[0].device, batch[0].scriptId, batch[0].value, batch[0].date);
+      Api->POSTMeasurement(batch[0], token);
       batch.erase( batch.begin() );//delete the first value from the batch
     }
-     return new double(input);//return last input
+     return input;//return last input
   }
   return NULL;//this should block the execution of the next operation
 }

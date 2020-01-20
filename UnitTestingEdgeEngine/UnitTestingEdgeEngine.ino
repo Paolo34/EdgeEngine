@@ -16,6 +16,7 @@ class Settings :public TestOnce{
     String ssidWIFI;
     String passWIFI;
     String token;
+    sample* sam;
 
     void setup() override{
       opts.username = "username";
@@ -37,6 +38,13 @@ class Settings :public TestOnce{
       passWIFI="pass";
       token="JWT token";
 
+      sam= new sample("temperature");
+      sam->date="2019-12-14T12:25:06.324Z";
+      sam->device=opts.device;
+      sam->url=opts.url;
+      sam->thing=opts.thing;
+      sam->scriptId="scriptId";
+
       Api=APIRest::getInstance();
       Api->TESTING=true;
           
@@ -51,35 +59,36 @@ test(operation){
   assertTrue(op->valid);
   
 }
-test(reception){
-  
+testF(Settings,reception){
   reception* rec= new reception("accept(10)");
   assertTrue(rec->valid);
   assertEqual(rec->getName(),"accept(10)");
-  rec->setInput(3436);
+  sam->value=3436;
+  rec->setInput(sam);
   assertNotEqual(rec->getInterval(),0);
   assertEqual(rec->getInterval(),10);
   assertEqual(rec->execute(),NULL);
   
   rec= new reception("accept(7m)");
-  rec->setInput(3436);
+  rec->setInput(sam);
   assertEqual(rec->getInterval(),420);
   assertEqual(rec->execute(),NULL);
   
   rec= new reception("accept(1h)");
-  rec->setInput(36);
+  rec->setInput(sam);
   assertEqual(rec->getInterval(),3600);
   assertEqual(rec->execute(),NULL);
   
   rec= new reception("accept(3d)");
-  rec->setInput(3);
+  rec->setInput(sam);
   assertEqual(rec->getInterval(),259200);
   assertEqual(rec->execute(),NULL);
   
   rec= new reception("accept(0)");
-  rec->setInput(3);
+  sam->value=3;
+  rec->setInput(sam);
   assertEqual(rec->getInterval(),0);
-  assertEqual(*(rec->execute()),(double)3);
+  assertEqual((rec->execute())->value,(double)3);
 
   //if time has typo 
   rec= new reception("accept(aaa)");
@@ -88,38 +97,48 @@ test(reception){
   assertFalse(rec->valid);
 }
 
-test(mapVal){
+testF(Settings,mapVal){
   mapVal* mapV = new mapVal("map(a/6)");
   assertTrue(mapV->valid);
   assertEqual(mapV->getName(),"map(a/6)");  
-  mapV->setInput(6);
-  assertEqual(*(mapV->execute()),(double)1);
-  mapV->setInput(23);  
-  assertEqual(*(mapV->execute()),(double)(23)/(double)(6));
+  sam->value=6;
+  mapV->setInput(sam);
+  assertEqual((mapV->execute())->value,(double)1);
+  sam->value=23;
+  mapV->setInput(sam);  
+  assertEqual((mapV->execute())->value,(double)(23)/(double)(6));
 
   mapV= new mapVal("map(a+101)");
-  mapV->setInput(9);
-  assertEqual(*(mapV->execute()),(double)(9+101));
-  mapV->setInput(25);  
-  assertEqual(*(mapV->execute()),(double)(25+101));
+  sam->value=9;
+  mapV->setInput(sam);
+  assertEqual((mapV->execute())->value,(double)(9+101));
+  sam->value=25;
+  mapV->setInput(sam);  
+  assertEqual((mapV->execute())->value,(double)(25+101));
 
   mapV= new mapVal("map(a*3)");
-  mapV->setInput(9);
-  assertEqual(*(mapV->execute()),(double)(3*9));
-  mapV->setInput(1);  
-  assertEqual(*(mapV->execute()),(double)(3*1));
+  sam->value=9;
+  mapV->setInput(sam);
+  assertEqual((mapV->execute())->value,(double)(3*9));
+  sam->value=1;
+  mapV->setInput(sam);  
+  assertEqual((mapV->execute())->value,(double)(3*1));
 
   mapV= new mapVal("map(a-101)");
-  mapV->setInput(3);
-  assertEqual(*(mapV->execute()),(double)(3-101));
-  mapV->setInput(205);  
-  assertEqual(*(mapV->execute()),(double)(205-101));
+  sam->value=3;
+  mapV->setInput(sam);
+  assertEqual((mapV->execute())->value,(double)(3-101));
+  sam->value=205;
+  mapV->setInput(sam);  
+  assertEqual((mapV->execute())->value,(double)(205-101));
 
   mapV= new mapVal("map(a^4)");
-  mapV->setInput(9);
-  assertEqual(*(mapV->execute()),(double)(pow(9,4)));
-  mapV->setInput(45);  
-  assertEqual(*(mapV->execute()),(double)(pow(45,4)));
+  sam->value=9;
+  mapV->setInput(sam);
+  assertEqual((mapV->execute())->value,(double)(pow(9,4)));
+  sam->value=45;
+  mapV->setInput(sam);  
+  assertEqual((mapV->execute())->value,(double)(pow(45,4)));
 
   mapV= new mapVal("map(a4)");
   assertFalse(mapV->valid);
@@ -131,95 +150,117 @@ test(mapVal){
   assertFalse(mapV->valid);
 }
 
-test(maxVal){
+testF(Settings,maxVal){
   maxVal* maxV= new maxVal("max()");
   assertTrue(maxV->valid);
   assertEqual(maxV->getName(),"max()");  
-  maxV->setInput(-10);
-  assertEqual(*(maxV->execute()),(double)-10);
-  maxV->setInput(-110);
+  sam->value=-10;
+  maxV->setInput(sam);
+  assertEqual((maxV->execute())->value,(double)-10);
+  sam->value=-110;
+  maxV->setInput(sam);
   assertEqual(maxV->execute(),NULL);
-  maxV->setInput(0);
-  assertEqual(*(maxV->execute()),(double)0);
+  sam->value=0;
+  maxV->setInput(sam);
+  assertEqual((maxV->execute())->value,(double)0);
   
   maxV =new maxVal("max()",10);
-  maxV->setInput(-10);
+  sam->value=10;
+  maxV->setInput(sam);
   assertEqual(maxV->execute(),NULL);
-  maxV->setInput(110);
-  assertEqual(*(maxV->execute()),(double)110);
-  maxV->setInput(0);
+  sam->value=110;
+  maxV->setInput(sam);
+  assertEqual((maxV->execute())->value,(double)110);
+  sam->value=0;
+  maxV->setInput(sam);
   assertEqual(maxV->execute(),NULL);
   maxV =new maxVal("max(a)");
   assertFalse(maxV->valid);
 }
-test(minVal){
+testF(Settings,minVal){
   minVal* minV = new minVal("min()");
   assertTrue(minV->valid);
   assertEqual(minV->getName(),"min()");  
-  minV->setInput(8);
-  assertEqual(*(minV->execute()),(double)8);
-  minV->setInput(-2340);
-  assertEqual(*(minV->execute()),(double)-2340);
-  minV->setInput(0);
+  sam->value=8;
+  minV->setInput(sam);
+  assertEqual((minV->execute())->value,(double)8);
+  sam->value=-2340;
+  minV->setInput(sam);
+  assertEqual((minV->execute())->value,(double)-2340);
+  sam->value=0;
+  minV->setInput(sam);
   assertEqual(minV->execute(),NULL);
   
   minV = new minVal("min()",10);
-  minV->setInput(20);
+  sam->value=20;
+  minV->setInput(sam);
   assertEqual(minV->execute(),NULL);
-  minV->setInput(110);
+  sam->value=110;
+  minV->setInput(sam);
   assertEqual(minV->execute(),NULL);
-  minV->setInput(0);
-  assertEqual(*(minV->execute()),(double)0);
+  sam->value=0;
+  minV->setInput(sam);
+  assertEqual((minV->execute())->value,(double)0);
   minV =new minVal("min(19)");
   assertFalse(minV->valid);
 }
 
-test(window){
+testF(Settings,window){
   window* wind = new window("window(+,1,10)");
   assertTrue(wind->valid);
   assertEqual(wind->getName(),"window(+,1,10)");  
   for (int i = 1; i < 10; i++)
   {
-    wind->setInput(i);
+    sam->value=i;
+    wind->setInput(sam);
     assertEqual(wind->execute(),NULL);
   }
-  wind->setInput(10);
-  assertEqual(*(wind->execute()),(double) 56);
+  sam->value=10;
+  wind->setInput(sam);
+  assertEqual((wind->execute())->value,(double) 56);
 
   for (int i = 1; i < 10; i++)
   {
-    wind->setInput(3);
+    sam->value=3;
+    wind->setInput(sam);
     assertEqual(wind->execute(),NULL);
   }
-  wind->setInput(3);
-  assertEqual(*(wind->execute()),(double)31);
+  sam->value=3;
+  wind->setInput(sam);
+  assertEqual((wind->execute())->value,(double)31);
 
   wind= new window("window(*,2,4)");
   for (int i = 1; i < 4; i++)
   {
-    wind->setInput(i);
+    sam->value=i;
+    wind->setInput(sam);
     assertEqual(wind->execute(),NULL);
   }
-  wind->setInput(10);
-  assertEqual(*(wind->execute()),(double) 2*1*2*3*10);
+  sam->value=10;
+  wind->setInput(sam);
+  assertEqual((wind->execute())->value,(double) 2*1*2*3*10);
 
   wind= new window("window(-,7,5)");
   for (int i = 1; i < 5; i++)
   {
-    wind->setInput(i);
+    sam->value=i;
+    wind->setInput(sam);
     assertEqual(wind->execute(),NULL);
   }
-  wind->setInput(5);
-  assertEqual(*(wind->execute()),(double)-8);
+  sam->value=5;
+  wind->setInput(sam);
+  assertEqual((wind->execute())->value,(double)-8);
 
    wind= new window("window(/,1,5)");
   for (int i = 1; i < 5; i++)
   {
-    wind->setInput(i);
+    sam->value=i;
+    wind->setInput(sam);
     assertEqual(wind->execute(),NULL);
   }
-  wind->setInput(1);
-  assertEqual(*(wind->execute()),(double)1/1/2/3/4/1);
+  sam->value=1;
+  wind->setInput(sam);
+  assertEqual((wind->execute())->value,(double)1/1/2/3/4/1);
 
   wind = new window("window(?,1,10)");
   assertFalse(wind->valid);
@@ -231,60 +272,76 @@ test(window){
   assertFalse(wind->valid);
 }
 
-test(slidingWindow){
+testF(Settings,slidingWindow){
   slidingWindow* slidWind = new slidingWindow("slidingWindow(+,1,5)");
   assertTrue(slidWind->valid);
   assertEqual(slidWind->getName(),"slidingWindow(+,1,5)");  
   for (int i = 1; i < 5; i++)
   {
-    slidWind->setInput(i);
+    sam->value=i;
+    slidWind->setInput(sam);
     assertEqual(slidWind->execute(),NULL);
   }
-  slidWind->setInput(33);
-  assertEqual(*(slidWind->execute()),(double)44);
-  slidWind->setInput(3);
-  assertEqual(*(slidWind->execute()),(double)46);
-  slidWind->setInput(0);
-  assertEqual(*(slidWind->execute()),(double)44);
+  sam->value=33;
+  slidWind->setInput(sam);
+  assertEqual((slidWind->execute())->value,(double)44);
+  sam->value=3;
+  slidWind->setInput(sam);
+  assertEqual((slidWind->execute())->value,(double)46);
+  sam->value=0;
+  slidWind->setInput(sam);
+  assertEqual((slidWind->execute())->value,(double)44);
 
   slidWind = new slidingWindow("slidingWindow(-,34,3)");
   for (int i = 1; i < 3; i++)
   {
-    slidWind->setInput(i);
+    sam->value=i;
+    slidWind->setInput(sam);
     assertEqual(slidWind->execute(),NULL);
   }
-  slidWind->setInput(3);
-  assertEqual(*(slidWind->execute()),(double)28);
-  slidWind->setInput(3);
-  assertEqual(*(slidWind->execute()),(double)26);
-  slidWind->setInput(0);
-  assertEqual(*(slidWind->execute()),(double)28);
+  sam->value=3;
+  slidWind->setInput(sam);
+  assertEqual((slidWind->execute())->value,(double)28);
+  sam->value=3;
+  slidWind->setInput(sam);
+  assertEqual((slidWind->execute())->value,(double)26);
+  sam->value=0;
+  slidWind->setInput(sam);
+  assertEqual((slidWind->execute())->value,(double)28);
 
   slidWind = new slidingWindow("slidingWindow(*,1,6)");
   for (int i = 1; i < 6; i++)
   {
-    slidWind->setInput(i);
+    sam->value=i;
+    slidWind->setInput(sam);
     assertEqual(slidWind->execute(),NULL);
   }
-  slidWind->setInput(10);
-  assertEqual(*(slidWind->execute()),(double)1200);
-  slidWind->setInput(3);
-  assertEqual(*(slidWind->execute()),(double)3600);
-  slidWind->setInput(1);
-  assertEqual(*(slidWind->execute()),(double)1800);
+  sam->value=10;
+  slidWind->setInput(sam);
+  assertEqual((slidWind->execute())->value,(double)1200);
+  sam->value=3;
+  slidWind->setInput(sam);
+  assertEqual((slidWind->execute())->value,(double)3600);
+  sam->value=1;
+  slidWind->setInput(sam);
+  assertEqual((slidWind->execute())->value,(double)1800);
 
   slidWind = new slidingWindow("slidingWindow(/,100,6)");
   for (int i = 1; i < 6; i++)
   {
-    slidWind->setInput(i);
+    sam->value=i;
+    slidWind->setInput(sam);
     assertEqual(slidWind->execute(),NULL);
   }
-  slidWind->setInput(10);
-  assertEqual(*(slidWind->execute()),(double)100/1/2/3/4/5/10);
-  slidWind->setInput(3);
-  assertEqual(*(slidWind->execute()),(double)100/2/3/4/5/10/3);
-  slidWind->setInput(1);
-  assertEqual(*(slidWind->execute()),(double)100/3/4/5/10/3/1);
+  sam->value=10;
+  slidWind->setInput(sam);
+  assertEqual((slidWind->execute())->value,(double)100/1/2/3/4/5/10);
+  sam->value=3;
+  slidWind->setInput(sam);
+  assertEqual((slidWind->execute())->value,(double)100/2/3/4/5/10/3);
+  sam->value=1;
+  slidWind->setInput(sam);
+  assertEqual((slidWind->execute())->value,(double)100/3/4/5/10/3/1);
 
   slidWind = new slidingWindow("slidingWindow(?,1,10)");
   assertFalse(slidWind->valid);
@@ -324,13 +381,14 @@ testF(Settings,script){
   assertEqual(scrp.scriptStr,"temperature().slidingWindow(+, 0, 6).map(a/6).send()");
   assertEqual(scrp.interval,"");
   assertEqual(scrp.feature,"temperature");
-  assertFalse(scrp.execute(1));
-  assertFalse(scrp.execute(2));
-  assertFalse(scrp.execute(3));
-  assertFalse(scrp.execute(4));
-  assertFalse(scrp.execute(5));
-  assertTrue(scrp.execute(6));// only after 6 input the value is sent to the api
-  assertTrue(scrp.execute(7));
+  sam->value=1;
+  assertFalse(scrp.execute(sam));
+  assertFalse(scrp.execute(sam));
+  assertFalse(scrp.execute(sam));
+  assertFalse(scrp.execute(sam));
+  assertFalse(scrp.execute(sam));
+  assertTrue(scrp.execute(sam));// only after 6 input the value is sent to the api
+  assertTrue(scrp.execute(sam));
 
   scrp= script("average-temperature","temperature().window(+, 0, 4).map(a/4).send()",
                             opts.thing.c_str(), opts.device.c_str(), "url", token.c_str(), "temperature, humidity");
@@ -340,14 +398,14 @@ testF(Settings,script){
   assertEqual(scrp.scriptStr,"temperature().window(+, 0, 4).map(a/4).send()");
   assertEqual(scrp.interval,"");
   assertEqual(scrp.feature,"temperature");
-  assertFalse(scrp.execute(1));
-  assertFalse(scrp.execute(2));
-  assertFalse(scrp.execute(3));
-  assertTrue(scrp.execute(4));// only after 4 input the value is sent to the api
-  assertFalse(scrp.execute(5));
-  assertFalse(scrp.execute(6));
-  assertFalse(scrp.execute(7));
-  assertTrue(scrp.execute(4));// only after 4 input the value is sent to the api
+  assertFalse(scrp.execute(sam));
+  assertFalse(scrp.execute(sam));
+  assertFalse(scrp.execute(sam));
+  assertTrue(scrp.execute(sam));// only after 4 input the value is sent to the api
+  assertFalse(scrp.execute(sam));
+  assertFalse(scrp.execute(sam));
+  assertFalse(scrp.execute(sam));
+  assertTrue(scrp.execute(sam));// only after 4 input the value is sent to the api
 
 
   scrp= script("average-temperature","temperatur(10).slidingWindow(+, 0, 6).map(a/6).send()",
@@ -375,28 +433,34 @@ testF(Settings,postVal){
                              "temperature", "average-temperature" );
   assertEqual(postV->getName(),"send()");
   assertTrue(postV->valid);
-  postV->setInput(5);
-  assertEqual(*(postV->execute()),(double)5);
+  sam->value=5;
+  postV->setInput(sam);
+  assertEqual((postV->execute()->value),(double)5);
   assertEqual(postV->batch.size(),(size_t)(0));
 
   postV =new postVal("send(5)", opts.thing.c_str(), opts.device.c_str(), opts.url.c_str(),token.c_str(),
                              "temperature", "average-temperature" );
   assertEqual(postV->getName(),"send(5)");
   assertTrue(postV->valid);
-  postV->setInput(5);
+  sam->value=5;
+  postV->setInput(sam);
   assertEqual(postV->execute(),NULL);
   assertEqual(postV->batch.size(),(size_t)(1));
-  postV->setInput(3);
+  sam->value=3;
+  postV->setInput(sam);
   assertEqual(postV->execute(),NULL);
   assertEqual(postV->batch.size(),(size_t)(2));
-  postV->setInput(0);
+  sam->value=0;
+  postV->setInput(sam);
   assertEqual(postV->execute(),NULL);
   assertEqual(postV->batch.size(),(size_t)(3));
-  postV->setInput(34);
+  sam->value=34;
+  postV->setInput(sam);
   assertEqual(postV->execute(),NULL);
   assertEqual(postV->batch.size(),(size_t)(4));
-  postV->setInput(5);
-  assertEqual(*(postV->execute()),(double)5);
+  sam->value=5;
+  postV->setInput(sam);
+  assertEqual((postV->execute()->value),(double)5);
   assertEqual(postV->batch.size(),(size_t)(0));  
 
   postV =new postVal("send(aa)", opts.thing.c_str(), opts.device.c_str(), opts.url.c_str(),token.c_str(),
@@ -410,21 +474,19 @@ testF(Settings,postVal){
   assertFalse(postV->valid);            
 }
 
-test(sample){
-  sample sam= sample("temperature");
-  sam.setValue(19);
-  assertEqual(sam.getValue(),(double)19);
-  assertEqual(sam.feature,"temperature");
+testF(Settings,sample){
+  sam->value=19;
+  assertEqual(sam->value,(double)19);
+  assertEqual(sam->feature,"temperature");
 }
 
 testF(Settings,edgine){
   edgine* Edge=edgine::getInstance();
   Edge->init(opts);// in the mocked init we retrieve 2 scripts: "temperature().send(5)"" and 
                       // "temperature(10).window(+, 0, 60).map(a/60).send()""
-  sample sam= sample("temperature");
-  sam.setValue(19);
+  sam->value=19;
   vector<sample> samples;
-  samples.push_back(sam);//use this sample all the times
+  samples.push_back(*sam);//use this sample all the times
   for (int i = 0; i < 4; i++)
   { // for 4 times no data are sent to the API
     assertEqual(Edge->evaluate(samples), 0);
@@ -499,11 +561,9 @@ testF(Settings,APIRest){
   response=Api->GETScript(opts.url.c_str(),"token");
   assertEqual(response,"none");
 
-  boolean success= Api->POSTMeasurement(opts.url.c_str(),token.c_str(),opts.thing.c_str(),
-                          "temperature",opts.device.c_str(),"group-temperature",(double)5);
+  boolean success= Api->POSTMeasurement(*sam,token.c_str());
   assertTrue(success);
-  success= Api->POSTMeasurement(opts.url.c_str(),"token",opts.thing.c_str(),
-                          "temperature",opts.device.c_str(),"group-temperature",(double)5);
+  success= Api->POSTMeasurement(*sam,"token");
   assertFalse(success);
 
   success=Api->POSTError(opts.url.c_str(),token.c_str(),opts.thing.c_str(),

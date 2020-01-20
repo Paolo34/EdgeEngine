@@ -27,7 +27,7 @@ class reception : public operation{
   int getInterval();
   
   //methods
-  double* execute();
+  sample* execute();
   
 };
 
@@ -43,14 +43,14 @@ void reception::initializeCounter(){
   startInstant = millis();
 }
 
-double* reception::execute(){
+sample* reception::execute(){
   
   if( (double)( millis()-startInstant )/MILLIS_PER_SEC < interval){ //if not elapsed enough time 
     
     return NULL;//this should block the execution of the next operation
   }
   initializeCounter(); // reinitialize counter
-  return new double(input);
+  return input;
 }
 
 int reception::parseIntervalToSec( String numString){

@@ -2,6 +2,7 @@
 
 #ifndef operation_h
 #define operation_h
+#include "sample.h"
 
 class operation{
   private:
@@ -10,7 +11,7 @@ class operation{
   //variables
   String opName;
   String code;
-  double input;
+  sample* input;
   int i;
   char c;
   //methods
@@ -25,7 +26,7 @@ class operation{
   operation(const operation&);
   
   //setters
-  void setInput(double);
+  void setInput(sample*);
   void setCode(String);
   virtual void setToken(String);
   
@@ -33,7 +34,7 @@ class operation{
   String getName() const;
   
   //methods
-  virtual double* execute();
+  virtual sample* execute();
 };
 
 operation::operation(String opName){
@@ -46,8 +47,8 @@ operation::operation(const operation &op){
   valid=true;
 }
 
-void operation::setInput(double input){
-  this->input=input;  
+void operation::setInput(sample* input){
+  this->input=input;
 }
 String operation::getName() const{
   return opName;
@@ -56,7 +57,7 @@ void operation::setCode(String code){
   this->code=code;
 }
 
-double* operation::execute(){
+sample* operation::execute(){
   Serial.println("base execute");
   return NULL;
   //must be overridden
