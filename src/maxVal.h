@@ -12,7 +12,8 @@ class maxVal : public operation{
   //constructors
   maxVal(String);
   maxVal(String,double);
-  
+  //destructor
+  ~maxVal();
   //methods
   sample* execute() ;
   
@@ -22,22 +23,27 @@ class maxVal : public operation{
 //constructors
 
 maxVal::maxVal(String opName):operation(opName){
+  valid=true;
   if(opName!="max()")
     valid=false;
   maxValue=-9999999999;
 }
 maxVal::maxVal( String opName,double initValue):operation(opName){
+  valid=true;
   if(opName!="max()")
     valid=false;
   maxValue=initValue;
 }
+maxVal:: ~maxVal(){
+}
 
 //methods
 sample* maxVal::execute() {
-  if(&input!=NULL && input->value>maxValue){
+  if(input!=NULL && input->value > maxValue){
     maxValue=input->value;
     return input;
   }
+  delete input; // free memory from this copy of sample because it is useless 
   return NULL;//this should block the execution of the next operation
 }
 

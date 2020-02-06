@@ -12,7 +12,8 @@ class sample{
   public:
   //variables
   double value;
-  String date;
+  String startDate;
+  String endDate;
   String url;
   String thing;
   String feature;
@@ -34,7 +35,8 @@ sample::sample(String feature){
 //copy constructor
 sample::sample(const sample &sam){
   this->value=sam.value;
-  this->date=sam.date;
+  this->startDate=sam.startDate;
+  this->endDate=sam.endDate;
   this->url=sam.url;
   this->thing=sam.thing;
   this->feature=sam.feature;

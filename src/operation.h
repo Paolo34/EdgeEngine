@@ -11,9 +11,7 @@ class operation{
   //variables
   String opName;
   String code;
-  sample* input;
-  int i;
-  char c;
+  sample* input=NULL;
   //methods
   boolean isaNumber(String);
   
@@ -24,6 +22,8 @@ class operation{
   //constructors
   operation(String);
   operation(const operation&);
+  //destructor
+  virtual ~operation();
   
   //setters
   void setInput(sample*);
@@ -39,12 +39,14 @@ class operation{
 
 operation::operation(String opName){
   this->opName=opName;
-  valid=true;
+  valid=false;
 }
 //copy constructor
 operation::operation(const operation &op){
   this->opName= op.opName;
-  valid=true;
+  valid=false;
+}
+operation::~operation(){
 }
 
 void operation::setInput(sample* input){
@@ -67,9 +69,9 @@ void operation::setToken(String token){
 }
 
 boolean operation::isaNumber(String numberStr){
-  for (i = 0; i < numberStr.length(); i++)
+  for (int i = 0; i < numberStr.length(); i++)
   {
-    c=numberStr.charAt(i);
+    char c=numberStr.charAt(i);
     if(c>'9' || c<'0')
     {
       return false;

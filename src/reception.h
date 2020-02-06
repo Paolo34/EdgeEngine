@@ -3,6 +3,7 @@
 #ifndef reception_h
 #define reception_h
 
+#include <time.h>
 #include "operation.h"
 #define MILLIS_PER_SEC 1000
 
@@ -11,8 +12,6 @@ class reception : public operation{
   //variables
   int interval;// always in seconds
   double startInstant; // in milliseconds
-  int numberValue; 
-  char lastChar;
   
   //methods
   void initializeCounter();
@@ -21,6 +20,8 @@ class reception : public operation{
   public:
   //constructors
   reception(String);
+  //destructor
+   ~reception();
 
   //setters
   void setInterval(int);
@@ -33,20 +34,23 @@ class reception : public operation{
 
 //constructors
 reception::reception(String opName):operation(opName){
+  valid=true;
   interval=parseIntervalToSec(opName.substring( opName.indexOf("(")+1, opName.indexOf(")") ));
   initializeCounter();
 }
+ reception:: ~reception(){
+ }
 
 
 //methods
 void reception::initializeCounter(){
-  startInstant = millis();
+  startInstant = (double)clock() / CLOCKS_PER_SEC;
 }
 
 sample* reception::execute(){
   
-  if( (double)( millis()-startInstant )/MILLIS_PER_SEC < interval){ //if not elapsed enough time 
-    
+  if( ( ((double)clock() / CLOCKS_PER_SEC) -startInstant ) < interval ){ //if not elapsed enough time 
+    delete input; // free memory from this copy of sample because it is useless 
     return NULL;//this should block the execution of the next operation
   }
   initializeCounter(); // reinitialize counter
@@ -54,10 +58,10 @@ sample* reception::execute(){
 }
 
 int reception::parseIntervalToSec( String numString){
-  numberValue=0; 
+  int numberValue=0; 
   
   if(numString!=""){ // if there is no time interval we assign 0 because there is not deltaTime between two measurements
-    lastChar = numString.charAt(numString.length()-1);
+    char lastChar = numString.charAt(numString.length()-1);
     if (lastChar>'9' || lastChar<'0'){ // if the last char is not a number we try to interpret it as a measure unit
       //check the validity of the interval, there must be only numbers 
       if(!isaNumber(numString.substring(0,numString.length()-1)))

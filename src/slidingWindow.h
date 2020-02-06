@@ -3,6 +3,7 @@
 #ifndef slidingWindow_h
 #define slidingWindow_h
 #include "operation.h"
+#include "sample.h"
 
 class slidingWindow : public operation{
   private:
@@ -10,18 +11,19 @@ class slidingWindow : public operation{
   char function;
   double initial;
   double accumulator;
-  vector<double> values;
+  vector<sample*> samples;
   int windowSize;
   int counter;
-  int i;
 
   //methods
   void parseArgument(String);
-  double calculate(vector<double>);
+  double calculate(vector<sample*>);
   
   public:
   //constructors
   slidingWindow(String);
+  //destructor
+  ~slidingWindow();
   
   //methods
   sample* execute() ;
@@ -29,27 +31,37 @@ class slidingWindow : public operation{
 //constructors
 
 slidingWindow::slidingWindow(String opName):operation(opName){
+  valid=true;
   parseArgument( opName.substring( opName.indexOf("(")+1, opName.indexOf(")")) );
   counter=0;    
   accumulator = initial; //initialize
+}
+slidingWindow:: ~slidingWindow(){
+  for ( auto sam : samples ){
+     delete sam;//call destructor for each sample
+   }
+   samples.clear();
 }
 
 //methods
 sample* slidingWindow::execute() {
 
-  if(&input!=NULL ){
-    values.push_back(input->value);
+  if(input!=NULL ){
+    samples.push_back(input);
   }
     
-  if(&input!=NULL && counter < windowSize){ // untill we have not enough values 
+  if(input!=NULL && counter < windowSize){ // untill we have not enough samples 
     counter++;
   }
-  if(&input!=NULL && counter >= windowSize){ // when the value are enough (at regime)
-    accumulator = calculate(values);//add last value to the window
-    values.erase( values.begin() );//delete first value from the queue
-    input->value=accumulator; //beacuse we want a sample (with all its info) with the script resulting value
-    
-    return input;
+  if(input!=NULL && counter >= windowSize){ // when the samples are enough (at regime)
+    accumulator = calculate(samples);
+    sample* output=new sample(*input);// we cannot corrupt the input because it is stored in the slidingWindow samples
+    output->value=accumulator; //beacuse we want a sample (with all its info) with the script resulting value
+    output->startDate=samples.front()->startDate; //take startDate from the first sample of the slidingWindow
+    delete samples[0]; // free memory from this copy of sample because it is useless now
+    samples.erase( samples.begin() );//remove first sample from the vector
+
+    return output;
   }
   return NULL; // this should block the execution of the next operation
 }
@@ -84,32 +96,34 @@ void slidingWindow::parseArgument(String arguments){
   }
   windowSize=arguments.substring(firstIndex,endIndex).toInt();
 }
-double slidingWindow::calculate(vector<double> values) {
+
+double slidingWindow::calculate(vector<sample*> samples) {
   accumulator=initial;
+  int i;
   switch(function){
     case '+':
-      for(i=0;i<values.size();i++){
-        accumulator+=values[i];
+      for(i=0;i<samples.size();i++){
+        accumulator+=samples[i]->value;
       }
       break;
     case '*':
-      for(i=0;i<values.size();i++){
-        accumulator*=values[i];
+      for(i=0;i<samples.size();i++){
+        accumulator*=samples[i]->value;
       }
       break;
     case '-':
-      for(i=0;i<values.size();i++){
-        accumulator-=values[i];
+      for(i=0;i<samples.size();i++){
+        accumulator-=samples[i]->value;
       }
       break;
     case '/':
-      for(i=0;i<values.size();i++){
-        accumulator/=values[i];
+      for(i=0;i<samples.size();i++){
+        accumulator/=samples[i]->value;
       }
       break;
     default: //this is a free choice
-      for(i=0;i<values.size();i++){
-        accumulator+=values[i];
+      for(i=0;i<samples.size();i++){
+        accumulator+=samples[i]->value;
       }
       break;
   }

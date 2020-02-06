@@ -4,19 +4,23 @@
 #define APIRest_h
 
 #include <HTTPClient.h>
+#include <time.h>
 #include "sample.h"
-
+/*
 #define DAY  86400000 // 86400000 milliseconds in a day
 #define HOUR  3600000 // 3600000 milliseconds in an hour
 #define MINUTE  60000 // 60000 milliseconds in a minute
+*/
 #define SECOND  1000 // 1000 milliseconds in a second
 
-typedef enum {
-    FAILED = 400,
-    BOH = 700
-} error_code;
 
-
+typedef struct{
+  String device;
+  String date;
+  String message;
+  String type;
+  String url;
+} alert;
 
 //SINGLETON wrapper
 class APIRest{
@@ -29,7 +33,8 @@ class APIRest{
   boolean success;
   unsigned long startingTime;
   unsigned long timeElapsed;
-  String zone;
+  String timestamp;
+  /*String zone;
   int year;
   int month;
   int day;
@@ -41,13 +46,11 @@ class APIRest{
   int hourElapsed; 
   int minuteElapsed;
   int secondElapsed;
-  int milliSecElapsed;
-  String startingDate;
+  int milliSecElapsed;*/
+  //String startingDate;
   String actualDate;
-  int j;
+  vector<alert> alertDB;
   boolean reposting;
-  int beginOfValue;
-  int endOfValue;
   
   //constructor
   APIRest();
@@ -57,21 +60,23 @@ class APIRest{
   
   //methods
   boolean isHTTPCodeOk(int);
+  boolean needToBeRePOST(String);
   String errorToString(int);
-  String ParseResponse(String,String);
+  String ParseResponse(String,String,boolean);
   void rePOSTMeasurement(String);
-  
+  void rePOSTAlert(String);
+
   public:
   //variables
   vector<sample> database;
   //methods
   static APIRest* getInstance();
   String POSTLogin(String,String,String);
-  String GETDate(String,String);
+  String GETInfoUpdateDate(String,String);
   String GETDescr(String,String);
   String GETScript(String,String);
   boolean POSTMeasurement(sample,String);
-  boolean POSTError(String,String,String,String,String,String,String);
+  boolean POSTAlert(String,String,String,String,String,String);
   String getActualDate();
   boolean TESTING;
   
@@ -90,10 +95,6 @@ APIRest* APIRest::getInstance(){
 APIRest::APIRest(){
   reposting=false;
 
-  startingDate="2020-01-19T00:00:00.000Z"; //DELETE THIS WHEN THE DATE ROUTE IS WORKING
-  startingTime = millis();//DELETE THIS WHEN THE DATE ROUTE IS WORKING
-  zone =String("Z");//DELETE THIS WHEN THE DATE ROUTE IS WORKING
-
   TESTING=false;
 }
 
@@ -104,17 +105,14 @@ String APIRest::POSTLogin (String url, String username, String password){
     
     https.addHeader("Content-Type","application/json");
     httpsCode = https.POST("{\"username\": \"" + username + "\",\"password\": \"" + password + "\"}");//this is the body
+    response=httpsCode+https.getString();
 
-    if (isHTTPCodeOk(httpsCode)) { //Check for the returning code
-        response = https.getString();
-        Serial.println(httpsCode);
-        Serial.println(response);
+    if (!isHTTPCodeOk(httpsCode)) { //Check for the returning code
+      Serial.print(F("[HTTPS] POST Login... failed," ));
+      if(httpsCode<0)
+        response+=" error: "+https.errorToString(httpsCode);      
     }
-    else {
-      response="none";
-      Serial.printf("[HTTPS] POST Login... failed, error: %s\n", https.errorToString(httpsCode).c_str());
-    }
-    
+    Serial.println(response);
     https.end(); //Free the resources
     
     return response;
@@ -131,7 +129,7 @@ String APIRest::POSTLogin (String url, String username, String password){
   }
   
 }
-String APIRest::GETDate(String url, String token){
+String APIRest::GETInfoUpdateDate(String url, String token){
   if(!TESTING)
   {
     HTTPClient https;
@@ -139,21 +137,31 @@ String APIRest::GETDate(String url, String token){
     https.addHeader("Authorization",token);
     httpsCode = https.GET();//the body is empty
     
+    response=httpsCode+https.getString();
     if (isHTTPCodeOk(httpsCode)) { //Check for the returning code
-          response = https.getString();
-          Serial.println(httpsCode);
-          Serial.println(response);
           
-          ////////////// WE HAVE TO PARSE THE GETDATE RESPONSE /////////////////
-          //startingDate = GETDate("url",token);
-          //startingTime = millis();
-          //zone =startingDate.substring(23,startingDate.length());
+          startingTime = ((double)clock() / CLOCKS_PER_SEC)*SECOND; //milliseconds
+          timestamp = ParseResponse(response,"timestamp",true);
+          //example of timestamp in milliseconds: "1580394697254" 
+          /*time_t time=timestamp.substring(0,timestamp.length()-3).toDouble();// first to last 3 digit are seconds
+          milliSec=timestamp.substring(timestamp.length()-3,timestamp.length()).toInt(); // last 3 digit are milliseconds
+          tm *tm_local =localtime(&time);
+          second=tm_local->tm_sec;
+          minute=tm_local->tm_min;
+          hour=tm_local->tm_hour;
+          day=tm_local->tm_mday;
+          month=tm_local->tm_mon+1; // months are counted from 0 to 11
+          year=tm_local->tm_year+1900; // years are counted since 1900
+          */
     }
     else {
       ////////////// WHAT IF THE GET DATE FAILS?????? /////////////////
-      response="none";
-      Serial.printf("[HTTPS] GET Date... failed, error: %s\n", https.errorToString(httpsCode).c_str());
+      if(httpsCode<0)
+        response+=" error: "+https.errorToString(httpsCode);
+      Serial.print(F("[HTTPS] GET Date... failed, "));
+
     }
+    Serial.println(response);
     https.end(); //Free the resources
 
     
@@ -170,23 +178,21 @@ String APIRest::GETDate(String url, String token){
   }
    
 }
+
 String APIRest::GETDescr(String url, String token){
   if(!TESTING){
     HTTPClient https;
     https.begin(url); //Specify the URL and certificate
 
     https.addHeader("Authorization",token);
-    
     httpsCode = https.GET();//the body is empty
-    if (isHTTPCodeOk(httpsCode)) { //Check for the returning code
-        response = https.getString();
-        Serial.println(httpsCode);
-        Serial.println(response);
+    response=httpsCode+https.getString();
+    if (!isHTTPCodeOk(httpsCode)) { //Check for the returning code
+      if(httpsCode<0)
+        response+=" error: "+https.errorToString(httpsCode);
+      Serial.print(F("[HTTPS] GET Description... failed, "));      
     }
-    else {
-      response="none";
-      Serial.printf("[HTTPS] GET Description... failed, error: %s\n", https.errorToString(httpsCode).c_str());
-    }
+    Serial.println(response);
     https.end(); //Free the resources
 
     return response;
@@ -225,24 +231,22 @@ String APIRest::GETScript(String url, String token){
     https.begin(url); //Specify the URL and certificate
 
     https.addHeader("Authorization",token);
-    
     httpsCode = https.GET();//the body is empty
-    if (isHTTPCodeOk(httpsCode)) { //Check for the returning code
-          response = https.getString();
-          Serial.println(httpsCode);
-          Serial.println(response);
+    response=httpsCode+https.getString();
+
+    if (!isHTTPCodeOk(httpsCode)) { //Check for the returning code
+      if(httpsCode<0)
+        response+=" error: "+https.errorToString(httpsCode);
+      Serial.print(F("[HTTPS] GET Script... failed, "));
     }
-    else {
-      response="none";
-      Serial.printf("[HTTPS] GET Script... failed, error: %s\n", https.errorToString(httpsCode).c_str());
-    }
+    Serial.println(response);
     https.end(); //Free the resources
 
     return response;
   }
   else{
     if(token=="JWT token"){
-		if( ParseResponse(url,"_id") == "group-temperature"){
+		if( ParseResponse(url,"_id",true) == "group-temperature"){
 			return "{\"docs\": ["
 					  "{"
 						  "\"visibility\": \"private\","
@@ -257,7 +261,7 @@ String APIRest::GETScript(String url, String token){
 					"],"
 					"\"totalDocs\": 1, \"limit\": 10, \"hasPrevPage\": false, \"hasNextPage\": false, \"page\": 1, \"totalPages\": 1, \"pagingCounter\": 1, \"prevPage\": null, \"nextPage\": null}";
 		}
-		else if(ParseResponse(url,"_id")=="average-hourly-temperature"){
+		else if(ParseResponse(url,"_id",true)=="average-hourly-temperature"){
 			return "{\"docs\": ["
 					  "{"
 						  "\"visibility\": \"private\","
@@ -287,28 +291,44 @@ boolean APIRest::POSTMeasurement(sample sam,String token){
     https.begin(sam.url); //Specify the URL and certificate 
     https.addHeader("Content-Type","application/json");
     https.addHeader("Authorization",token);
-    httpsCode = https.POST("{\"thing\": \""+sam.thing+"\", \"feature\": \""+sam.feature+"\", \"device\": \""+sam.device+"\", \"script\": \""+sam.scriptId+"\", \"samples\": {\"values\":"+sam.value+"}, \"startDate\": \""+sam.date+"\", \"endDate\": \""+sam.date+"\"}" );//this is the body
+    httpsCode = https.POST("{\"thing\": \""+sam.thing+"\", \"feature\": \""+sam.feature+"\", \"device\": \""+sam.device+"\", \"script\": \""+sam.scriptId+"\", \"samples\": {\"values\":"+sam.value+"}, \"startDate\": \""+sam.startDate+"\", \"endDate\": \""+sam.endDate+"\"}" );//this is the body
+    response=httpsCode+https.getString();
+
     if (isHTTPCodeOk(httpsCode)) { //Check for the returning code
-      Serial.println(httpsCode);
-      Serial.println(https.getString());
       success=true;
     }
     else {// something has gone wrong in the POST
       // if the post has encoutered an error, we want to save datum that will be resent as soon as possible
-      database.push_back(sam);// save the datum in a local database
-      Serial.printf("[HTTPS] POST NewMeas... failed, error: %s\n", https.errorToString(httpsCode).c_str());
-      success=false;
+      if(httpsCode<0)
+        response+=" error: "+https.errorToString(httpsCode);
+      if( needToBeRePOST(response)){
+        database.push_back(sam);// save the datum in a local database
+        Serial.print(F("[HTTPS] POST NewMeas... failed"));
+        Serial.print(", value: "+String(sam.value));
+        Serial.println(", script: "+sam.scriptId);
+        success=false;
+      }
+      else{
+        success=true;// if don't need to be resent
+        Serial.println(F("Measurement aleady POSTed"));
+      }
+      
     }
+    Serial.println(response);
     https.end(); //Free the resources
-    
+
     if(!reposting){
       reposting=true;
       rePOSTMeasurement(token); // every time we post a new measurement retry to post all the failed ones
     }
+    if(!reposting){
+      reposting=true;
+      rePOSTAlert(token); // every time we post a new measurement retry to post all the failed alerts
+    }
     
     return success;
   }
-  else{
+  else{ //////////////////// TESTING ////////////////////
     if(token=="JWT token"){
       success = true;
     }
@@ -321,54 +341,67 @@ boolean APIRest::POSTMeasurement(sample sam,String token){
       reposting=true;
       rePOSTMeasurement(token); // every time we post a new measurement retry to post all the failed ones
     }
+    if(!reposting){
+      reposting=true;
+      rePOSTAlert(token); // every time we post a new measurement retry to post all the failed alerts
+    }
     
     return success;    
   }
-  
 }
 
 void APIRest::rePOSTMeasurement(String token){
-  
   // j is useful to count the number of iteration equal to database size; 
   // since after repost the first element we erase it, the next one shift to the first position so access database[0] till end
-  for(j=0; j<database.size(); j++){
-    APIRest::POSTMeasurement(database[0], token);
-    Serial.println(database[0].value);
-    Serial.println(database[0].date);
-    Serial.println(database[0].scriptId);
-    Serial.println(database[0].feature);
-    Serial.println(database[0].url);
-    Serial.println(database[0].thing);
-    Serial.println(database[0].device);
-
+  int size=database.size();
+  for(int j=0; j<size; j++){
+    APIRest::POSTMeasurement(database[j], token);
     //APIRest::POSTError(database[0].url, token, database[0].thing, database[0].feature, database[0].device, database[0].scriptId, database[0].value, database[0].date);
-    database.erase( database.begin() );
   }
-  
+  database.erase( database.begin(), database.begin()+size);//remove all samples rePOSTed
+
   reposting=false;
-  
 } 
 
-boolean APIRest::POSTError(String url,String token,String thing,String feature,String device,String scriptId,String date=APIRest::getInstance()->getActualDate()){
+boolean APIRest::POSTAlert(String url,String token,String device,String message,String type="generic",String date=APIRest::getInstance()->getActualDate()){
   if(!TESTING){
     HTTPClient https;
     https.begin(url); //Specify the URL and certificate 
     https.addHeader("Content-Type","application/json");
     https.addHeader("Authorization",token);
-    httpsCode = https.POST("{\"thing\": \""+thing+"\", \"feature\": \""+feature+"\", \"device\": \""+device+"\", \"script\": \""+scriptId+"\", \"startDate\": \""+date+"\", \"endDate\": \""+date+"\"}" );//this is the body
+    httpsCode = https.POST("{\"device\": \""+device+"\",  \"date\": \""+date+"\", \"message\": \""+message+"\",\"type\": \""+type+"\"}" );//this is the body
+
+    response=httpsCode+https.getString();
+
     if (isHTTPCodeOk(httpsCode)) { //Check for the returning code
-      Serial.println(httpsCode);
-      Serial.println(https.getString());
       success=true;
     }
     else {// something has gone wrong in the POST
-      
-      Serial.printf("[HTTPS] POST Error... failed, error: %s\n", https.errorToString(httpsCode).c_str());
-      success=false;
+      if(httpsCode<0)
+        response+=" error "+https.errorToString(httpsCode);
+      if( needToBeRePOST(response)){
+        alert al;
+        al.date=date;
+        al.device=device;
+        al.message=message;
+        al.type=type;
+        al.url=url;
+        // if the post has encoutered an error, we want to save datum that will be resent as soon as possible
+        alertDB.push_back(al);// save the datum in a local database
+        Serial.println(F("[HTTPS] POST Alert... failed"));
+        
+        success=false;
+      }else{
+        Serial.println(F("Alert aleady POSTed"));
+        success=true;// if don't need to be resent
+      }
     }
+    Serial.println(response);
     https.end(); //Free the resources
+
     return success;
   }
+
   else{
     if(token=="JWT token"){
       return true; 
@@ -378,12 +411,30 @@ boolean APIRest::POSTError(String url,String token,String thing,String feature,S
     }
   }
 }
+void APIRest::rePOSTAlert(String token){
+  
+  // j is useful to count the number of iteration equal to database size; 
+  // since after repost the first element we erase it, the next one shift to the first position so access database[0] till end
+  for(int j=0; j<alertDB.size(); j++){
+    APIRest::POSTAlert(alertDB[0].url,token,alertDB[0].device,alertDB[0].message,alertDB[0].type,alertDB[0].date);
+    alertDB.erase( alertDB.begin() );// don't need to delete every alert individually because we passed the struct and not the pointer
+  }
+  reposting=false;
+} 
 
 
 boolean APIRest::isHTTPCodeOk(int code){
-  return code<210;
+  return  code>=200 && code<210;
 }
 
+
+boolean APIRest::needToBeRePOST(String response){
+    if( ParseResponse(response,"value",false)=="6"){// "value"= 6 means that the resource already exists, so do not try create it again
+      return false;
+    }
+    return true;
+}
+/*
 String APIRest::errorToString(int error){
     switch(error) {
     case HTTPC_ERROR_CONNECTION_REFUSED:
@@ -391,26 +442,24 @@ String APIRest::errorToString(int error){
     default:
         return String();
     }
-}
+}*/
 
 String APIRest::getActualDate(){
 
-  timeElapsed = millis()-startingTime ;
+  timeElapsed = ((double)clock() / CLOCKS_PER_SEC)*SECOND - startingTime ; //in milliseconds
+
+  /*
+  startingTime+= timeElapsed; //update the starting time 
   
+  //hypotesis: between 2 call of this function elapses less than 28 days
   dayElapsed = timeElapsed / DAY ;                                //number of days
   hourElapsed = (timeElapsed % DAY) / HOUR;                       //the remainder from days division (in milliseconds) divided by hours, this gives the full hours
   minuteElapsed = ((timeElapsed % DAY) % HOUR) / MINUTE ;         //and so on...
   secondElapsed = (((timeElapsed % DAY) % HOUR) % MINUTE) / SECOND;
   milliSecElapsed = (((timeElapsed % DAY) % HOUR) % MINUTE) % SECOND ;
+  Serial.println("day: "+ String(dayElapsed)+", hour: "+ String(hourElapsed)+", min: "+ String(minuteElapsed)+", sec: "+ String(secondElapsed)+", millis: "+String(milliSecElapsed) );
   
-  year = startingDate.substring(0,4).toInt();
-  month = startingDate.substring(5,7).toInt();
-  day = startingDate.substring(8,10).toInt();
-  hour = startingDate.substring(11,13).toInt();
-  minute = startingDate.substring(14,16).toInt();
-  second = startingDate.substring(17,19).toInt();
-  milliSec = startingDate.substring(20,23).toInt();
-  
+
   milliSec+=milliSecElapsed;
   second+=(secondElapsed+milliSec/1000);
   milliSec%=1000;
@@ -420,7 +469,7 @@ String APIRest::getActualDate(){
   minute%=60;
   day+=(dayElapsed+hour/24);
   hour%=24;
-  
+  //Serial.println("day: "+ String(day)+", hour: "+ String(hour)+", min: "+ String(minute)+", sec: "+ String(second)+", millis: "+String(milliSec) );
   switch(month){
     case 1:
       if(day>31){
@@ -481,19 +530,19 @@ String APIRest::getActualDate(){
     case 9:
       if(day>30){
         day%=30;
-        month=10;
+        month=9;
       }
       break;
     case 10:
       if(day>31){
         day%=31;
-        month=11;
+        month=10;
       }
       break;
     case 11:
       if(day>30){
         day%=30;
-        month=6;
+        month=11;
       }
       break;
     case 12:
@@ -508,27 +557,45 @@ String APIRest::getActualDate(){
   actualDate = String(year) + "-" + ( month<10 ? "0"+String(month):String(month) ) + "-" + ( day<10 ? "0"+String(day):String(day) ) + "T" +
             ( hour<10 ? "0"+String(hour):String(hour) )+":"+( ( minute<10 ? "0"+String(minute):String(minute) ) )+":"+(( second<10 ? "0"+String(second):String(second) ) )+ // ( second<10 ? "0"+String(second):String(second) )
             "." + ( milliSec<100 ? ( milliSec<10 ? "00"+String(milliSec):"0"+String(milliSec) ):String(milliSec) ) + String(zone); //( minute<10 ? "0"+String(minute):String(minute) )
-            
-  
-  if(dayElapsed>=40){//since millis() overflows after about 50 days 
-    startingTime=millis();
-    startingDate=actualDate;    
-  }
-  
+  */
+  actualDate = String(timestamp.toDouble() + timeElapsed);
   return actualDate;
 }
 
-String APIRest::ParseResponse( String response, String fieldName ){
+
+String APIRest::ParseResponse( String response, String fieldName, boolean quotedField = true ){
   
   if( response.indexOf(fieldName) ==-1){
     return "";
   }
+  
   response.replace(" ","");//delete whitespace
-  beginOfValue = response.indexOf( ":", response.indexOf(fieldName) )+1;//find starting index of field value
+  int beginOfValue = response.indexOf( ":", response.indexOf(fieldName) )+1;//find starting index of field value
+  int endOfValue;
+  String fieldValue;
+
+  if(quotedField){ // example "fieldName": "fieldValue"
+    endOfValue = response.indexOf('\"',beginOfValue+1);// start looking for the last delimiter from the next value
+    fieldValue=response.substring( beginOfValue+1, endOfValue);
+  }
+  else{ // example "fieldName": fieldValue
+    endOfValue = response.indexOf(',',beginOfValue);// start looking for the last delimiter from the next value
+    if(response.charAt(endOfValue-1) =='}' || response.charAt(endOfValue-1) ==']'){// if the field is the last of the a JSON objects({...}) or JSON array([...])
+      endOfValue-=1;
+    }
+    else if(endOfValue==-1){ //if the object is the last of response
+      endOfValue = response.indexOf('}',beginOfValue);
+
+      if(endOfValue==-1){//if the array is the last of response
+        endOfValue = response.indexOf(']',beginOfValue);
+
+      }
+    }
+    fieldValue=response.substring( beginOfValue, endOfValue);
+  }
   
-  endOfValue = response.indexOf('\"',beginOfValue+1);// start looking for the last delimiter from the next value
-  
-  return response.substring( beginOfValue+1, endOfValue);
+  return fieldValue;
 }
+
 
 #endif

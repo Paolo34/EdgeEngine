@@ -3,6 +3,7 @@
 #ifndef window_h
 #define window_h
 #include "operation.h"
+#include "sample.h"
 
 class window : public operation{
   private:
@@ -13,6 +14,7 @@ class window : public operation{
   double result;
   int windowSize;
   int counter;
+  String startDate;
 
   //methods
   void parseArgument(String);
@@ -20,6 +22,8 @@ class window : public operation{
   public:
   //constructors
   window(String);
+  //destructor
+  ~window();
   
   //methods
   sample* execute() ;
@@ -27,15 +31,20 @@ class window : public operation{
 //constructors
 
 window::window(String opName):operation(opName){
+  valid=true;
   parseArgument( opName.substring( opName.indexOf("(")+1, opName.indexOf(")")) );
   counter=0;    
   accumulator = initial; //initialize
 }
+window:: ~window(){
+}
 
 //methods
 sample* window::execute() {
-  if(&input!=NULL ){
+  if(input!=NULL ){
     accumulator = calculate(input->value);
+    if(counter==0)
+      startDate=input->startDate;//save the startDate of the first sample
     counter++;
   }
   if(counter >= windowSize){
@@ -44,8 +53,10 @@ sample* window::execute() {
     accumulator = initial;
     counter=0;
     input->value=result;
+    input->startDate=startDate;
     return input;
   }
+  delete input;// free memory from this copy of sample because it is useless 
   return NULL;//this should block the execution of the next operation
 }
 

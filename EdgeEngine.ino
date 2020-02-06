@@ -1,5 +1,7 @@
 using std::vector;
 
+#include <time.h>
+
 #include "src/connection.h"
 #include "src/edgine.h"
 #include "src/sample.h"
@@ -9,7 +11,10 @@ int lightPin = 34;// pin 27 not working with this sketch
 int potPin = 32;
 
 double pirCounter;
-sample motion = sample("temperature");
+
+sample* motion=NULL;
+sample* potentiometer=NULL;
+sample* light=NULL;
 /*
 const char* ssidWifi = "TIM-91746045";
 const char* passWifi = "1Oj3eyR5qHD3jAaT5Jfj1Ooh";
@@ -21,11 +26,11 @@ const char* passWifi = "finalborgo";
 const char* ssid = "S7Chicco";
 const char* password = "LLLLLLLL";
 */
-options opts;
+
 
 edgine* Edge;
 connection* Connection; //Wrapper for the wifi connection
-vector<sample> samples;
+vector<sample*> samples;
 /*
 const char* root_ca= \
 "-----BEGIN CERTIFICATE-----\n" \
@@ -52,13 +57,19 @@ const char* root_ca= \
 /**
  * setup
  */
+int i;
 void setup() {
+  
+    // Serial.print("START Free Memory = ");
+    // Serial.println(ESP.getFreeHeap());
   
   Serial.begin(115200);
 
   //setup connection
   Connection = connection::getInstance();
   Connection->setupConnection(ssidWifi, passWifi);
+
+  options opts;
   //login
   opts.username = "riccardo-office-temperature-sensor-username";
   opts.password =  "riccardo-office-temperature-sensor-password";
@@ -69,11 +80,12 @@ void setup() {
   opts.devs = "devices";
   opts.scps = "scripts";
   opts.measurements = "measurements";
-  opts.dateUrl= "URL OF THE DATE";
+  opts.info= "info";
+  opts.alerts="alerts";
   //Edgine identifiers
   opts.thing = "riccardo-office";
-  opts.device = "temperature-sensor-riccardo-office";
-  opts.id = "temperature-sensor-riccardo-office";
+  opts.device = "environment-riccardo-office";
+  opts.id = "environment-riccardo-office";
 
   //initialize Edge engine
   Edge=edgine::getInstance();
@@ -82,7 +94,7 @@ void setup() {
   //Interrupt sensor setup
   pinMode(pirPin, INPUT);
   //attachInterrupt(digitalPinToInterrupt(pirPin), detectedMotion, FALLING);
-  
+  i=0;
 }
 
 
@@ -91,58 +103,65 @@ void loop() {
   
   if ( Connection->isConnected() ) //Check the current connection status
   { 
-    /*
-    //create a temperature measurement sample
-    sample temperature = sample("temperature");
-    float t = dht.readTemperature();
-    Serial.println(t);
-    temperature.setValue(t);
-    samples.push_back(temperature);
-
-    //create a humidity measurement sample
-    sample humidity = sample("humidity");
     
-    humidity.setValue(1);
-    samples.push_back(humidity);
-    */
+    // Serial.print("Free Memory = ");
+    // Serial.println(ESP.getFreeHeap());
    
     //create a light measurement sample
-    sample light = sample("temperature");
+    light = new sample("light");
     int lig=analogRead(lightPin);
-    light.date=Edge->Api->getActualDate();
-    //Serial.println(lig);
-    light.value= lig;
-    
-   // samples.push_back(light);
+    light->startDate=Edge->Api->getActualDate();
+    light->endDate=light->startDate;
+    // light->value= lig;
+    light->value=(double)ESP.getFreeHeap();
+    samples.push_back(light);
     
     //create a potentiometer measurement sample
-    sample potentiometer = sample("temperature");
+
+    potentiometer = new sample("temperature");
     int pot=analogRead(potPin);
-    potentiometer.date=Edge->Api->getActualDate();
-    potentiometer.value=pot;
+    potentiometer->startDate=Edge->Api->getActualDate();
+    potentiometer->endDate=potentiometer->startDate;
+    //potentiometer->value=pot;
+    potentiometer->value=i++;
     samples.push_back(potentiometer);
 
     Edge->evaluate(samples);
     samples.clear(); // after evaluated all samples delete them
-    
-    if((millis()-pirCounter)>=2000){// pir sensor needs 2 seconds to be ready to give another measurement
-      //attachInterrupt(digitalPinToInterrupt(pirPin), detectedMotion, FALLING);
-      //Serial.println("attachInterrupt");
-    }
+    delete potentiometer;
+    delete light;
+    //delete motion;
+
+    // if( ((double)clock()-pirCounter)>=2000){// pir sensor needs 2 seconds to be ready to give another measurement
+    //   //attachInterrupt(digitalPinToInterrupt(pirPin), detectedMotion, FALLING);
+    //   //Serial.println("attachInterrupt");
+    // }
       
     delay(Edge->getPeriod()*1000);//delay in milliseconds
     
   }
   else{
     Serial.println("Device disconnected");
+    Serial.println("WIFI STATUS: "+String(WiFi.status()));
+
+    if(Connection->isConnectionLost()){
+      Connection->reconnect();
+    }
+    else{
+      Connection->disconnect();
+      Connection->setupConnection(ssidWifi, passWifi);//connect again
+    }   
   }
   
 }
 
-void detectedMotion(){
-  detachInterrupt(digitalPinToInterrupt(pirPin)); //PIR sensor needs 2 seconds to take an image to compare to
-  pirCounter=millis();
-  Serial.println("Motion detected");
-  motion.value=1;
-  samples.push_back(motion);
-}
+// void detectedMotion(){
+//   detachInterrupt(digitalPinToInterrupt(pirPin)); //PIR sensor needs 2 seconds to take an image to compare to
+//   pirCounter=(double)clock();
+//   Serial.println("Motion detected");
+//   motion = new sample("motion");
+//   motion->startDate=Edge->Api->getActualDate();
+//   motion->endDate=motion->startDate;
+//   motion->value=1;
+//   samples.push_back(motion);
+// }

@@ -39,7 +39,8 @@ class Settings :public TestOnce{
       token="JWT token";
 
       sam= new sample("temperature");
-      sam->date="2019-12-14T12:25:06.324Z";
+      sam->startDate="2019-12-14T12:25:06.324Z";
+      sam->endDate="2019-12-14T12:25:06.324Z";
       sam->device=opts.device;
       sam->url=opts.url;
       sam->thing=opts.thing;

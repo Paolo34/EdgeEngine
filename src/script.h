@@ -5,15 +5,14 @@
 
 using std::vector;
 #include <time.h> 
-
 #include "operation.h"
-#include "accept.h"
-#include "max.h"
-#include "min.h"
+#include "reception.h"
+#include "maxVal.h"
+#include "minVal.h"
 #include "window.h"
 #include "slidingWindow.h"
-#include "map.h"
-#include "send.h"
+#include "mapVal.h"
+#include "postVal.h"
 #include "sample.h"
 
 
@@ -26,11 +25,9 @@ class script{
   String device;
   String featuresAllowed;// features allowed for this device
   String url;
-  int i;
   
   //methods
   void parseScript(String);
-  int parseIntervalToSec(String);
   operation* createOperation(String);
   boolean isAllowed(String, String);
   
@@ -41,10 +38,11 @@ class script{
   vector<operation*> operations;
   String scriptStr;
   String scriptId;
-  String interval;
-  sample* nextInput;
+  sample* nextInput=NULL;
   //constructor
   script(String,String,String,String,String,String,String);
+  //destructor
+  ~script();
   
   //methods
   boolean execute(sample*); 
@@ -72,6 +70,17 @@ script::script( String scriptId,String scriptStr, String thing, String device, S
     Serial.println("New script: "+scriptId);
   }
 }
+script::~script(){
+   for ( auto op : operations ){
+     delete op;//call destructor for each operation
+   }
+   operations.clear();
+   if (nextInput)//if nextInput is pointing to something 
+   {
+      delete nextInput;
+   }
+}
+
 void script::setToken(String token){
    this->token=token;
    operations[operations.size()-1]->setToken(token);//the last one is the send operation which needs the token
@@ -94,11 +103,11 @@ void script::parseScript(String scriptString){
   startIndex = endIndex+1;
   
   endIndex = scriptString.indexOf(")",startIndex); //the second is the time interval
-  interval = scriptString.substring(startIndex,endIndex);
+  String interval = scriptString.substring(startIndex,endIndex);
   operations.push_back( createOperation("accept("+interval+")") );//the first operation is always "accept" which verify the time elapsed
   if(!operations[counter]->valid){
-    operations.clear();
-    return;//end here the parsing
+    //operations.clear();
+    return; //end here the parsing
   }
 	  
   counter++;
@@ -110,8 +119,8 @@ void script::parseScript(String scriptString){
 
     operations.push_back( createOperation(scriptString.substring(startIndex,endIndex)) ); //Add element at the end
     
-    if(!operations[counter] || !operations[counter]->valid){ // if something is wrong in the script
-      operations.clear();// Removes all elements from the vector (which are destroyed), leaving the container with a size of 0.
+    if(!operations[counter]->valid){ // if something is wrong in the script
+      //operations.clear();// Removes all elements from the vector (which are destroyed), leaving the container with a size of 0.
       return;//end here the parsing
     }
     counter++;
@@ -124,7 +133,7 @@ void script::parseScript(String scriptString){
 boolean script::isAllowed(String feature,String featuresAllowed){
   int startIndex=featuresAllowed.indexOf(feature);
   if(startIndex!=-1){
-	  int endIndex=featuresAllowed.indexOf(",",startIndex);
+	  int endIndex=featuresAllowed.indexOf("\"",startIndex);
 	  if( featuresAllowed.substring(startIndex, (endIndex!=-1? endIndex : featuresAllowed.length()-startIndex))== feature )
 		  return true;
   }
@@ -159,17 +168,16 @@ operation* script::createOperation(String op){
   }
   else{
     Serial.println("wrong operation: "+op);
-    return NULL;// if is not among the allowed operations
+    return new operation(op);// if is not among the allowed operations
   }
 }
 
 boolean script::execute(sample* value){
   
-  nextInput=new sample(*value);// pass a copy of the sample
+  nextInput = new sample(*value);// pass a copy of the sample beacuse the script may modify it
 
-  for(i=0;i<operations.size();i++){
+  for(int i=0;i<operations.size();i++){
     operations[i]->setInput(nextInput);
-    
     nextInput = operations[i]->execute();
     
     if(nextInput==NULL)

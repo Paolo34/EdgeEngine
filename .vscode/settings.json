@@ -28,6 +28,21 @@
         "ratio": "cpp",
         "cmath": "cpp",
         "optional": "cpp",
-        "xtr1common": "cpp"
+        "xtr1common": "cpp",
+        "queue": "cpp",
+        "stack": "cpp",
+        "random": "cpp",
+        "utility": "cpp",
+        "deque": "cpp",
+        "list": "cpp",
+        "xhash": "cpp",
+        "xstring": "cpp",
+        "xtree": "cpp",
+        "string": "cpp",
+        "unordered_map": "cpp",
+        "unordered_set": "cpp",
+        "rope": "cpp",
+        "slist": "cpp",
+        "typeinfo": "cpp"
     }
 }

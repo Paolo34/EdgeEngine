@@ -9,8 +9,6 @@ class mapVal : public operation{
   //variable
   char function;
   double operand;
-  int i;
-  char c;
 
   //methods
   void parseArgument(String);
@@ -19,6 +17,8 @@ class mapVal : public operation{
   public:
   //constructors
   mapVal(String);
+  //destructor
+   ~mapVal();
   
   //methods
   sample* execute();
@@ -26,12 +26,15 @@ class mapVal : public operation{
 //constructors
 
 mapVal::mapVal(String opName):operation(opName){
+  valid=true;
   parseArgument( opName.substring( opName.indexOf("(")+1, opName.indexOf(")")) );
+}
+mapVal:: ~mapVal(){
 }
 
 //methods
 sample* mapVal::execute() {
-  if(&input!=NULL ){
+  if(input!=NULL ){
     input->value=calculate(input->value);
     return input;
   }
