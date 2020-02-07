@@ -52,9 +52,12 @@ postVal::postVal(String opName, String thing, String device, String url, String 
 }
 
  postVal::~postVal(){
-   for ( auto sam : batch ){
-     delete sam;//call destructor for each sample
-   }
+   for(int i=0;i<batch.size();i++){
+    delete batch[i];
+  }
+  //  for ( auto sam : batch ){
+  //    delete sam;//call destructor for each sample
+  //  }
    batch.clear();
  }
 

@@ -123,7 +123,7 @@ void edgine::init( options opts){
       }
     }
     else{
-      Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,response,"initialization_issue");
+      Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,response+" retrieving info","initialization_issue");
     }
     while(!isOKresponse(response) && ( ((double)clock() / CLOCKS_PER_SEC)-startGetCount ) < retryTime);//wait here "retryTime" if GETDescr failed, then retry GETDescr
 
@@ -166,7 +166,7 @@ void edgine::init( options opts){
       features= ParseResponse(response,"features");
     }
     else{
-      Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,response,"initialization_issue");
+      Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,response+" retrieving description","initialization_issue");
     }
     while(!isOKresponse(response) && ( ((double)clock() / CLOCKS_PER_SEC)-startGetDescrCount ) < retryTime);//wait here "retryTime" if GETDescr failed, then retry GETDescr
 
@@ -206,7 +206,7 @@ int edgine::evaluate(vector<sample*> samples){
       }
     }
     else{
-      Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,response); // generic
+      Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,response+" retrieving info"); // generic
     }
   }
 
@@ -245,7 +245,7 @@ int edgine::evaluate(vector<sample*> samples){
       //if retrieve fails does not matter, the engine use the previous scripts
     }
     else{
-      Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,response);// generic
+      Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,response+" retrieving virtual description");// generic
     }
     /*
     if (isOKresponse(response)){
@@ -269,7 +269,11 @@ void edgine::authenticate(){
     if(isOKresponse(response)){
       token = ParseToken(response);
     }else{
-      Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,response+" LOGIN FAILED");// generic
+      if(initialization)
+        Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,response+" LOGIN FAILED","initialization_issue");
+      else
+        Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,response+" LOGIN FAILED");// generic
+
     }
 
     while(!isOKresponse(response) && ( ((double)clock() / CLOCKS_PER_SEC)-startLogCount ) < retryTime);//wait "retryTime" if login failed, then retry login
@@ -295,10 +299,18 @@ void edgine::retrieveScriptsCode(String token, String scriptsId){
       firstGetScriptsResponse = "none";// THIS VARIABLE MATTERS ONLY THE FIRST TIME WE GET SCRIPTS
       tempCode="none";// do not block all scripts retrieve because only one fails, try others
       if(initialization){
-        Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,codeResponse,"initialization_issue");
+        Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,codeResponse+" retrieving "+scriptId+" script","initialization_issue");
       }
       else{
-        Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,codeResponse);//generic issue
+        Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,codeResponse+" retrieving "+scriptId+" script");//generic issue
+
+        for(int i=0;i<scripts.size();i++){
+         if(scripts[i]->scriptId==scriptId){
+            scripts[i]->valid=true; // if fails to retieve the code use the previous already present
+            break; //exit the for loop because the scriptId is univocal
+          }
+        }
+
       }
     }
     else{

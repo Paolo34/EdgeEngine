@@ -71,9 +71,12 @@ script::script( String scriptId,String scriptStr, String thing, String device, S
   }
 }
 script::~script(){
-   for ( auto op : operations ){
-     delete op;//call destructor for each operation
-   }
+  for(int i=0;i<operations.size();i++){
+    delete operations[i];
+  }
+  //  for ( operation* op : operations ){
+  //    delete op;//call destructor for each operation
+  //  }
    operations.clear();
    if (nextInput)//if nextInput is pointing to something 
    {

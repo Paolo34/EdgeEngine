@@ -104,8 +104,6 @@ void loop() {
   if ( Connection->isConnected() ) //Check the current connection status
   { 
     
-    // Serial.print("Free Memory = ");
-    // Serial.println(ESP.getFreeHeap());
    
     //create a light measurement sample
     light = new sample("light");

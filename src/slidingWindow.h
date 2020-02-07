@@ -37,9 +37,12 @@ slidingWindow::slidingWindow(String opName):operation(opName){
   accumulator = initial; //initialize
 }
 slidingWindow:: ~slidingWindow(){
-  for ( auto sam : samples ){
-     delete sam;//call destructor for each sample
-   }
+  for(int i=0;i<samples.size();i++){
+    delete samples[i];
+  }
+  // for ( sample* sam : samples ){
+  //    delete sam;//call destructor for each sample
+  //  }
    samples.clear();
 }
 

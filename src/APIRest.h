@@ -61,7 +61,6 @@ class APIRest{
   //methods
   boolean isHTTPCodeOk(int);
   boolean needToBeRePOST(String);
-  String errorToString(int);
   String ParseResponse(String,String,boolean);
   void rePOSTMeasurement(String);
   void rePOSTAlert(String);
@@ -434,15 +433,7 @@ boolean APIRest::needToBeRePOST(String response){
     }
     return true;
 }
-/*
-String APIRest::errorToString(int error){
-    switch(error) {
-    case HTTPC_ERROR_CONNECTION_REFUSED:
-        return F("connection refused");
-    default:
-        return String();
-    }
-}*/
+ 
 
 String APIRest::getActualDate(){
 
