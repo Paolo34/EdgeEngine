@@ -60,17 +60,15 @@ void connection::setupConnection(const char* ssidWifi,const char* passWifi){
   else{
 	  connected=true;
   }
-  
 }
 
 void connection::disconnect(){
   if(!TESTING){
+    Serial.println(F("Disconnecting.."));
     WiFi.disconnect(); 
-    while (WiFi.status() != WL_DISCONNECTED) {
-      delay(2000);
-      Serial.println(F("Disconnecting.."));
-    }
-    Serial.println(F("Disconnected"));
+    
+    if(WiFi.status() == WL_DISCONNECTED)
+      Serial.println(F("Disconnected"));
   }
   else{
 	  connected=false;
@@ -79,14 +77,14 @@ void connection::disconnect(){
 
 void connection::reconnect(){
   if(!TESTING){
-    while (WiFi.status() != WL_CONNECTED && !WiFi.reconnect()) {
-      delay(2000);
-      Serial.println(F("Reconnecting.."));
-    }
+    Serial.println(F("Reconnecting.."));
+    WiFi.reconnect();
+
+    if(WiFi.status() == WL_CONNECTED)
       Serial.println(F("Reconnected"));
   }
   else{
-	  connected=false;
+	  connected=true;
   }
 }
 

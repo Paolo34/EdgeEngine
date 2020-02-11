@@ -62,7 +62,6 @@ class edgine{
   String codeResponse;
   String scriptId;
   String firstGetScriptsResponse;
-  int samplesSent=0;
   
   //methods
   void authenticate();
@@ -375,7 +374,7 @@ void edgine::retrieveScriptsCode(String token, String scriptsId){
 
 
 int edgine::executeScripts(vector<sample*> samples){
-	samplesSent=0;
+	int samplesSent=0;
 	for(int j=0;j<samples.size();j++){
 		for(int i=0;i<scripts.size();i++){
 			if(scripts[i]->feature==samples[j]->feature){

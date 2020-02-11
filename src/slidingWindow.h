@@ -33,6 +33,7 @@ class slidingWindow : public operation{
 slidingWindow::slidingWindow(String opName):operation(opName){
   valid=true;
   parseArgument( opName.substring( opName.indexOf("(")+1, opName.indexOf(")")) );
+  samples.reserve(windowSize);// allocate in advance what needed, because dynamically it is done in power of 2 (2,4,8,16,32,..) and so waste memory
   counter=0;    
   accumulator = initial; //initialize
 }
@@ -44,6 +45,7 @@ slidingWindow:: ~slidingWindow(){
   //    delete sam;//call destructor for each sample
   //  }
    samples.clear();
+
 }
 
 //methods
@@ -64,7 +66,7 @@ sample* slidingWindow::execute() {
     delete samples[0]; // free memory from this copy of sample because it is useless now
     samples.erase( samples.begin() );//remove first sample from the vector
 
-    return output;
+    return output;//output will be deallocated by next operations
   }
   return NULL; // this should block the execution of the next operation
 }

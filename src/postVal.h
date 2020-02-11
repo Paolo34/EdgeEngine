@@ -47,6 +47,7 @@ postVal::postVal(String opName, String thing, String device, String url, String 
   this->feature=feature;
   this->scriptId=scriptId;
   numOfSamples = parseNumOfSamples(opName.substring( opName.indexOf("(")+1, opName.indexOf(")") ));
+  batch.reserve(numOfSamples);// allocate in advance what need, because dynamically it is done in power of 2 (2,4,8,16,32,..) and so waste memory
   counter=0; 
   Api=APIRest::getInstance();
 }
@@ -55,9 +56,6 @@ postVal::postVal(String opName, String thing, String device, String url, String 
    for(int i=0;i<batch.size();i++){
     delete batch[i];
   }
-  //  for ( auto sam : batch ){
-  //    delete sam;//call destructor for each sample
-  //  }
    batch.clear();
  }
 
@@ -92,12 +90,11 @@ sample* postVal::execute() {
     // since after post the first element we erase it, the next one shift to the first position so access batch[0] till end
     for(int j=0; j<numOfSamples; j++){
       //if( Api->POSTMeasurement(*batch[j], token) )
-        Api->POSTMeasurement(*batch[j], token);
-        delete batch[j];// if the value has been correctly POSTed delete it
+        Api->POSTMeasurement(*batch[j], token);// pass a copy 
+        delete batch[j];// deallocate it
     }
     batch.clear();//remove all samples
-    
-    return NULL;
+    return new sample("");//return empty sample pointer, for testing purpose
   }
   return NULL;//this means the input is not been POSTed
 }

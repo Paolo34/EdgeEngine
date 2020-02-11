@@ -78,6 +78,7 @@ script::~script(){
   //    delete op;//call destructor for each operation
   //  }
    operations.clear();
+
    if (nextInput)//if nextInput is pointing to something 
    {
       delete nextInput;
@@ -179,7 +180,7 @@ boolean script::execute(sample* value){
   
   nextInput = new sample(*value);// pass a copy of the sample beacuse the script may modify it
 
-  for(int i=0;i<operations.size();i++){
+  for(int i=0; i<operations.size(); i++){
     operations[i]->setInput(nextInput);
     nextInput = operations[i]->execute();
     
@@ -187,6 +188,7 @@ boolean script::execute(sample* value){
       return false;// if an operation return NULL stop executing the script
     
   }
+  delete nextInput;
   return true;
 }
 

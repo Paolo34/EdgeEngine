@@ -101,56 +101,42 @@ void setup() {
 
 void loop() {
   
-  if ( Connection->isConnected() ) //Check the current connection status
-  { 
-    
-   
-    //create a light measurement sample
-    light = new sample("light");
-    int lig=analogRead(lightPin);
-    light->startDate=Edge->Api->getActualDate();
-    light->endDate=light->startDate;
-    // light->value= lig;
-    light->value=(double)ESP.getFreeHeap();
-    samples.push_back(light);
-    
-    //create a potentiometer measurement sample
+  //create a light measurement sample
+  light = new sample("light");
+  int lig=analogRead(lightPin);
+  light->startDate=Edge->Api->getActualDate();
+  light->endDate=light->startDate;
+  // light->value= lig;
+  light->value=(double)ESP.getFreeHeap();
+  samples.push_back(light);
+  
+  //create a potentiometer measurement sample
 
-    potentiometer = new sample("temperature");
-    int pot=analogRead(potPin);
-    potentiometer->startDate=Edge->Api->getActualDate();
-    potentiometer->endDate=potentiometer->startDate;
-    //potentiometer->value=pot;
-    potentiometer->value=i++;
-    samples.push_back(potentiometer);
+  potentiometer = new sample("temperature");
+  int pot=analogRead(potPin);
+  potentiometer->startDate=Edge->Api->getActualDate();
+  potentiometer->endDate=potentiometer->startDate;
+  //potentiometer->value=pot;
+  potentiometer->value=i++;
+  samples.push_back(potentiometer);
+  Edge->evaluate(samples);
+  samples.clear(); // after evaluated all samples delete them
 
-    Edge->evaluate(samples);
-    samples.clear(); // after evaluated all samples delete them
-    delete potentiometer;
-    delete light;
-    //delete motion;
+  delete potentiometer;
+  delete light;
+  //delete motion;
 
-    // if( ((double)clock()-pirCounter)>=2000){// pir sensor needs 2 seconds to be ready to give another measurement
-    //   //attachInterrupt(digitalPinToInterrupt(pirPin), detectedMotion, FALLING);
-    //   //Serial.println("attachInterrupt");
-    // }
-      
-    delay(Edge->getPeriod()*1000);//delay in milliseconds
-    
-  }
-  else{
+  // if( ((double)clock()-pirCounter)>=2000){// pir sensor needs 2 seconds to be ready to give another measurement
+  //   //attachInterrupt(digitalPinToInterrupt(pirPin), detectedMotion, FALLING);
+  //   //Serial.println("attachInterrupt");
+  // }
+  if (!Connection->isConnected()) {
     Serial.println("Device disconnected");
     Serial.println("WIFI STATUS: "+String(WiFi.status()));
-
-    if(Connection->isConnectionLost()){
-      Connection->reconnect();
-    }
-    else{
-      Connection->disconnect();
-      Connection->setupConnection(ssidWifi, passWifi);//connect again
-    }   
+    Connection->reconnect();
   }
   
+  delay(Edge->getPeriod()*1000);//delay in milliseconds
 }
 
 // void detectedMotion(){

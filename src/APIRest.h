@@ -34,22 +34,9 @@ class APIRest{
   unsigned long startingTime;
   unsigned long timeElapsed;
   String timestamp;
-  /*String zone;
-  int year;
-  int month;
-  int day;
-  int hour;
-  int minute;
-  int second;
-  int milliSec;
-  int dayElapsed;                                
-  int hourElapsed; 
-  int minuteElapsed;
-  int secondElapsed;
-  int milliSecElapsed;*/
-  //String startingDate;
   String actualDate;
   vector<alert> alertDB;
+  vector<sample> database;
   boolean reposting;
   
   //constructor
@@ -67,7 +54,7 @@ class APIRest{
 
   public:
   //variables
-  vector<sample> database;
+  
   //methods
   static APIRest* getInstance();
   String POSTLogin(String,String,String);
@@ -78,7 +65,8 @@ class APIRest{
   boolean POSTAlert(String,String,String,String,String,String);
   String getActualDate();
   boolean TESTING;
-  
+  int getSampleDBsize();
+  int getAlertDBsize();
   
 };
 
@@ -93,7 +81,6 @@ APIRest* APIRest::getInstance(){
 //constructor
 APIRest::APIRest(){
   reposting=false;
-
   TESTING=false;
 }
 
@@ -119,7 +106,7 @@ String APIRest::POSTLogin (String url, String username, String password){
   else  // Mocking for the Unit Test
   { //example of token response
     if(username=="username" && password =="password")
-      return " {\"token\": \"JWT token\"}";
+      return "200{\"token\": \"JWT token\"}";
       else
       {
         return "none";
@@ -142,19 +129,8 @@ String APIRest::GETInfoUpdateDate(String url, String token){
           startingTime = ((double)clock() / CLOCKS_PER_SEC)*SECOND; //milliseconds
           timestamp = ParseResponse(response,"timestamp",true);
           //example of timestamp in milliseconds: "1580394697254" 
-          /*time_t time=timestamp.substring(0,timestamp.length()-3).toDouble();// first to last 3 digit are seconds
-          milliSec=timestamp.substring(timestamp.length()-3,timestamp.length()).toInt(); // last 3 digit are milliseconds
-          tm *tm_local =localtime(&time);
-          second=tm_local->tm_sec;
-          minute=tm_local->tm_min;
-          hour=tm_local->tm_hour;
-          day=tm_local->tm_mday;
-          month=tm_local->tm_mon+1; // months are counted from 0 to 11
-          year=tm_local->tm_year+1900; // years are counted since 1900
-          */
     }
     else {
-      ////////////// WHAT IF THE GET DATE FAILS?????? /////////////////
       if(httpsCode<0)
         response+=" error: "+https.errorToString(httpsCode);
       Serial.print(F("[HTTPS] GET Date... failed, "));
@@ -169,7 +145,13 @@ String APIRest::GETInfoUpdateDate(String url, String token){
   else  // Mocking for the Unit Test
   {
     if(token=="JWT token"){
-      return "2019-12-14T12:25:06.324Z";
+      return "200{"
+                "\"version\": \"0.2.001\","
+                "\"environment\": \"production\","
+                "\"token_expiration_time\": \"30m\","
+                "\"database\": \"mongodb://localhost:27017/atmosphere-prod\","
+                "\"timestamp\": \"1581425017114\""
+              "}";
     }
     else{
       return "none";
@@ -198,7 +180,7 @@ String APIRest::GETDescr(String url, String token){
   }
   else{// Mocking for the Unit Test
     if(token=="JWT token"){
-      return "{"
+      return "200{"
         "\"features\": ["
           " \"temperature\""
         "],"
@@ -208,7 +190,9 @@ String APIRest::GETDescr(String url, String token){
             "\"group-temperature\""
         "],"
         "\"visibility\": \"private\","
-        "\"period\": 10,"
+        "\"period\": \"5s\","
+        "\"cycle\": \"10m\","
+        "\"retryTime\": \"10s\","
         "\"_id\": \"temperature-sensor-riccardo-office\","
         "\"owner\": {"
             "\"_id\": \"5dcec66bc67ed54963bc865c\","
@@ -246,7 +230,7 @@ String APIRest::GETScript(String url, String token){
   else{
     if(token=="JWT token"){
 		if( ParseResponse(url,"_id",true) == "group-temperature"){
-			return "{\"docs\": ["
+			return "200{\"docs\": ["
 					  "{"
 						  "\"visibility\": \"private\","
 						  "\"tags\": [],"
@@ -261,7 +245,7 @@ String APIRest::GETScript(String url, String token){
 					"\"totalDocs\": 1, \"limit\": 10, \"hasPrevPage\": false, \"hasNextPage\": false, \"page\": 1, \"totalPages\": 1, \"pagingCounter\": 1, \"prevPage\": null, \"nextPage\": null}";
 		}
 		else if(ParseResponse(url,"_id",true)=="average-hourly-temperature"){
-			return "{\"docs\": ["
+			return "200{\"docs\": ["
 					  "{"
 						  "\"visibility\": \"private\","
 						  "\"tags\": [],"
@@ -357,8 +341,10 @@ void APIRest::rePOSTMeasurement(String token){
     APIRest::POSTMeasurement(database[j], token);
     //APIRest::POSTError(database[0].url, token, database[0].thing, database[0].feature, database[0].device, database[0].scriptId, database[0].value, database[0].date);
   }
+  
   database.erase( database.begin(), database.begin()+size);//remove all samples rePOSTed
-
+  vector<sample>(database).swap(database);// this create a new database with capacity equal to the size
+  
   reposting=false;
 } 
 
@@ -403,11 +389,21 @@ boolean APIRest::POSTAlert(String url,String token,String device,String message,
 
   else{
     if(token=="JWT token"){
-      return true; 
+      success= true; 
     }
     else{
-      return false;
+      alert al;
+      al.date=date;
+      al.device=device;
+      al.message=message;
+      al.type=type;
+      al.url=url;
+      // if the post has encoutered an error, we want to save datum that will be resent as soon as possible
+      alertDB.push_back(al);// save the datum in a local database
+      success= false;
     }
+
+    return success;
   }
 }
 void APIRest::rePOSTAlert(String token){
@@ -418,6 +414,7 @@ void APIRest::rePOSTAlert(String token){
     APIRest::POSTAlert(alertDB[0].url,token,alertDB[0].device,alertDB[0].message,alertDB[0].type,alertDB[0].date);
     alertDB.erase( alertDB.begin() );// don't need to delete every alert individually because we passed the struct and not the pointer
   }
+  vector<alert>(alertDB).swap(alertDB);// this create a new database with capacity equal to the size
   reposting=false;
 } 
 
@@ -428,7 +425,7 @@ boolean APIRest::isHTTPCodeOk(int code){
 
 
 boolean APIRest::needToBeRePOST(String response){
-    if( ParseResponse(response,"value",false)=="6"){// "value"= 6 means that the resource already exists, so do not try create it again
+    if( ParseResponse(response,"value",false)=="6"){// "value"= 6 means that the resource was not created for some problem(usually because it already exists), so do not try create it again
       return false;
     }
     return true;
@@ -438,117 +435,6 @@ boolean APIRest::needToBeRePOST(String response){
 String APIRest::getActualDate(){
 
   timeElapsed = ((double)clock() / CLOCKS_PER_SEC)*SECOND - startingTime ; //in milliseconds
-
-  /*
-  startingTime+= timeElapsed; //update the starting time 
-  
-  //hypotesis: between 2 call of this function elapses less than 28 days
-  dayElapsed = timeElapsed / DAY ;                                //number of days
-  hourElapsed = (timeElapsed % DAY) / HOUR;                       //the remainder from days division (in milliseconds) divided by hours, this gives the full hours
-  minuteElapsed = ((timeElapsed % DAY) % HOUR) / MINUTE ;         //and so on...
-  secondElapsed = (((timeElapsed % DAY) % HOUR) % MINUTE) / SECOND;
-  milliSecElapsed = (((timeElapsed % DAY) % HOUR) % MINUTE) % SECOND ;
-  Serial.println("day: "+ String(dayElapsed)+", hour: "+ String(hourElapsed)+", min: "+ String(minuteElapsed)+", sec: "+ String(secondElapsed)+", millis: "+String(milliSecElapsed) );
-  
-
-  milliSec+=milliSecElapsed;
-  second+=(secondElapsed+milliSec/1000);
-  milliSec%=1000;
-  minute+=(minuteElapsed+second/60);
-  second%=60;
-  hour+=(hourElapsed+minute/60);
-  minute%=60;
-  day+=(dayElapsed+hour/24);
-  hour%=24;
-  //Serial.println("day: "+ String(day)+", hour: "+ String(hour)+", min: "+ String(minute)+", sec: "+ String(second)+", millis: "+String(milliSec) );
-  switch(month){
-    case 1:
-      if(day>31){
-        day%=31;
-        month=2;
-      }
-      break;
-    case 2:
-      if((year%100==0 && year%400==0) || (year%100!=0 && year%4==0)){ //bissextile years
-        if(day>29){
-          day%=29;
-          month=3;
-        }
-      }
-      else{//not bissextile years
-        if(day>28){
-          day%=28;
-          month=3;
-        }
-      }
-      break;
-    case 3:    
-    if(day>31){
-        day%=31;
-        month=4;
-      }
-      break;
-    case 4:
-      if(day>30){
-        day%=30;
-        month=5;
-      }
-      break;
-    case 5:
-      if(day>31){
-        day%=31;
-        month=6;
-      }
-      break;
-    case 6:
-      if(day>30){
-        day%=30;
-        month=7;
-      }
-      break;
-    case 7:
-      if(day>31){
-          day%=31;
-          month=8;
-        }
-      break;
-    case 8:
-      if(day>31){
-        day%=31;
-        month=9;
-      }
-      break;
-    case 9:
-      if(day>30){
-        day%=30;
-        month=9;
-      }
-      break;
-    case 10:
-      if(day>31){
-        day%=31;
-        month=10;
-      }
-      break;
-    case 11:
-      if(day>30){
-        day%=30;
-        month=11;
-      }
-      break;
-    case 12:
-      if(day>31){
-          day%=31;
-          month=1;
-          year++;
-        }
-      break;
-  }
-
-  actualDate = String(year) + "-" + ( month<10 ? "0"+String(month):String(month) ) + "-" + ( day<10 ? "0"+String(day):String(day) ) + "T" +
-            ( hour<10 ? "0"+String(hour):String(hour) )+":"+( ( minute<10 ? "0"+String(minute):String(minute) ) )+":"+(( second<10 ? "0"+String(second):String(second) ) )+ // ( second<10 ? "0"+String(second):String(second) )
-            "." + ( milliSec<100 ? ( milliSec<10 ? "00"+String(milliSec):"0"+String(milliSec) ):String(milliSec) ) + String(zone); //( minute<10 ? "0"+String(minute):String(minute) )
-  */
   actualDate = String(timestamp.toDouble() + timeElapsed);
   return actualDate;
 }
@@ -586,6 +472,12 @@ String APIRest::ParseResponse( String response, String fieldName, boolean quoted
   }
   
   return fieldValue;
+}
+int APIRest:: getSampleDBsize(){
+ return database.size();
+}
+int APIRest::getAlertDBsize(){
+  return alertDB.size();
 }
 
 
