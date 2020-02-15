@@ -2,9 +2,12 @@
 
 #ifndef APIRest_h
 #define APIRest_h
+#include <string>
+using std::string;
 
 #include <HTTPClient.h>
 #include <time.h>
+#include <pthread.h>
 #include "sample.h"
 /*
 #define DAY  86400000 // 86400000 milliseconds in a day
@@ -13,14 +16,19 @@
 */
 #define SECOND  1000 // 1000 milliseconds in a second
 
+typedef struct{
+  string device;
+  string date;
+  string message;
+  string type;
+  string url;
+} alert;
 
 typedef struct{
-  String device;
-  String date;
-  String message;
-  String type;
-  String url;
-} alert;
+  //input
+  sample* sam;
+  string token;
+} taskParameter;
 
 //SINGLETON wrapper
 class APIRest{
@@ -28,16 +36,20 @@ class APIRest{
   private:
 
   //variables
-  int httpsCode;
-  String response;
+  int httpCode;
+  char httpCodeTmp [4];
+  string response;
   boolean success;
   unsigned long startingTime;
   unsigned long timeElapsed;
-  String timestamp;
-  String actualDate;
+  string timestamp;
+  char actualDate [15];
   vector<alert> alertDB;
   vector<sample> database;
   boolean reposting;
+
+  
+  taskParameter parameters;
   
   //constructor
   APIRest();
@@ -47,23 +59,26 @@ class APIRest{
   
   //methods
   boolean isHTTPCodeOk(int);
-  boolean needToBeRePOST(String);
-  String ParseResponse(String,String,boolean);
-  void rePOSTMeasurement(String);
-  void rePOSTAlert(String);
+  boolean needToBeRePOST(string);
+  string ParseResponse(string,string,boolean);
+  void rePOSTMeasurement(string);
+  void rePOSTAlert(string);
+
+
+  static void POSTMeasurement_task( void *  );
 
   public:
   //variables
   
   //methods
   static APIRest* getInstance();
-  String POSTLogin(String,String,String);
-  String GETInfoUpdateDate(String,String);
-  String GETDescr(String,String);
-  String GETScript(String,String);
-  boolean POSTMeasurement(sample,String);
-  boolean POSTAlert(String,String,String,String,String,String);
-  String getActualDate();
+  string POSTLogin(string,string,string);
+  string GETInfoUpdateDate(string,string);
+  string GETDescr(string,string);
+  string GETScript(string,string);
+  boolean POSTMeasurement(sample,string);
+  boolean POSTAlert(string,string,string,string,string,string);
+  string getActualDate();
   boolean TESTING;
   int getSampleDBsize();
   int getAlertDBsize();
@@ -84,21 +99,23 @@ APIRest::APIRest(){
   TESTING=false;
 }
 
-String APIRest::POSTLogin (String url, String username, String password){
+string APIRest::POSTLogin (string url, string username, string password){
   if(!TESTING){
     HTTPClient https;
-    https.begin(url); //Specify the URL and certificate
-    
+    https.begin(url.c_str()); //Specify the URL and certificate
     https.addHeader("Content-Type","application/json");
-    httpsCode = https.POST("{\"username\": \"" + username + "\",\"password\": \"" + password + "\"}");//this is the body
-    response=httpsCode+https.getString();
-
-    if (!isHTTPCodeOk(httpsCode)) { //Check for the returning code
+    httpCode = https.POST( ("{\"username\": \"" + username + "\",\"password\": \"" + password + "\"}").c_str() );//this is the body
+    
+    itoa(httpCode,httpCodeTmp,10);
+    
+    response=string(httpCodeTmp)+https.getString().c_str();
+    
+    if (!isHTTPCodeOk(httpCode)) { //Check for the returning code
       Serial.print(F("[HTTPS] POST Login... failed," ));
-      if(httpsCode<0)
-        response+=" error: "+https.errorToString(httpsCode);      
+      if(httpCode<0)
+        response=response+" error: "+https.errorToString(httpCode).c_str();      
     }
-    Serial.println(response);
+    Serial.println(response.c_str());
     https.end(); //Free the resources
     
     return response;
@@ -115,28 +132,28 @@ String APIRest::POSTLogin (String url, String username, String password){
   }
   
 }
-String APIRest::GETInfoUpdateDate(String url, String token){
+string APIRest::GETInfoUpdateDate(string url, string token){
   if(!TESTING)
   {
     HTTPClient https;
-    https.begin(url); //Specify the URL and certificate
-    https.addHeader("Authorization",token);
-    httpsCode = https.GET();//the body is empty
-    
-    response=httpsCode+https.getString();
-    if (isHTTPCodeOk(httpsCode)) { //Check for the returning code
+    https.begin(url.c_str()); //Specify the URL and certificate
+    https.addHeader("Authorization",token.c_str());
+    httpCode = https.GET();//the body is empty
+    itoa(httpCode,httpCodeTmp,10);
+    response=string(httpCodeTmp)+https.getString().c_str();
+    if (isHTTPCodeOk(httpCode)) { //Check for the returning code
           
           startingTime = ((double)clock() / CLOCKS_PER_SEC)*SECOND; //milliseconds
           timestamp = ParseResponse(response,"timestamp",true);
           //example of timestamp in milliseconds: "1580394697254" 
     }
     else {
-      if(httpsCode<0)
-        response+=" error: "+https.errorToString(httpsCode);
+      if(httpCode<0)
+        response=response+" error: "+https.errorToString(httpCode).c_str();
       Serial.print(F("[HTTPS] GET Date... failed, "));
 
     }
-    Serial.println(response);
+    Serial.println(response.c_str());
     https.end(); //Free the resources
 
     
@@ -160,20 +177,21 @@ String APIRest::GETInfoUpdateDate(String url, String token){
    
 }
 
-String APIRest::GETDescr(String url, String token){
+string APIRest::GETDescr(string url, string token){
   if(!TESTING){
     HTTPClient https;
-    https.begin(url); //Specify the URL and certificate
+    https.begin(url.c_str()); //Specify the URL and certificate
 
-    https.addHeader("Authorization",token);
-    httpsCode = https.GET();//the body is empty
-    response=httpsCode+https.getString();
-    if (!isHTTPCodeOk(httpsCode)) { //Check for the returning code
-      if(httpsCode<0)
-        response+=" error: "+https.errorToString(httpsCode);
+    https.addHeader("Authorization",token.c_str());
+    httpCode = https.GET();//the body is empty
+    itoa(httpCode,httpCodeTmp,10);
+    response=string(httpCodeTmp)+https.getString().c_str();
+    if (!isHTTPCodeOk(httpCode)) { //Check for the returning code
+      if(httpCode<0)
+        response=response+" error: "+https.errorToString(httpCode).c_str();
       Serial.print(F("[HTTPS] GET Description... failed, "));      
     }
-    Serial.println(response);
+    Serial.println(response.c_str());
     https.end(); //Free the resources
 
     return response;
@@ -208,21 +226,22 @@ String APIRest::GETDescr(String url, String token){
   
 }
 
-String APIRest::GETScript(String url, String token){
+string APIRest::GETScript(string url, string token){
   if(!TESTING){
     HTTPClient https;
-    https.begin(url); //Specify the URL and certificate
+    https.begin(url.c_str()); //Specify the URL and certificate
 
-    https.addHeader("Authorization",token);
-    httpsCode = https.GET();//the body is empty
-    response=httpsCode+https.getString();
+    https.addHeader("Authorization",token.c_str());
+    httpCode = https.GET();//the body is empty
+    itoa(httpCode,httpCodeTmp,10);
+    response=string(httpCodeTmp)+https.getString().c_str();
 
-    if (!isHTTPCodeOk(httpsCode)) { //Check for the returning code
-      if(httpsCode<0)
-        response+=" error: "+https.errorToString(httpsCode);
+    if (!isHTTPCodeOk(httpCode)) { //Check for the returning code
+      if(httpCode<0)
+        response=response+" error: "+https.errorToString(httpCode).c_str();
       Serial.print(F("[HTTPS] GET Script... failed, "));
     }
-    Serial.println(response);
+    Serial.println(response.c_str());
     https.end(); //Free the resources
 
     return response;
@@ -267,28 +286,83 @@ String APIRest::GETScript(String url, String token){
   }
    
 }
+/*
+pthread_t thread;
+int returnValue;
+void *printThreadId(void *threadid) {
+   Serial.println((int)threadid);
+}*/
 
-boolean APIRest::POSTMeasurement(sample sam,String token){
+// void APIRest::POSTMeasurement_task( void * pvParameters ){
+//     taskParameter param = *(taskParameter *) pvParameters;
+
+//     HTTPClient https;
+//     https.begin(param.sam->url); //Specify the URL and certificate 
+//     https.addHeader("Content-Type","application/json");
+//     https.addHeader("Authorization",param.token);
+//     int httpCode = https.POST("{\"thing\": \""+param.sam->thing+"\", \"feature\": \""+param.sam->feature+"\", \"device\": \""+param.sam->device+"\", \"script\": \""+param.sam->scriptId+"\", \"samples\": {\"values\":"+param.sam->value+"}, \"startDate\": \""+param.sam->startDate+"\", \"endDate\": \""+param.sam->endDate+"\"}" );//this is the body
+//     String response=httpCode+https.getString();
+    
+//     if (!isHTTPCodeOk(httpCode)) {// something has gone wrong in the POST
+//       // if the post has encoutered an error, we want to save datum that will be resent as soon as possible
+//       if(httpCode<0)
+//         response+=" error: "+HTTPClient::errorToString(httpCode);
+//       if( needToBeRePOST(response)){
+//         database.push_back(param.sam);// save the datum in a local database
+//         Serial.print(F("[HTTPS] POST NewMeas... failed"));
+//         Serial.print(", value: "+String(param.sam->value));
+//         Serial.println(", script: "+param.sam->scriptId);
+//       }
+//       else{
+//         Serial.println(F("Measurement aleady POSTed"));
+//       }
+      
+//     }
+//     Serial.println(response);
+//     https.end(); //Free the resources
+
+//     if(!reposting){
+//       reposting=true;
+//       rePOSTMeasurement(param.token); // every time we post a new measurement retry to post all the failed ones
+//     }
+//     if(!reposting){
+//       reposting=true;
+//       rePOSTAlert(param.token); // every time we post a new measurement retry to post all the failed alerts
+//     }
+
+//     vTaskDelete(NULL);
+// }
+
+boolean APIRest::POSTMeasurement(sample sam,string token){
   if(!TESTING){
+    
+    // parameters.sam=&sam;
+    // parameters.token=token;
+    // xTaskCreatePinnedToCore( POSTMeasurement_task,"POSTMeas TASK",1000,&parameters,2,NULL,1);
     HTTPClient https;
-    https.begin(sam.url); //Specify the URL and certificate 
+    https.begin(sam.url.c_str()); //Specify the URL and certificate 
     https.addHeader("Content-Type","application/json");
-    https.addHeader("Authorization",token);
-    httpsCode = https.POST("{\"thing\": \""+sam.thing+"\", \"feature\": \""+sam.feature+"\", \"device\": \""+sam.device+"\", \"script\": \""+sam.scriptId+"\", \"samples\": {\"values\":"+sam.value+"}, \"startDate\": \""+sam.startDate+"\", \"endDate\": \""+sam.endDate+"\"}" );//this is the body
-    response=httpsCode+https.getString();
+    https.addHeader("Authorization",token.c_str());
+    //Arduino does not support std::to_string(double) so I used here String(double).c_str()
+    httpCode = https.POST(("{\"thing\": \""+sam.thing+"\", \"feature\": \""+sam.feature+"\", \"device\": \""+sam.device+"\", \"script\": \""+sam.scriptId+"\", \"samples\": {\"values\":"+String(sam.value).c_str()+"}, \"startDate\": \""+sam.startDate+"\", \"endDate\": \""+sam.endDate+"\"}").c_str() );//this is the body
 
-    if (isHTTPCodeOk(httpsCode)) { //Check for the returning code
+    itoa(httpCode,httpCodeTmp,10);
+    response=string(httpCodeTmp)+https.getString().c_str();
+
+    if (isHTTPCodeOk(httpCode)) { //Check for the returning code
       success=true;
     }
     else {// something has gone wrong in the POST
       // if the post has encoutered an error, we want to save datum that will be resent as soon as possible
-      if(httpsCode<0)
-        response+=" error: "+https.errorToString(httpsCode);
+      if(httpCode<0)
+        response=response+" error: "+https.errorToString(httpCode).c_str();
       if( needToBeRePOST(response)){
         database.push_back(sam);// save the datum in a local database
         Serial.print(F("[HTTPS] POST NewMeas... failed"));
-        Serial.print(", value: "+String(sam.value));
-        Serial.println(", script: "+sam.scriptId);
+        Serial.print(", value: ");
+        Serial.print(sam.value);
+        Serial.print(", script: ");
+        Serial.println(sam.scriptId.c_str());
         success=false;
       }
       else{
@@ -297,7 +371,7 @@ boolean APIRest::POSTMeasurement(sample sam,String token){
       }
       
     }
-    Serial.println(response);
+    Serial.println(response.c_str());
     https.end(); //Free the resources
 
     if(!reposting){
@@ -333,7 +407,7 @@ boolean APIRest::POSTMeasurement(sample sam,String token){
   }
 }
 
-void APIRest::rePOSTMeasurement(String token){
+void APIRest::rePOSTMeasurement(string token){
   // j is useful to count the number of iteration equal to database size; 
   // since after repost the first element we erase it, the next one shift to the first position so access database[0] till end
   int size=database.size();
@@ -348,22 +422,23 @@ void APIRest::rePOSTMeasurement(String token){
   reposting=false;
 } 
 
-boolean APIRest::POSTAlert(String url,String token,String device,String message,String type="generic",String date=APIRest::getInstance()->getActualDate()){
+boolean APIRest::POSTAlert(string url,string token,string device,string message,string type="generic",string date=APIRest::getInstance()->getActualDate()){
   if(!TESTING){
+
     HTTPClient https;
-    https.begin(url); //Specify the URL and certificate 
+    https.begin(url.c_str()); //Specify the URL and certificate 
     https.addHeader("Content-Type","application/json");
-    https.addHeader("Authorization",token);
-    httpsCode = https.POST("{\"device\": \""+device+"\",  \"date\": \""+date+"\", \"message\": \""+message+"\",\"type\": \""+type+"\"}" );//this is the body
+    https.addHeader("Authorization",token.c_str());
+    httpCode = https.POST(("{\"device\": \""+device+"\",  \"date\": \""+date+"\", \"message\": \""+message+"\",\"type\": \""+type+"\"}").c_str() );//this is the body
+    itoa(httpCode,httpCodeTmp,10);
+    response=string(httpCodeTmp)+https.getString().c_str();
 
-    response=httpsCode+https.getString();
-
-    if (isHTTPCodeOk(httpsCode)) { //Check for the returning code
+    if (isHTTPCodeOk(httpCode)) { //Check for the returning code
       success=true;
     }
     else {// something has gone wrong in the POST
-      if(httpsCode<0)
-        response+=" error "+https.errorToString(httpsCode);
+      if(httpCode<0)
+        response=response+" error: "+https.errorToString(httpCode).c_str();
       if( needToBeRePOST(response)){
         alert al;
         al.date=date;
@@ -381,7 +456,7 @@ boolean APIRest::POSTAlert(String url,String token,String device,String message,
         success=true;// if don't need to be resent
       }
     }
-    Serial.println(response);
+    Serial.println(response.c_str());
     https.end(); //Free the resources
 
     return success;
@@ -406,7 +481,7 @@ boolean APIRest::POSTAlert(String url,String token,String device,String message,
     return success;
   }
 }
-void APIRest::rePOSTAlert(String token){
+void APIRest::rePOSTAlert(string token){
   
   // j is useful to count the number of iteration equal to database size; 
   // since after repost the first element we erase it, the next one shift to the first position so access database[0] till end
@@ -424,7 +499,7 @@ boolean APIRest::isHTTPCodeOk(int code){
 }
 
 
-boolean APIRest::needToBeRePOST(String response){
+boolean APIRest::needToBeRePOST(string response){
     if( ParseResponse(response,"value",false)=="6"){// "value"= 6 means that the resource was not created for some problem(usually because it already exists), so do not try create it again
       return false;
     }
@@ -432,43 +507,47 @@ boolean APIRest::needToBeRePOST(String response){
 }
  
 
-String APIRest::getActualDate(){
+string APIRest::getActualDate(){
 
-  timeElapsed = ((double)clock() / CLOCKS_PER_SEC)*SECOND - startingTime ; //in milliseconds
-  actualDate = String(timestamp.toDouble() + timeElapsed);
-  return actualDate;
+  timeElapsed = ((unsigned long)clock() / CLOCKS_PER_SEC)*SECOND - startingTime ; //in milliseconds
+  ultoa(atol(timestamp.c_str()) + timeElapsed, actualDate, 10);
+  return string(actualDate);
 }
 
 
-String APIRest::ParseResponse( String response, String fieldName, boolean quotedField = true ){
+string APIRest::ParseResponse( string response, string fieldName, boolean quotedField = true ){
   
-  if( response.indexOf(fieldName) ==-1){
+  if( response.find(fieldName) ==-1){
     return "";
   }
+
+  int pos=0;
+  while ( ( pos=response.find(" ") ) !=-1){
+    response.erase(pos);//delete whitespace
+  }
   
-  response.replace(" ","");//delete whitespace
-  int beginOfValue = response.indexOf( ":", response.indexOf(fieldName) )+1;//find starting index of field value
+  int beginOfValue = response.find( ":", response.find(fieldName) )+1;//find starting index of field value
   int endOfValue;
-  String fieldValue;
+  string fieldValue;
 
   if(quotedField){ // example "fieldName": "fieldValue"
-    endOfValue = response.indexOf('\"',beginOfValue+1);// start looking for the last delimiter from the next value
-    fieldValue=response.substring( beginOfValue+1, endOfValue);
+    endOfValue = response.find('\"',beginOfValue+1);// start looking for the last delimiter from the next value
+    fieldValue=response.substr( beginOfValue+1, endOfValue - (beginOfValue+1));
   }
   else{ // example "fieldName": fieldValue
-    endOfValue = response.indexOf(',',beginOfValue);// start looking for the last delimiter from the next value
-    if(response.charAt(endOfValue-1) =='}' || response.charAt(endOfValue-1) ==']'){// if the field is the last of the a JSON objects({...}) or JSON array([...])
+    endOfValue = response.find(',',beginOfValue);// start looking for the last delimiter from the next value
+    if(response.at(endOfValue-1) =='}' || response.at(endOfValue-1) ==']'){// if the field is the last of the a JSON objects({...}) or JSON array([...])
       endOfValue-=1;
     }
     else if(endOfValue==-1){ //if the object is the last of response
-      endOfValue = response.indexOf('}',beginOfValue);
+      endOfValue = response.find('}',beginOfValue);
 
       if(endOfValue==-1){//if the array is the last of response
-        endOfValue = response.indexOf(']',beginOfValue);
+        endOfValue = response.find(']',beginOfValue);
 
       }
     }
-    fieldValue=response.substring( beginOfValue, endOfValue);
+    fieldValue=response.substr( beginOfValue, endOfValue-beginOfValue);
   }
   
   return fieldValue;

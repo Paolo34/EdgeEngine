@@ -3,22 +3,25 @@
 #ifndef edgine_h
 #define edgine_h
 
+using std::string;
+#include <string>
+
 typedef struct{
-  String username;
-  String password;
+  string username;
+  string password;
   //route
-  String url;
-  String ver;
-  String login;
-  String devs;
-  String scps;
-  String measurements;
-  String info;
-  String alerts;
+  string url;
+  string ver;
+  string login;
+  string devs;
+  string scps;
+  string measurements;
+  string info;
+  string alerts;
   //descriptors
-  String thing;
-  String device;
-  String id;
+  string thing;
+  string device;
+  string id;
 }options;
 
 #include "APIRest.h" //API wrapper
@@ -40,11 +43,11 @@ class edgine{
   options opts;
   boolean initialization;
   
-  String token="none";
-  String response;
+  string token="none";
+  string response;
   vector<script*> scripts;
-  String scriptsId; // id of the scripts
-  String features;
+  string scriptsId; // id of the scripts
+  string features;
   double startLogCount=0;// starting instant of counter of Login
   double startGetDescrCount=0;// starting instant of counter of Get description
   double startGetCount=0;// starting instant of counter of Get scripts/date
@@ -58,22 +61,22 @@ class edgine{
   double getDescrCount=(double)cycle;
   
   int temp;
-  String tempCode;
-  String codeResponse;
-  String scriptId;
-  String firstGetScriptsResponse;
+  string tempCode;
+  string codeResponse;
+  string scriptId;
+  string firstGetScriptsResponse;
   
   //methods
   void authenticate();
-  void retrieveScriptsCode(String, String);
+  void retrieveScriptsCode(string, string);
   int executeScripts(vector<sample*>);
-  String ParseResponse( String, String);
-  int FindEndIndex (char, char, int, String);
-  int stringToSec(String);
-  boolean isaDigit(String);
-  boolean isOKresponse(String);
-  String ParseToken(String);
-  void setToken(String);
+  string ParseResponse( string, string);
+  int FindEndIndex (char, char, int, string);
+  int stringToSec(string);
+  boolean isaDigit(string);
+  boolean isOKresponse(string);
+  string ParseToken(string);
+  void setToken(string);
   
   public:
   //variables
@@ -105,12 +108,12 @@ void edgine::init( options opts){
   initialization=true;
   this->opts=opts; 
   authenticate();
-
   do{//GET INFO
     if( ( ((double)clock() / CLOCKS_PER_SEC) - startLogCount ) >= token_expiration_time ){//verify token validity
       authenticate();
     }
     startGetCount = (double)clock() / CLOCKS_PER_SEC;
+    Serial.println(token.c_str());
     response = Api->GETInfoUpdateDate(opts.url+"/"+opts.ver+"/"+opts.info,token); // Get the infos
     if(isOKresponse(response)){
       temp = stringToSec( ParseResponse(response,"token_expiration_time"));
@@ -256,15 +259,14 @@ int edgine::evaluate(vector<sample*> samples){
     }*/
     
   }
- 
   return executeScripts(samples);
 }
 
 void edgine::authenticate(){
   do{
-    startLogCount= (double)clock() / CLOCKS_PER_SEC;
-    //startLogCount = millis();      
+    startLogCount= (double)clock() / CLOCKS_PER_SEC; 
     response=Api->POSTLogin(opts.url+"/"+opts.ver+"/"+opts.login, opts.username, opts.password); // Authentication
+
     if(isOKresponse(response)){
       token = ParseToken(response);
     }else{
@@ -279,18 +281,20 @@ void edgine::authenticate(){
   }while(!isOKresponse(response));
 }
 
-void edgine::retrieveScriptsCode(String token, String scriptsId){
+void edgine::retrieveScriptsCode(string token, string scriptsId){
   firstGetScriptsResponse="ok";
   int startIndex=1;
   int endIndex=1;
 
-  //Serial.println("retrieveScriptsCode :"+scriptsId);
-  scriptsId.replace(" ","");//delete whitespace
+  int pos=0;
+  while ( ( pos=scriptsId.find(" ") ) !=-1){
+    scriptsId.erase(pos);//delete whitespace
+  }
   
   while( startIndex < scriptsId.length() ){
     
-    endIndex=scriptsId.indexOf("\"",startIndex+1); // start the search from the next charater    
-    scriptId= scriptsId.substring(startIndex,endIndex);
+    endIndex=scriptsId.find("\"",startIndex+1); // start the search from the next charater    
+    scriptId= scriptsId.substr(startIndex,endIndex-startIndex);
 
     codeResponse = Api->GETScript(opts.url + "/" + opts.ver + "/" + opts.scps + "?filter={\"_id\":\"" + scriptId + "\"}", token);   
 
@@ -320,12 +324,14 @@ void edgine::retrieveScriptsCode(String token, String scriptsId){
       //verify if it is a new script
       for(int i=0;i<scripts.size();i++){
         if(scripts[i]->scriptId==scriptId && scripts[i]->scriptStr==tempCode ){ //if there is already this script
-          Serial.println("Script Unchanged: "+scriptId);
+          Serial.print("Script Unchanged: ");
+          Serial.println(scriptId.c_str());
           scripts[i]->valid=true; // set it to valid because it is already in the API
           goto cnt; //is already present so do nothing and go to retrieve next script
         }
         else if(scripts[i]->scriptId==scriptId){ //if there is already this script but the code has changed
-          Serial.println("Script changed: "+scriptId);
+          Serial.print("Script changed: ");
+          Serial.println(scriptId.c_str());
           scripts[i]->valid=false;// invalidate the old version of the script and then create the new version of it   
         }
       }    
@@ -336,10 +342,10 @@ void edgine::retrieveScriptsCode(String token, String scriptsId){
 
         
         if(scripts.back()->operations.size()<=1){ // if the script has only one operation the error is in the feature
-          String feature = scripts.back()->feature;// the feature is the one with the error
+          string feature = scripts.back()->feature;// the feature is the one with the error
           Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,feature+" has an error","script_issue"); 
         }else{
-          String invalidOperation = scripts.back()->operations.back()->getName();// the last operation created is the one with the error
+          string invalidOperation = scripts.back()->operations.back()->getName();// the last operation created is the one with the error
           Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,invalidOperation+" has an error","script_issue"); 
         }
         delete scripts.back(); //delete the script to free memory
@@ -358,18 +364,22 @@ void edgine::retrieveScriptsCode(String token, String scriptsId){
   //  delete scripts that are not valid anymore (deleted in the API)
   for(int i=0;i<scripts.size();i++){
     if(scripts[i]->valid==false){
-      Serial.println("Script deleted: "+scripts[i]->scriptId);
+      Serial.print("Script deleted: ");
+      Serial.println(scripts[i]->scriptId.c_str());
       delete scripts[i];
       scripts.erase(scripts.begin()+i);
       i--; //since we deleted a script, even if the scripts size stays unchanged every position is shifted by one
     }
     else{
-      Serial.println("Script valid: "+scripts[i]->scriptId);
+      Serial.print("Script valid: ");
+      Serial.println(scripts[i]->scriptId.c_str());
+
       scripts[i]->valid=false;// preset valid to false, to be reconfirmed on the next check in the API
     }
   }
-  Serial.println("There are: " + String( scripts.size() )+" scripts");
-
+  Serial.print("There are: ");
+  Serial.print((int)scripts.size());
+  Serial.println(" scripts");
 }
 
 
@@ -386,34 +396,39 @@ int edgine::executeScripts(vector<sample*> samples){
   return samplesSent;
 }
 
-void edgine::setToken(String token){
+void edgine::setToken(string token){
   for(int i=0;i<scripts.size();i++){
     scripts[i]->setToken(token);
   }
 }
 
 
-String edgine::ParseToken(String response){
-  if(response.indexOf("J")!=-1){
-    return response.substring( response.indexOf("J"), response.lastIndexOf("\"") );
+string edgine::ParseToken(string response){
+  if(response.find("J")!=-1){
+    return response.substr( response.find("J"), response.rfind("\"")-response.find("J") );
   }
   return "none";
 }
 
 //NOT WORKS WITH CUSTOM OPERATIONS 
-String edgine::ParseResponse( String response, String fieldName ){
+string edgine::ParseResponse( string response, string fieldName ){
   
-  if( response.indexOf(fieldName) ==-1){
+  if( response.find(fieldName) ==-1){
     Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,fieldName+" field is not present!","field_issue");
-    Serial.println(fieldName+" field is not present!");
+    Serial.print(fieldName.c_str());
+    Serial.println(" field is not present!");
     return "none";
   }
-  response.replace(" ","");//delete whitespace
-  int beginOfValue = response.indexOf( ":", response.indexOf(fieldName) )+1;//find starting index of field value
+  int pos=0;
+  while ( ( pos=response.find(" ") ) !=-1){
+    response.erase(pos);//delete whitespace
+  }
+
+  int beginOfValue = response.find( ":", response.find(fieldName) )+1;//find starting index of field value
   int endOfValue;
-  switch ( response.charAt( beginOfValue ) ){
+  switch ( response.at( beginOfValue ) ){
     case '\"':
-      endOfValue = response.indexOf('\"',beginOfValue+1);// start looking for the last delimiter from the next value
+      endOfValue = response.find('\"',beginOfValue+1);// start looking for the last delimiter from the next value
       break;
     case '(':
       endOfValue = FindEndIndex('(',')', beginOfValue+1,response);
@@ -426,16 +441,16 @@ String edgine::ParseResponse( String response, String fieldName ){
       break;
   }
     
-  return response.substring( beginOfValue+1, endOfValue);
+  return response.substr( beginOfValue+1, endOfValue-(beginOfValue+1));
 }
 
 
-int edgine::FindEndIndex (char first,char last, int start, String response){
+int edgine::FindEndIndex (char first,char last, int start, string response){
   int nextClose;
   while(true){
-    String delimiters= "";
-    int nextOpen = response.indexOf( first, start );
-    nextClose = response.indexOf( last, start );
+    string delimiters= "";
+    int nextOpen = response.find( first, start );
+    nextClose = response.find( last, start );
     //if no more open/close bracket is found it returns -1 
     if(nextOpen==-1)
       nextOpen=nextClose+1;
@@ -448,29 +463,29 @@ int edgine::FindEndIndex (char first,char last, int start, String response){
     }
       //if the next one is a close bracket and an open bracket is at the end of the stack  delimiters.charAt(delimiters.length()-1)==first){
     else if( nextClose<nextOpen && delimiters.length()!=0){
-       delimiters.remove(delimiters.length()-1);
+       delimiters.erase(delimiters.length()-1);
        start=nextClose+1;
     }
     //if the next one is a open bracket
     else{
-      delimiters.concat(first);
+      delimiters.push_back(first);
       start=nextOpen+1;
     }
   }
   return nextClose;
 }
 
-int edgine::stringToSec( String numString){
+int edgine::stringToSec( string numString){
   int numberValue ;
   if(numString!=""){ // if there is no time interval we assign 0 
-    char lastChar = numString.charAt(numString.length()-1);
+    char lastChar = numString.at(numString.length()-1);
     if (lastChar>'9' || lastChar<'0'){ // if the last char is not a number we try to interpret it as a measure unit
-      //check the validity of the interval, there must be only numbers 
-      if(!isaDigit(numString.substring(0,numString.length()-1)))
+      //check the validity of the interval, there must be only numbers (last may be the unit)
+      if(!isaDigit(numString.substr(0,numString.length()-1)))
       {
         return -1;// if there is an error in the numString
       }
-      numberValue = ( numString.substring(0,numString.length()-1) ).toInt(); // if conversion fails a 0 is returned
+      numberValue = atoi( numString.substr(0,numString.length()-1).c_str() ); // if conversion fails a 0 is returned
       
       switch( lastChar ){
       case 's'://do nothing is already in Second
@@ -490,7 +505,7 @@ int edgine::stringToSec( String numString){
       }
     }
     else{
-      numberValue = ( numString.substring(0,numString.length()) ).toInt();
+      numberValue = atoi( numString.c_str() );
     }
   }
   
@@ -499,15 +514,15 @@ int edgine::stringToSec( String numString){
 
 
 
-boolean edgine::isOKresponse(String response){
-  int code=response.substring(0,3).toInt();// if toInt() fails the code would be 0
-  return code>=200 && code<210;
+boolean edgine::isOKresponse(string response){
+  int code=atoi( response.substr(0,3).c_str() );// if toInt() fails the code would be 0
+  return code>=200 && code<=308;
 }
 
-boolean edgine::isaDigit(String numberStr){
+boolean edgine::isaDigit(string numberStr){
   for (int i = 0; i < numberStr.length(); i++)
   {
-    char c=numberStr.charAt(i);
+    char c=numberStr.at(i);
     if(c>'9' || c<'0')
     {
       return false;

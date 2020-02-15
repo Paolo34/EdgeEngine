@@ -2,7 +2,12 @@
 
 #ifndef map_h
 #define map_h
+
+using std::string;
+#include <string>
+
 #include "operation.h"
+
 
 class mapVal : public operation{
   private:
@@ -11,12 +16,12 @@ class mapVal : public operation{
   double operand;
 
   //methods
-  void parseArgument(String);
+  void parseArgument(string);
   double calculate(double);
   
   public:
   //constructors
-  mapVal(String);
+  mapVal(string);
   //destructor
    ~mapVal();
   
@@ -25,9 +30,9 @@ class mapVal : public operation{
 };
 //constructors
 
-mapVal::mapVal(String opName):operation(opName){
+mapVal::mapVal(string opName):operation(opName){
   valid=true;
-  parseArgument( opName.substring( opName.indexOf("(")+1, opName.indexOf(")")) );
+  parseArgument( opName.substr( opName.find("(")+1, opName.find(")")-(opName.find("(")+1)) );
 }
 mapVal:: ~mapVal(){
 }
@@ -41,22 +46,25 @@ sample* mapVal::execute() {
   return NULL;//this should block the execution of the next operation
 }
 
-void mapVal::parseArgument(String arguments){
-  arguments.replace(" ","");//delete whitespace
+void mapVal::parseArgument(string arguments){
+  int pos=0;
+  while ( ( pos=arguments.find(" ") ) !=-1){
+    arguments.erase(pos);//delete whitespace
+  }
   //arguments example : "a/6" so charAt(0) is useless
   //first argument is the operation type
-  function=arguments.charAt(1);
+  function=arguments.at(1);
   if(function!='+' && function!='*' && function!='-' && function!='/' && function!='^'){
     valid=false;
     return;
   }
-  if(!isaNumber(arguments.substring(2,arguments.length())))
+  if(!isaNumber(arguments.substr(2,arguments.length()-2)))
   {
     valid=false;
     return;
   }
   //second argument is the operand
-  operand=arguments.substring(2,arguments.length()).toDouble();
+  operand=atof( arguments.substr(2,arguments.length()-2).c_str() );
 }
 
 double mapVal::calculate(double input) {

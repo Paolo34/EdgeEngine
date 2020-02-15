@@ -2,6 +2,9 @@
 
 #ifndef maxVal_h
 #define maxVal_h
+
+using std::string;
+
 #include "operation.h"
 
 class maxVal : public operation{
@@ -10,8 +13,8 @@ class maxVal : public operation{
   
   public:
   //constructors
-  maxVal(String);
-  maxVal(String,double);
+  maxVal(string);
+  maxVal(string,double);
   //destructor
   ~maxVal();
   //methods
@@ -22,13 +25,13 @@ class maxVal : public operation{
 };
 //constructors
 
-maxVal::maxVal(String opName):operation(opName){
+maxVal::maxVal(string opName):operation(opName){
   valid=true;
   if(opName!="max()")
     valid=false;
   maxValue=-9999999999;
 }
-maxVal::maxVal( String opName,double initValue):operation(opName){
+maxVal::maxVal( string opName,double initValue):operation(opName){
   valid=true;
   if(opName!="max()")
     valid=false;

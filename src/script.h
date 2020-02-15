@@ -4,6 +4,9 @@
 #define script_h
 
 using std::vector;
+using std::string;
+#include <string>
+
 #include <time.h> 
 #include "operation.h"
 #include "reception.h"
@@ -20,27 +23,27 @@ using std::vector;
 class script{
   private:
   //variables
-  String token;
-  String thing;
-  String device;
-  String featuresAllowed;// features allowed for this device
-  String url;
+  string token;
+  string thing;
+  string device;
+  string featuresAllowed;// features allowed for this device
+  string url;
   
   //methods
-  void parseScript(String);
-  operation* createOperation(String);
-  boolean isAllowed(String, String);
+  void parseScript(string);
+  operation* createOperation(string);
+  boolean isAllowed(string, string);
   
   public:
   //variables
   boolean valid;
-  String feature; //feature of this script
+  string feature; //feature of this script
   vector<operation*> operations;
-  String scriptStr;
-  String scriptId;
+  string scriptStr;
+  string scriptId;
   sample* nextInput=NULL;
   //constructor
-  script(String,String,String,String,String,String,String);
+  script(string,string,string,string,string,string,string);
   //destructor
   ~script();
   
@@ -48,10 +51,10 @@ class script{
   boolean execute(sample*); 
   
   //setters
-  void setToken(String);
+  void setToken(string);
 };
 
-script::script( String scriptId,String scriptStr, String thing, String device, String url, String token, String features){
+script::script( string scriptId,string scriptStr, string thing, string device, string url, string token, string features){
   this->scriptId=scriptId;
   this->scriptStr=scriptStr; //save the string
   this->thing=thing;
@@ -63,11 +66,13 @@ script::script( String scriptId,String scriptStr, String thing, String device, S
   
   parseScript(scriptStr);
   if(!valid){
-    Serial.println("The script was not created: "+scriptId);
+    Serial.print("The script was not created: ");
+    Serial.println(scriptId.c_str());
   //IF SOMETHING GOES WRONG AND THE SCRIPT IS NOT CREATED GIVE SOME ERROR
   }
   else{
-    Serial.println("New script: "+scriptId);
+    Serial.print("New script: ");
+    Serial.println(scriptId.c_str());
   }
 }
 script::~script(){
@@ -85,29 +90,34 @@ script::~script(){
    }
 }
 
-void script::setToken(String token){
+void script::setToken(string token){
    this->token=token;
    operations[operations.size()-1]->setToken(token);//the last one is the send operation which needs the token
  }
-void script::parseScript(String scriptString){
+void script::parseScript(string scriptString){
   int startIndex=0;
   int endIndex=1;
   int counter=0;
    
-  scriptString.replace(" ","");//delete whitespace
-  
-  endIndex = scriptString.indexOf("(",startIndex); 
-  feature =  scriptString.substring(startIndex,endIndex);//the first is the feature
+  int pos=0;
+  while ( ( pos=scriptString.find(" ") ) !=-1){
+    scriptString.erase(pos);//delete whitespace
+  }
+
+  endIndex = scriptString.find("(",startIndex); 
+  feature =  scriptString.substr(startIndex,endIndex-startIndex);//the first is the feature
   //Check if this feature is supported else return
   if(!isAllowed(feature, featuresAllowed)){
-    Serial.println(feature+" is not allowed!");
+    Serial.print(feature.c_str());
+    Serial.println(" is not allowed!");
+
     return;
   }
   
   startIndex = endIndex+1;
   
-  endIndex = scriptString.indexOf(")",startIndex); //the second is the time interval
-  String interval = scriptString.substring(startIndex,endIndex);
+  endIndex = scriptString.find(")",startIndex); //the second is the time interval
+  string interval = scriptString.substr(startIndex,endIndex-startIndex);
   operations.push_back( createOperation("accept("+interval+")") );//the first operation is always "accept" which verify the time elapsed
   if(!operations[counter]->valid){
     //operations.clear();
@@ -119,9 +129,9 @@ void script::parseScript(String scriptString){
   
   while( endIndex!=-1 ){
   
-    endIndex = scriptString.indexOf(".",startIndex+1); // start the search from the next charater
+    endIndex = scriptString.find(".",startIndex+1); // start the search from the next charater
 
-    operations.push_back( createOperation(scriptString.substring(startIndex,endIndex)) ); //Add element at the end
+    operations.push_back( createOperation(scriptString.substr(startIndex,endIndex-startIndex)) ); //Add element at the end
     
     if(!operations[counter]->valid){ // if something is wrong in the script
       //operations.clear();// Removes all elements from the vector (which are destroyed), leaving the container with a size of 0.
@@ -134,44 +144,47 @@ void script::parseScript(String scriptString){
   valid=true;
 }
 
-boolean script::isAllowed(String feature,String featuresAllowed){
-  int startIndex=featuresAllowed.indexOf(feature);
+boolean script::isAllowed(string feature,string featuresAllowed){
+  int startIndex=featuresAllowed.find(feature);
   if(startIndex!=-1){
-	  int endIndex=featuresAllowed.indexOf("\"",startIndex);
-	  if( featuresAllowed.substring(startIndex, (endIndex!=-1? endIndex : featuresAllowed.length()-startIndex))== feature )
+	  int endIndex=featuresAllowed.find("\"",startIndex);
+    // if( featuresAllowed.substr(startIndex, (endIndex!=-1? endIndex-startIndex : featuresAllowed.length()-startIndex) )== feature )
+
+	  if( featuresAllowed.substr(startIndex, endIndex-startIndex )== feature )
 		  return true;
   }
   return false;
 }
 
 //These are the allowed opeartions; we have to add manually every operation we want to implement
-operation* script::createOperation(String op){
-  int endIndex=op.indexOf("(");
-  String opName=op.substring(0,endIndex);
+operation* script::createOperation(string op){
+  int endIndex=op.find("(");
+  string opName=op.substr(0,endIndex);
   
-  if(opName.compareTo("accept")==0){
+  if(opName=="accept"){
     return new reception(op);
   }
-  else if(opName.compareTo("min")==0){
+  else if(opName=="min"){
     return new minVal(op);
     
-  }else if(opName.compareTo("max")==0){
+  }else if(opName=="max"){
     return new maxVal(op);
     
-  }else if(opName.compareTo("send")==0){
+  }else if(opName=="send"){
     return new postVal(op,thing, device, url, token, feature, scriptId);    
   }
-  else if(opName.compareTo("window")==0){
+  else if(opName=="window"){
     return new window(op);    
   }
-  else if(opName.compareTo("slidingWindow")==0){
+  else if(opName=="slidingWindow"){
     return new slidingWindow(op);    
   }
-  else if(opName.compareTo("map")==0){
+  else if(opName=="map"){
     return new mapVal(op);    
   }
   else{
-    Serial.println("wrong operation: "+op);
+    Serial.print("wrong operation: ");
+    Serial.println(op.c_str());
     return new operation(op);// if is not among the allowed operations
   }
 }
@@ -183,7 +196,6 @@ boolean script::execute(sample* value){
   for(int i=0; i<operations.size(); i++){
     operations[i]->setInput(nextInput);
     nextInput = operations[i]->execute();
-    
     if(nextInput==NULL)
       return false;// if an operation return NULL stop executing the script
     

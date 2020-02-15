@@ -2,27 +2,31 @@
 
 #ifndef send_h
 #define send_h
+using std::string;
+#include <string>
+
 #include "operation.h"
+
 
 class postVal : public operation{
   private:
   //variables
-  String token;
-  String thing;
-  String device;
-  String feature;
-  String scriptId;
-  String url;
+  string token;
+  string thing;
+  string device;
+  string feature;
+  string scriptId;
+  string url;
   APIRest* Api;
   int numOfSamples;
   int counter;
 
   //methods
-  int parseNumOfSamples(String);
+  int parseNumOfSamples(string);
 
   public:
   //constructors
-  postVal(String,String,String,String,String,String,String);
+  postVal(string,string,string,string,string,string,string);
   //destructor
    ~postVal();
   
@@ -33,12 +37,12 @@ class postVal : public operation{
   vector<sample*> batch;
   
   //setters
-  void setToken(String);
-  void setFeature(String);
-  void setScriptId(String);
+  void setToken(string);
+  void setFeature(string);
+  void setScriptId(string);
 };
 //constructors
-postVal::postVal(String opName, String thing, String device, String url, String token, String feature, String scriptId):operation(opName){
+postVal::postVal(string opName, string thing, string device, string url, string token, string feature, string scriptId):operation(opName){
   valid=true;
   this->thing=thing;
   this->device=device;
@@ -46,8 +50,9 @@ postVal::postVal(String opName, String thing, String device, String url, String 
   this->token=token;
   this->feature=feature;
   this->scriptId=scriptId;
-  numOfSamples = parseNumOfSamples(opName.substring( opName.indexOf("(")+1, opName.indexOf(")") ));
+  numOfSamples = parseNumOfSamples(opName.substr( opName.find("(")+1, opName.find(")")-(opName.find("(")+1) ));
   batch.reserve(numOfSamples);// allocate in advance what need, because dynamically it is done in power of 2 (2,4,8,16,32,..) and so waste memory
+
   counter=0; 
   Api=APIRest::getInstance();
 }
@@ -60,21 +65,19 @@ postVal::postVal(String opName, String thing, String device, String url, String 
  }
 
 //setters
- void postVal::setToken(String token){
+ void postVal::setToken(string token){
    this->token=token;
  }
- void postVal::setFeature(String feature){
+ void postVal::setFeature(string feature){
    this->feature=feature;
  }
- void postVal::setScriptId(String scriptId){
+ void postVal::setScriptId(string scriptId){
    this->scriptId=scriptId;
  }
 
 //methods
 sample* postVal::execute() {
-  
   if(input!=NULL && counter < numOfSamples){ // untill we have not enough values 
-    
     input->url=url;
     input->thing=thing;
     input->device=device;
@@ -85,6 +88,7 @@ sample* postVal::execute() {
   }
   
   if( input!=NULL && counter >= numOfSamples){
+
     counter=0;
     // j is useful to count the number of iteration equal to batch size; 
     // since after post the first element we erase it, the next one shift to the first position so access batch[0] till end
@@ -99,7 +103,7 @@ sample* postVal::execute() {
   return NULL;//this means the input is not been POSTed
 }
 
-int postVal::parseNumOfSamples( String numString){
+int postVal::parseNumOfSamples( string numString){
   int numberValue=1; 
   
   if(numString!="")// if there is no number we assign 1 because we post one measurement at a time 
@@ -109,7 +113,7 @@ int postVal::parseNumOfSamples( String numString){
       valid=false;
       return numberValue;
     }
-    numberValue = numString.toInt();
+    numberValue = atoi(numString.c_str());
   }	 
   return numberValue;
 }

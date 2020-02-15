@@ -3,6 +3,8 @@
 #ifndef sample_h
 #define sample_h
 
+using std::string;
+
 class sample{
   private:
   //variables
@@ -12,24 +14,24 @@ class sample{
   public:
   //variables
   double value;
-  String startDate;
-  String endDate;
-  String url;
-  String thing;
-  String feature;
-  String device;
-  String scriptId;
+  string startDate;
+  string endDate;
+  string url;
+  string thing;
+  string feature;
+  string device;
+  string scriptId;
   
   //methods 
   
   
   //constructors
-  sample(String);
+  sample(string);
   sample(const sample&);
   
 };
 
-sample::sample(String feature){
+sample::sample(string feature){
   this->feature=feature;
 }
 //copy constructor

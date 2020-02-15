@@ -1,7 +1,6 @@
 using std::vector;
-
+using std::string;
 #include <time.h>
-
 #include "src/connection.h"
 #include "src/edgine.h"
 #include "src/sample.h"
@@ -10,18 +9,20 @@ int pirPin = 35;
 int lightPin = 34;// pin 27 not working with this sketch
 int potPin = 32;
 
-double pirCounter;
+clock_t pirCounter;
+clock_t cycleCounter; // count execution cycle time
+clock_t sleepTime;
 
 sample* motion=NULL;
 sample* potentiometer=NULL;
 sample* light=NULL;
-/*
+
 const char* ssidWifi = "TIM-91746045";
 const char* passWifi = "1Oj3eyR5qHD3jAaT5Jfj1Ooh";
-*/
+/*
 const char* ssidWifi = "TORNATOREwifi";
 const char* passWifi = "finalborgo";
-
+*/
 /*
 const char* ssid = "S7Chicco";
 const char* password = "LLLLLLLL";
@@ -81,12 +82,12 @@ void setup() {
   opts.scps = "scripts";
   opts.measurements = "measurements";
   opts.info= "info";
-  opts.alerts="alerts";
+  opts.alerts="issues";
   //Edgine identifiers
   opts.thing = "riccardo-office";
   opts.device = "environment-riccardo-office";
   opts.id = "environment-riccardo-office";
-
+  
   //initialize Edge engine
   Edge=edgine::getInstance();
   Edge->init(opts);
@@ -95,11 +96,13 @@ void setup() {
   pinMode(pirPin, INPUT);
   //attachInterrupt(digitalPinToInterrupt(pirPin), detectedMotion, FALLING);
   i=0;
+  
 }
 
 
 
 void loop() {
+  cycleCounter=clock();
   
   //create a light measurement sample
   light = new sample("light");
@@ -132,12 +135,25 @@ void loop() {
   // }
   if (!Connection->isConnected()) {
     Serial.println("Device disconnected");
-    Serial.println("WIFI STATUS: "+String(WiFi.status()));
+    Serial.print("WIFI STATUS: ");
+    Serial.println(WiFi.status());
     Connection->reconnect();
+    
   }
+  cycleCounter=clock()-cycleCounter;// duration of the exexution of th cycle
+
+  Serial.print("CYCLE DURATION: ");
+  Serial.println(cycleCounter);
   
-  delay(Edge->getPeriod()*1000);//delay in milliseconds
+  // subtract te execution time to the Sleep period if result is not negative
+  (cycleCounter/CLOCKS_PER_SEC) < Edge->getPeriod() ? sleepTime=(Edge->getPeriod()-cycleCounter/CLOCKS_PER_SEC)*1000 : sleepTime=0;//delay in milliseconds
+  
+  
+  delay(sleepTime);
 }
+
+
+
 
 // void detectedMotion(){
 //   detachInterrupt(digitalPinToInterrupt(pirPin)); //PIR sensor needs 2 seconds to take an image to compare to

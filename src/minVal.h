@@ -2,6 +2,9 @@
 
 #ifndef minVal_h
 #define minVal_h
+
+using std::string;
+
 #include "operation.h"
 
 class minVal : public operation{
@@ -10,8 +13,8 @@ class minVal : public operation{
   
   public:
   //constructors
-  minVal(String);
-  minVal(String,double);
+  minVal(string);
+  minVal(string,double);
   //destructor
   ~minVal();
   //methods
@@ -21,13 +24,13 @@ class minVal : public operation{
   double getMin();
 };
 //constructors
-minVal::minVal(String opName):operation(opName){
+minVal::minVal(string opName):operation(opName){
   valid=true;
   if(opName!="min()")
     valid=false;
   minValue=9999999999;
 }
-minVal::minVal(String opName, double initValue ):operation(opName){
+minVal::minVal(string opName, double initValue ):operation(opName){
   valid=true;
   if(opName!="min()")
     valid=false;

@@ -2,6 +2,9 @@
 
 #ifndef slidingWindow_h
 #define slidingWindow_h
+using std::string;
+#include <string>
+
 #include "operation.h"
 #include "sample.h"
 
@@ -16,12 +19,12 @@ class slidingWindow : public operation{
   int counter;
 
   //methods
-  void parseArgument(String);
+  void parseArgument(string);
   double calculate(vector<sample*>);
   
   public:
   //constructors
-  slidingWindow(String);
+  slidingWindow(string);
   //destructor
   ~slidingWindow();
   
@@ -30,9 +33,9 @@ class slidingWindow : public operation{
 };
 //constructors
 
-slidingWindow::slidingWindow(String opName):operation(opName){
+slidingWindow::slidingWindow(string opName):operation(opName){
   valid=true;
-  parseArgument( opName.substring( opName.indexOf("(")+1, opName.indexOf(")")) );
+  parseArgument( opName.substr( opName.find("(")+1, opName.find(")")-(opName.find("(")+1)) );
   samples.reserve(windowSize);// allocate in advance what needed, because dynamically it is done in power of 2 (2,4,8,16,32,..) and so waste memory
   counter=0;    
   accumulator = initial; //initialize
@@ -71,35 +74,38 @@ sample* slidingWindow::execute() {
   return NULL; // this should block the execution of the next operation
 }
 
-void slidingWindow::parseArgument(String arguments){
-  arguments.replace(" ","");//delete whitespace
-  int firstIndex = arguments.indexOf(",");
+void slidingWindow::parseArgument(string arguments){
+  int pos=0;
+  while ( ( pos=arguments.find(" ") ) !=-1){
+    arguments.erase(pos);//delete whitespace
+  }
+  int firstIndex = arguments.find(",");
   int endIndex;
   
   //first argument is the operation type
-  function=arguments.charAt(0);
+  function=arguments.at(0);
   if(function!='+' && function!='*' && function!='-' && function!='/' && function!='^'){
     valid=false;
     return;
   }
   //second argument is the accumulator
-  endIndex = arguments.indexOf(",",firstIndex+1);
-  if(!isaNumber(arguments.substring(firstIndex+1,endIndex)))
+  endIndex = arguments.find(",",firstIndex+1);
+  if(!isaNumber(arguments.substr(firstIndex+1,endIndex-(firstIndex+1))))
   {
     valid=false;
     return;
   }
-  initial=arguments.substring(firstIndex+1,endIndex).toDouble();
+  initial=atof( arguments.substr(firstIndex+1,endIndex-(firstIndex+1)).c_str() );
 
   //third argument is the size
   firstIndex = endIndex+1;
   endIndex=arguments.length();
-  if(!isaNumber(arguments.substring(firstIndex+1,endIndex)))
+  if(!isaNumber(arguments.substr(firstIndex+1,endIndex-(firstIndex+1))))
   {
     valid=false;
     return;
   }
-  windowSize=arguments.substring(firstIndex,endIndex).toInt();
+  windowSize=atoi( arguments.substr(firstIndex,endIndex-firstIndex).c_str() );
 }
 
 double slidingWindow::calculate(vector<sample*> samples) {

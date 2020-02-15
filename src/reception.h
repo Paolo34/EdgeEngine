@@ -2,6 +2,8 @@
 
 #ifndef reception_h
 #define reception_h
+using std::string;
+#include <string>
 
 #include <time.h>
 #include "operation.h"
@@ -15,11 +17,11 @@ class reception : public operation{
   
   //methods
   void initializeCounter();
-  int parseIntervalToSec(String);
+  int parseIntervalToSec(string);
   
   public:
   //constructors
-  reception(String);
+  reception(string);
   //destructor
    ~reception();
 
@@ -33,9 +35,9 @@ class reception : public operation{
 };
 
 //constructors
-reception::reception(String opName):operation(opName){
+reception::reception(string opName):operation(opName){
   valid=true;
-  interval=parseIntervalToSec(opName.substring( opName.indexOf("(")+1, opName.indexOf(")") ));
+  interval=parseIntervalToSec(opName.substr( opName.find("(")+1, opName.find(")")-(opName.find("(")+1) ));
   initializeCounter();
 }
  reception:: ~reception(){
@@ -57,19 +59,19 @@ sample* reception::execute(){
   return input;
 }
 
-int reception::parseIntervalToSec( String numString){
+int reception::parseIntervalToSec( string numString){
   int numberValue=0; 
   
   if(numString!=""){ // if there is no time interval we assign 0 because there is not deltaTime between two measurements
-    char lastChar = numString.charAt(numString.length()-1);
+    char lastChar = numString.at(numString.length()-1);
     if (lastChar>'9' || lastChar<'0'){ // if the last char is not a number we try to interpret it as a measure unit
       //check the validity of the interval, there must be only numbers 
-      if(!isaNumber(numString.substring(0,numString.length()-1)))
+      if(!isaNumber(numString.substr(0,numString.length()-1)))
       {
         valid=false;
         return numberValue;
       }
-      numberValue = ( numString.substring(0,numString.length()-1) ).toInt(); // if conversion fails a 0 is returned
+      numberValue = atoi( numString.substr(0,numString.length()-1).c_str() ); // if conversion fails a 0 is returned
       
       switch( lastChar ){
       case 's'://do nothing is already in Second
@@ -89,7 +91,7 @@ int reception::parseIntervalToSec( String numString){
       }
     }
     else{
-      numberValue = ( numString.substring(0,numString.length()) ).toInt();
+      numberValue = atoi( numString.substr(0,numString.length()).c_str() );
     }
   }
   

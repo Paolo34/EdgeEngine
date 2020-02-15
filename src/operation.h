@@ -2,6 +2,10 @@
 
 #ifndef operation_h
 #define operation_h
+
+using std::string;
+#include <string>
+
 #include "sample.h"
 
 class operation{
@@ -9,35 +13,35 @@ class operation{
  
   protected:
   //variables
-  String opName;
-  String code;
+  string opName;
+  string code;
   sample* input=NULL;
   //methods
-  boolean isaNumber(String);
+  boolean isaNumber(string);
   
   public:
   //variables
   boolean valid;
 
   //constructors
-  operation(String);
+  operation(string);
   operation(const operation&);
   //destructor
   virtual ~operation();
   
   //setters
   void setInput(sample*);
-  void setCode(String);
-  virtual void setToken(String);
+  void setCode(string);
+  virtual void setToken(string);
   
   //getters
-  String getName() const;
+  string getName() const;
   
   //methods
   virtual sample* execute();
 };
 
-operation::operation(String opName){
+operation::operation(string opName){
   this->opName=opName;
   valid=false;
 }
@@ -52,10 +56,10 @@ operation::~operation(){
 void operation::setInput(sample* input){
   this->input=input;
 }
-String operation::getName() const{
+string operation::getName() const{
   return opName;
 }
-void operation::setCode(String code){
+void operation::setCode(string code){
   this->code=code;
 }
 
@@ -64,14 +68,14 @@ sample* operation::execute(){
   return NULL;
   //must be overridden
 }
-void operation::setToken(String token){
+void operation::setToken(string token){
   Serial.println("base execute");
 }
 
-boolean operation::isaNumber(String numberStr){
+boolean operation::isaNumber(string numberStr){
   for (int i = 0; i < numberStr.length(); i++)
   {
-    char c=numberStr.charAt(i);
+    char c=numberStr.at(i);
     if(c>'9' || c<'0')
     {
       return false;
