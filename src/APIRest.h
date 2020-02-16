@@ -61,9 +61,9 @@ class APIRest{
   boolean isHTTPCodeOk(int);
   boolean needToBeRePOST(string);
   string ParseResponse(string,string,boolean);
+  void deleteSpaces(string);
   void rePOSTMeasurement(string);
   void rePOSTAlert(string);
-
 
   static void POSTMeasurement_task( void *  );
 
@@ -520,11 +520,7 @@ string APIRest::ParseResponse( string response, string fieldName, boolean quoted
   if( response.find(fieldName) ==-1){
     return "";
   }
-
-  int pos=0;
-  while ( ( pos=response.find(" ") ) !=-1){
-    response.erase(pos);//delete whitespace
-  }
+  deleteSpaces(response);
   
   int beginOfValue = response.find( ":", response.find(fieldName) )+1;//find starting index of field value
   int endOfValue;
@@ -551,6 +547,12 @@ string APIRest::ParseResponse( string response, string fieldName, boolean quoted
   }
   
   return fieldValue;
+}
+void APIRest::deleteSpaces(string str){
+  int pos=0;
+  while ( ( pos=str.find(" ") ) !=-1){
+    str.erase(pos,1);//delete whitespace
+  }
 }
 int APIRest:: getSampleDBsize(){
  return database.size();

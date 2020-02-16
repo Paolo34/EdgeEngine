@@ -16,8 +16,11 @@ using std::string;
 #include "slidingWindow.h"
 #include "mapVal.h"
 #include "postVal.h"
+#include "filter.h"
+#include "median.h"
+#include "average.h"
+#include "stdDeviation.h"
 #include "sample.h"
-
 
 
 class script{
@@ -33,6 +36,7 @@ class script{
   void parseScript(string);
   operation* createOperation(string);
   boolean isAllowed(string, string);
+  void deleteSpaces(string&);
   
   public:
   //variables
@@ -98,12 +102,7 @@ void script::parseScript(string scriptString){
   int startIndex=0;
   int endIndex=1;
   int counter=0;
-   
-  int pos=0;
-  while ( ( pos=scriptString.find(" ") ) !=-1){
-    scriptString.erase(pos);//delete whitespace
-  }
-
+  deleteSpaces(scriptString);
   endIndex = scriptString.find("(",startIndex); 
   feature =  scriptString.substr(startIndex,endIndex-startIndex);//the first is the feature
   //Check if this feature is supported else return
@@ -182,6 +181,18 @@ operation* script::createOperation(string op){
   else if(opName=="map"){
     return new mapVal(op);    
   }
+  else if(opName=="filter"){
+    return new filter(op);    
+  }
+  else if(opName=="average"){
+    return new average(op);    
+  }
+  else if(opName=="median"){
+    return new median(op);    
+  }
+  else if(opName=="stdDeviation"){
+    return new stdDeviation(op);    
+  }
   else{
     Serial.print("wrong operation: ");
     Serial.println(op.c_str());
@@ -202,6 +213,12 @@ boolean script::execute(sample* value){
   }
   delete nextInput;
   return true;
+}
+void script::deleteSpaces(string& str){
+  int pos=0;
+  while ( ( pos=str.find(" ") ) !=-1){
+    str.erase(pos,1);//delete whitespace
+  }
 }
 
 #endif 

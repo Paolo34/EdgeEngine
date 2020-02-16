@@ -2,6 +2,7 @@
 
 #ifndef slidingWindow_h
 #define slidingWindow_h
+using std::vector;
 using std::string;
 #include <string>
 
@@ -35,6 +36,7 @@ class slidingWindow : public operation{
 
 slidingWindow::slidingWindow(string opName):operation(opName){
   valid=true;
+  Serial.println( opName.substr( opName.find("(")+1, opName.find(")")-(opName.find("(")+1)).c_str());
   parseArgument( opName.substr( opName.find("(")+1, opName.find(")")-(opName.find("(")+1)) );
   samples.reserve(windowSize);// allocate in advance what needed, because dynamically it is done in power of 2 (2,4,8,16,32,..) and so waste memory
   counter=0;    
@@ -44,9 +46,6 @@ slidingWindow:: ~slidingWindow(){
   for(int i=0;i<samples.size();i++){
     delete samples[i];
   }
-  // for ( sample* sam : samples ){
-  //    delete sam;//call destructor for each sample
-  //  }
    samples.clear();
 
 }
@@ -75,10 +74,7 @@ sample* slidingWindow::execute() {
 }
 
 void slidingWindow::parseArgument(string arguments){
-  int pos=0;
-  while ( ( pos=arguments.find(" ") ) !=-1){
-    arguments.erase(pos);//delete whitespace
-  }
+  deleteSpaces(arguments);
   int firstIndex = arguments.find(",");
   int endIndex;
   
@@ -95,17 +91,22 @@ void slidingWindow::parseArgument(string arguments){
     valid=false;
     return;
   }
+  
   initial=atof( arguments.substr(firstIndex+1,endIndex-(firstIndex+1)).c_str() );
-
+  
   //third argument is the size
   firstIndex = endIndex+1;
   endIndex=arguments.length();
-  if(!isaNumber(arguments.substr(firstIndex+1,endIndex-(firstIndex+1))))
+  
+  if( !isaNumber(arguments.substr(firstIndex+1,endIndex-(firstIndex+1))) )
   {
+    Serial.println( arguments.substr(firstIndex+1,endIndex-(firstIndex+1)).c_str() );
     valid=false;
     return;
   }
+  
   windowSize=atoi( arguments.substr(firstIndex,endIndex-firstIndex).c_str() );
+  
 }
 
 double slidingWindow::calculate(vector<sample*> samples) {

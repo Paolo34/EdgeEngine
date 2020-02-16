@@ -2,6 +2,8 @@
 
 #ifndef send_h
 #define send_h
+using std::vector;
+
 using std::string;
 #include <string>
 

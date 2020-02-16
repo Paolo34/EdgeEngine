@@ -77,6 +77,7 @@ class edgine{
   boolean isOKresponse(string);
   string ParseToken(string);
   void setToken(string);
+  void deleteSpaces(string&);
   
   public:
   //variables
@@ -285,11 +286,7 @@ void edgine::retrieveScriptsCode(string token, string scriptsId){
   firstGetScriptsResponse="ok";
   int startIndex=1;
   int endIndex=1;
-
-  int pos=0;
-  while ( ( pos=scriptsId.find(" ") ) !=-1){
-    scriptsId.erase(pos);//delete whitespace
-  }
+  deleteSpaces(scriptsId);
   
   while( startIndex < scriptsId.length() ){
     
@@ -419,10 +416,7 @@ string edgine::ParseResponse( string response, string fieldName ){
     Serial.println(" field is not present!");
     return "none";
   }
-  int pos=0;
-  while ( ( pos=response.find(" ") ) !=-1){
-    response.erase(pos);//delete whitespace
-  }
+  deleteSpaces(response);
 
   int beginOfValue = response.find( ":", response.find(fieldName) )+1;//find starting index of field value
   int endOfValue;
@@ -530,6 +524,14 @@ boolean edgine::isaDigit(string numberStr){
   }
   return true;
 }
+
+void edgine::deleteSpaces(string& str){
+  int pos=0;
+  while ( ( pos=str.find(" ") ) !=-1){
+    str.erase(pos,1);//delete whitespace
+  }
+}
+
 double edgine::getPeriod(){
   return period;
 }

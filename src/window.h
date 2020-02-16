@@ -65,10 +65,7 @@ sample* window::execute() {
 }
 
 void window::parseArgument(string arguments){
-  int pos=0;
-  while ( ( pos=arguments.find(" ") ) !=-1){
-    arguments.erase(pos);//delete whitespace
-  }
+  deleteSpaces(arguments);
   //example "*,2,4"
   int firstIndex = arguments.find(",");
   int endIndex;

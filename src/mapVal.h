@@ -43,14 +43,12 @@ sample* mapVal::execute() {
     input->value=calculate(input->value);
     return input;
   }
+  delete input;
   return NULL;//this should block the execution of the next operation
 }
 
 void mapVal::parseArgument(string arguments){
-  int pos=0;
-  while ( ( pos=arguments.find(" ") ) !=-1){
-    arguments.erase(pos);//delete whitespace
-  }
+  deleteSpaces(arguments);
   //arguments example : "a/6" so charAt(0) is useless
   //first argument is the operation type
   function=arguments.at(1);

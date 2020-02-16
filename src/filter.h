@@ -16,7 +16,6 @@ class filter : public operation{
 
   //methods
   void parseArgument(string);
-  double calculate(double);
   
   public:
   //constructors
@@ -39,17 +38,24 @@ filter:: ~filter(){
 //methods
 sample* filter::execute() {
   if(input!=NULL ){
-    input->value=calculate(input->value);
-    return input;
+      //ex: filter(a<5)
+    if(function=="<" && input->value<operand)
+        return input;
+    else if(function==">" && input->value>operand)
+        return input;
+    else if(function=="<=" && input->value<=operand)
+        return input;
+    else if(function==">=" && input->value>=operand)
+        return input;
+    else if(function=="==" && input->value==operand)
+        return input;
   }
+  delete input;
   return NULL;//this should block the execution of the next operation
 }
 
 void filter::parseArgument(string arguments){
-  int pos=0;
-  while ( ( pos=arguments.find(" ") ) !=-1){
-    arguments.erase(pos);//delete whitespace
-  }
+  deleteSpaces(arguments);
   //arguments example : "a<6" or "a<=6" so charAt(0) is useless
   //first argument is the operation type
   
@@ -79,29 +85,6 @@ void filter::parseArgument(string arguments){
     //second argument is the operand
     operand=atof( arguments.substr(2,arguments.length()-2).c_str() ); 
   }
-}
-
-double filter::calculate(double input) {
-  //ex: a<5
-  if(function=="<"){
-    if(input<operand)
-      return input;
-  }
-  else if(function==">"){
-    if(input<operand)
-      return input;
-
-  }
-  else if(function=="<="){
-
-  }
-  else if(function==">="){
-
-  }
-  else{ //if(function=="==")
-
-  }
-  
 }
 
 

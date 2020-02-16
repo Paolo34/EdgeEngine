@@ -16,7 +16,6 @@ class filter : public operation{
 
   //methods
   void parseArgument(string);
-  double calculate(double);
   
   public:
   //constructors
@@ -39,68 +38,53 @@ filter:: ~filter(){
 //methods
 sample* filter::execute() {
   if(input!=NULL ){
-    input->value=calculate(input->value);
-    return input;
+      //ex: filter(a<5)
+    if(function=="<" && input->value<operand)
+        return input;
+    else if(function==">" && input->value>operand)
+        return input;
+    else if(function=="<=" && input->value<=operand)
+        return input;
+    else if(function==">=" && input->value>=operand)
+        return input;
+    else if(function=="==" && input->value==operand)
+        return input;
   }
+  delete input;
   return NULL;//this should block the execution of the next operation
 }
 
 void filter::parseArgument(string arguments){
-  size_t pos=0;
-  while ( ( pos=arguments.find(" ") ) !=-1){
-    arguments.erase(pos);//delete whitespace
-  }
+  deleteSpaces(arguments);
   //arguments example : "a<6" or "a<=6" so charAt(0) is useless
   //first argument is the operation type
   
-  char func1=arguments.at(1);
-  if( func1!='<' && func1!='>' && func1!='=' ){
+  char func=arguments.at(1);
+  if( func!='<' && func!='>' && func!='=' ){
     valid=false;
     return;
   }
-  // function.append()
-  // char func2=arguments.charAt(2);
-  // if( !isaNumber(func2) ){
-  //     if(func2!='='){
-          
-  //     }
-  //     else{
-  //       valid=false;
-  //       return;
-  //     }
-  // }
-  
-
-  if(!isaNumber(arguments.substr(3,arguments.length()-3)))
-  {
-    valid=false;
-    return;
+  function=func;
+  func=arguments.at(2);
+  if(func=='='){//if it is a 2-chars function
+    function.push_back(func);
+    if(!isaNumber(arguments.substr(3,arguments.length()-3)))
+    {
+      valid=false;
+      return;
+    }
+    //second argument is the operand
+    operand=atof( arguments.substr(3,arguments.length()-3).c_str() ); 
   }
-  //second argument is the operand
-  operand=atof( arguments.substr(2,arguments.length()-2).c_str() );
-}
-
-double filter::calculate(double input) {
-  //ex: a<5
-  if(function=="<"){
-        return input<operand;
+  else{//if it is a 1-char function
+    if(!isaNumber(arguments.substr(2,arguments.length()-2)))
+    {
+      valid=false;
+      return;
+    }
+    //second argument is the operand
+    operand=atof( arguments.substr(2,arguments.length()-2).c_str() ); 
   }
-  else if(function=="<"){
-
-  }
-  else if(function=="<"){
-
-  }
-  else if(function=="<"){
-
-  }
-  else if(function=="<"){
-
-  }
-  else{ //this is a free choice
-    return input;
-  }
-  
 }
 
 

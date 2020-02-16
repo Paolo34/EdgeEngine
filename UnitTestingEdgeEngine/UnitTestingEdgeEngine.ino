@@ -13,9 +13,9 @@ class Settings :public TestOnce{
     options opts;
     APIRest* Api;
     connection* conn;
-    String ssidWIFI;
-    String passWIFI;
-    String token;
+    const char* ssidWIFI;
+    const char* passWIFI;
+    string token;
     sample* sam;
 
     void setup() override{
@@ -28,7 +28,8 @@ class Settings :public TestOnce{
       opts.devs = "devices";
       opts.scps = "scripts";
       opts.measurements = "measurements";
-      opts.dateUrl= "URL OF THE DATE";
+      opts.info= "info";
+      opts.alerts="alerts";
       //Edgine identifiers
       opts.thing = "riccardo-office";
       opts.device = "temperature-sensor-riccardo-office";
@@ -40,7 +41,7 @@ class Settings :public TestOnce{
 
       sam= new sample("temperature");
       sam->startDate="2019-12-14T12:25:06.324Z";
-      sam->endDate="2019-12-14T12:25:06.324Z";
+      sam->endDate=sam->startDate;
       sam->device=opts.device;
       sam->url=opts.url;
       sam->thing=opts.thing;
@@ -56,14 +57,14 @@ class Settings :public TestOnce{
 
 test(operation){
   operation* op= new operation("operation");
-  assertEqual(op->getName(),"operation");
+  assertEqual(op->getName().c_str(),"operation");
   assertTrue(op->valid);
   
 }
 testF(Settings,reception){
   reception* rec= new reception("accept(10)");
   assertTrue(rec->valid);
-  assertEqual(rec->getName(),"accept(10)");
+  assertEqual(rec->getName().c_str(),"accept(10)");
   sam->value=3436;
   rec->setInput(sam);
   assertNotEqual(rec->getInterval(),0);
@@ -101,7 +102,7 @@ testF(Settings,reception){
 testF(Settings,mapVal){
   mapVal* mapV = new mapVal("map(a/6)");
   assertTrue(mapV->valid);
-  assertEqual(mapV->getName(),"map(a/6)");  
+  assertEqual(mapV->getName().c_str(),"map(a/6)");  
   sam->value=6;
   mapV->setInput(sam);
   assertEqual((mapV->execute())->value,(double)1);
@@ -154,34 +155,57 @@ testF(Settings,mapVal){
 testF(Settings,maxVal){
   maxVal* maxV= new maxVal("max()");
   assertTrue(maxV->valid);
-  assertEqual(maxV->getName(),"max()");  
+  assertEqual(maxV->getName().c_str(),"max()");  
   sam->value=-10;
   maxV->setInput(sam);
   assertEqual((maxV->execute())->value,(double)-10);
   sam->value=-110;
   maxV->setInput(sam);
-  assertEqual(maxV->execute(),NULL);
+  assertEqual(maxV->execute(),NULL);// this function delete sam
+  sam= new sample("temperature");
+  sam->startDate="2019-12-14T12:25:06.324Z";
+  sam->endDate=sam->startDate;
+  sam->device=opts.device;
+  sam->url=opts.url;
+  sam->thing=opts.thing;
+  sam->scriptId="scriptId";
   sam->value=0;
   maxV->setInput(sam);
   assertEqual((maxV->execute())->value,(double)0);
-  
+
   maxV =new maxVal("max()",10);
+  assertTrue(maxV->valid);
   sam->value=10;
   maxV->setInput(sam);
-  assertEqual(maxV->execute(),NULL);
+  assertEqual(maxV->execute(),NULL);// this function delete sam
+  sam= new sample("temperature");
+  sam->startDate="2019-12-14T12:25:06.324Z";
+  sam->endDate=sam->startDate;
+  sam->device=opts.device;
+  sam->url=opts.url;
+  sam->thing=opts.thing;
+  sam->scriptId="scriptId";
   sam->value=110;
   maxV->setInput(sam);
   assertEqual((maxV->execute())->value,(double)110);
   sam->value=0;
   maxV->setInput(sam);
-  assertEqual(maxV->execute(),NULL);
+  assertEqual(maxV->execute(),NULL);// this function delete sam
+  sam= new sample("temperature");
+  sam->startDate="2019-12-14T12:25:06.324Z";
+  sam->endDate=sam->startDate;
+  sam->device=opts.device;
+  sam->url=opts.url;
+  sam->thing=opts.thing;
+  sam->scriptId="scriptId";
   maxV =new maxVal("max(a)");
   assertFalse(maxV->valid);
+  
 }
 testF(Settings,minVal){
   minVal* minV = new minVal("min()");
   assertTrue(minV->valid);
-  assertEqual(minV->getName(),"min()");  
+  assertEqual(minV->getName().c_str(),"min()");  
   sam->value=8;
   minV->setInput(sam);
   assertEqual((minV->execute())->value,(double)8);
@@ -190,15 +214,36 @@ testF(Settings,minVal){
   assertEqual((minV->execute())->value,(double)-2340);
   sam->value=0;
   minV->setInput(sam);
-  assertEqual(minV->execute(),NULL);
+  assertEqual(minV->execute(),NULL);// this function delete sam
+  sam= new sample("temperature");
+  sam->startDate="2019-12-14T12:25:06.324Z";
+  sam->endDate=sam->startDate;
+  sam->device=opts.device;
+  sam->url=opts.url;
+  sam->thing=opts.thing;
+  sam->scriptId="scriptId";
   
   minV = new minVal("min()",10);
   sam->value=20;
   minV->setInput(sam);
-  assertEqual(minV->execute(),NULL);
+  assertEqual(minV->execute(),NULL);// this function delete sam
+  sam= new sample("temperature");
+  sam->startDate="2019-12-14T12:25:06.324Z";
+  sam->endDate=sam->startDate;
+  sam->device=opts.device;
+  sam->url=opts.url;
+  sam->thing=opts.thing;
+  sam->scriptId="scriptId";
   sam->value=110;
   minV->setInput(sam);
-  assertEqual(minV->execute(),NULL);
+  assertEqual(minV->execute(),NULL);// this function delete sam
+  sam= new sample("temperature");
+  sam->startDate="2019-12-14T12:25:06.324Z";
+  sam->endDate=sam->startDate;
+  sam->device=opts.device;
+  sam->url=opts.url;
+  sam->thing=opts.thing;
+  sam->scriptId="scriptId";
   sam->value=0;
   minV->setInput(sam);
   assertEqual((minV->execute())->value,(double)0);
@@ -209,7 +254,7 @@ testF(Settings,minVal){
 testF(Settings,window){
   window* wind = new window("window(+,1,10)");
   assertTrue(wind->valid);
-  assertEqual(wind->getName(),"window(+,1,10)");  
+  assertEqual(wind->getName().c_str(),"window(+,1,10)");  
   for (int i = 1; i < 10; i++)
   {
     sam->value=i;
@@ -276,7 +321,7 @@ testF(Settings,window){
 testF(Settings,slidingWindow){
   slidingWindow* slidWind = new slidingWindow("slidingWindow(+,1,5)");
   assertTrue(slidWind->valid);
-  assertEqual(slidWind->getName(),"slidingWindow(+,1,5)");  
+  assertEqual(slidWind->getName().c_str(),"slidingWindow(+,1,5)");  
   for (int i = 1; i < 5; i++)
   {
     sam->value=i;
@@ -358,30 +403,27 @@ testF(Settings,slidingWindow){
 
 testF(Settings,script){
   script scrp= script("average-temperature","temperature(10).slidingWindow(+, 0, 6).map(a/6).send()",
-                            opts.thing.c_str(), opts.device.c_str(), "url", token.c_str(), "temperature, humidity");
+                            opts.thing, opts.device, "url", token, "temperature, humidity");
   assertTrue(scrp.valid);
-  assertEqual(scrp.feature,"temperature");
-  assertEqual(scrp.scriptId,"average-temperature");
-  assertEqual(scrp.scriptStr,"temperature(10).slidingWindow(+, 0, 6).map(a/6).send()");
-  assertEqual(scrp.interval,"10");
-  assertEqual(scrp.feature,"temperature");
+  assertEqual(scrp.feature.c_str(),"temperature");
+  assertEqual(scrp.scriptId.c_str(),"average-temperature");
+  assertEqual(scrp.scriptStr.c_str(),"temperature(10).slidingWindow(+, 0, 6).map(a/6).send()");
+  assertEqual(scrp.feature.c_str(),"temperature");
 
   vector<operation*> ops=scrp.operations;
-  int size=ops.size();
-  assertEqual(size, 4); 
-  assertEqual(ops[0]->getName(),"accept(10)");
-  assertEqual(ops[1]->getName(),"slidingWindow(+,0,6)");//spaces are deleted by the parser
-  assertEqual(ops[2]->getName(),"map(a/6)");
-  assertEqual(ops[3]->getName(),"send()");
+  assertEqual(ops.size(),(size_t) 4); 
+  assertEqual(ops[0]->getName().c_str(),"accept(10)");
+  assertEqual(ops[1]->getName().c_str(),"slidingWindow(+,0,6)");//spaces are deleted by the parser
+  assertEqual(ops[2]->getName().c_str(),"map(a/6)");
+  assertEqual(ops[3]->getName().c_str(),"send()");
 
   scrp= script("average-temperature","temperature().slidingWindow(+, 0, 6).map(a/6).send()",
-                            opts.thing.c_str(), opts.device.c_str(), "url", token.c_str(), "temperature, humidity");
+                            opts.thing, opts.device, "url", token, "temperature, humidity");
   assertTrue(scrp.valid);
-  assertEqual(scrp.feature,"temperature");
-  assertEqual(scrp.scriptId,"average-temperature");
-  assertEqual(scrp.scriptStr,"temperature().slidingWindow(+, 0, 6).map(a/6).send()");
-  assertEqual(scrp.interval,"");
-  assertEqual(scrp.feature,"temperature");
+  assertEqual(scrp.feature.c_str(),"temperature");
+  assertEqual(scrp.scriptId.c_str(),"average-temperature");
+  assertEqual(scrp.scriptStr.c_str(),"temperature().slidingWindow(+, 0, 6).map(a/6).send()");
+  assertEqual(scrp.feature.c_str(),"temperature");
   sam->value=1;
   assertFalse(scrp.execute(sam));
   assertFalse(scrp.execute(sam));
@@ -392,13 +434,12 @@ testF(Settings,script){
   assertTrue(scrp.execute(sam));
 
   scrp= script("average-temperature","temperature().window(+, 0, 4).map(a/4).send()",
-                            opts.thing.c_str(), opts.device.c_str(), "url", token.c_str(), "temperature, humidity");
+                            opts.thing, opts.device, "url", token, "temperature, humidity");
   assertTrue(scrp.valid);
-  assertEqual(scrp.feature,"temperature");
-  assertEqual(scrp.scriptId,"average-temperature");
-  assertEqual(scrp.scriptStr,"temperature().window(+, 0, 4).map(a/4).send()");
-  assertEqual(scrp.interval,"");
-  assertEqual(scrp.feature,"temperature");
+  assertEqual(scrp.feature.c_str(),"temperature");
+  assertEqual(scrp.scriptId.c_str(),"average-temperature");
+  assertEqual(scrp.scriptStr.c_str(),"temperature().window(+, 0, 4).map(a/4).send()");
+  assertEqual(scrp.feature.c_str(),"temperature");
   assertFalse(scrp.execute(sam));
   assertFalse(scrp.execute(sam));
   assertFalse(scrp.execute(sam));
@@ -410,38 +451,38 @@ testF(Settings,script){
 
 
   scrp= script("average-temperature","temperatur(10).slidingWindow(+, 0, 6).map(a/6).send()",
-                            opts.thing.c_str(), opts.device.c_str(), "url", token.c_str(), "temperature");
+                            opts.thing, opts.device, "url", token, "temperature");
   assertFalse(scrp.valid); // typo in "temperatur" -> script not valid
   scrp= script("average-temperature","temperatures(10).slidingWindow(+, 0, 6).map(a/6).send()",
-                            opts.thing.c_str(), opts.device.c_str(), "url", token.c_str(), "temperature");
+                            opts.thing, opts.device, "url", token, "temperature");
   assertFalse(scrp.valid); // typo in "temperatures" -> script not valid
   scrp= script("average-temperature","temperature(10).sliding(+, 0, 6).map(a/6).send()",
-                            opts.thing.c_str(), opts.device.c_str(), "url", token.c_str(), "temperature");
+                            opts.thing, opts.device, "url", token, "temperature");
   assertFalse(scrp.valid); // "sliding" is not an operations -> script not valid
   scrp= script("average-temperature","temperature(10a).sliding(+, 0, 6).map(a/6).send()",
-                            opts.thing.c_str(), opts.device.c_str(), "url", token.c_str(), "temperature");
+                            opts.thing, opts.device, "url", token, "temperature");
   assertFalse(scrp.valid); // typo in "temperature(10a)" -> script not valid
   scrp= script("average-temperature","temperature(10a).sliding(+, 0, 6).map(a/6).send",
-                            opts.thing.c_str(), opts.device.c_str(), "url", token.c_str(), "temperature");
+                            opts.thing, opts.device, "url", token, "temperature");
   assertFalse(scrp.valid); // typo in "send" -> script not valid
   scrp= script("average-temperature","temperature.sliding(+, 0, 6).map(a/6).send()",
-                            opts.thing.c_str(), opts.device.c_str(), "url", token.c_str(), "temperature");
+                            opts.thing, opts.device, "url", token, "temperature");
   assertFalse(scrp.valid); // typo in "temperature" -> script not valid
 }
 
 testF(Settings,postVal){
-  postVal* postV =new postVal("send()", opts.thing.c_str(), opts.device.c_str(), opts.url.c_str(),token.c_str(),
+  postVal* postV =new postVal("send()", opts.thing, opts.device, opts.url,token,
                              "temperature", "average-temperature" );
-  assertEqual(postV->getName(),"send()");
+  assertEqual(postV->getName().c_str(),"send()");
   assertTrue(postV->valid);
   sam->value=5;
   postV->setInput(sam);
   assertEqual((postV->execute()->value),(double)5);
   assertEqual(postV->batch.size(),(size_t)(0));
 
-  postV =new postVal("send(5)", opts.thing.c_str(), opts.device.c_str(), opts.url.c_str(),token.c_str(),
+  postV =new postVal("send(5)", opts.thing, opts.device, opts.url,token,
                              "temperature", "average-temperature" );
-  assertEqual(postV->getName(),"send(5)");
+  assertEqual(postV->getName().c_str(),"send(5)");
   assertTrue(postV->valid);
   sam->value=5;
   postV->setInput(sam);
@@ -464,13 +505,13 @@ testF(Settings,postVal){
   assertEqual((postV->execute()->value),(double)5);
   assertEqual(postV->batch.size(),(size_t)(0));  
 
-  postV =new postVal("send(aa)", opts.thing.c_str(), opts.device.c_str(), opts.url.c_str(),token.c_str(),
+  postV =new postVal("send(aa)", opts.thing, opts.device, opts.url,token,
                              "temperature", "average-temperature" );
   assertFalse(postV->valid); 
-  postV =new postVal("send(1aa)", opts.thing.c_str(), opts.device.c_str(), opts.url.c_str(),token.c_str(),
+  postV =new postVal("send(1aa)", opts.thing, opts.device, opts.url,token,
                              "temperature", "average-temperature" );
   assertFalse(postV->valid);  
-  postV =new postVal("send(1a1)", opts.thing.c_str(), opts.device.c_str(), opts.url.c_str(),token.c_str(),
+  postV =new postVal("send(1a1)", opts.thing, opts.device, opts.url,token,
                              "temperature", "average-temperature" );
   assertFalse(postV->valid);            
 }
@@ -478,7 +519,7 @@ testF(Settings,postVal){
 testF(Settings,sample){
   sam->value=19;
   assertEqual(sam->value,(double)19);
-  assertEqual(sam->feature,"temperature");
+  assertEqual(sam->feature.c_str(),"temperature");
 }
 
 testF(Settings,edgine){
@@ -486,30 +527,35 @@ testF(Settings,edgine){
   Edge->init(opts);// in the mocked init we retrieve 2 scripts: "temperature().send(5)"" and 
                       // "temperature(10).window(+, 0, 60).map(a/60).send()""
   sam->value=19;
-  vector<sample> samples;
-  samples.push_back(*sam);//use this sample all the times
+  vector<sample*> samples;
+  samples.push_back(sam);//use this sample all the times
   for (int i = 0; i < 4; i++)
   { // for 4 times no data are sent to the API
     assertEqual(Edge->evaluate(samples), 0);
   }
   assertEqual(Edge->evaluate(samples), 1); // 5th time the first script send the datum
   assertEqual(Edge->evaluate(samples), 0);
-
 }
 
 testF(Settings,APIRest){
-  String response=Api->POSTLogin(opts.url.c_str()+String("/")+opts.ver.c_str()+String("/")+opts.login.c_str(), opts.username.c_str(), opts.password.c_str());
-  assertEqual(response, " {\"token\": \"JWT token\"}");
-  response=Api->POSTLogin(opts.url.c_str()+String("/")+opts.ver.c_str()+String("/")+opts.login.c_str(), "aa","bb");
-  assertEqual(response, "none");
+  string response=Api->POSTLogin(opts.url+"/"+opts.ver+"/"+opts.login, opts.username, opts.password);
+  assertEqual(response.c_str(), "200{\"token\": \"JWT token\"}");
+  response=Api->POSTLogin(opts.url+"/"+opts.ver+"/"+opts.login, "aa","bb");
+  assertEqual(response.c_str(), "none");
 
-  response= Api->GETDate(opts.url,token);
-  assertEqual(response,"2019-12-14T12:25:06.324Z");
-  response= Api->GETDate(opts.url.c_str(),"token");
-  assertEqual(response,"none");
+  response= Api->GETInfoUpdateDate(opts.url,token);
+  assertEqual(response.c_str(),"200{"
+                          "\"version\": \"0.2.001\","
+                          "\"environment\": \"production\","
+                          "\"token_expiration_time\": \"30m\","
+                          "\"database\": \"mongodb://localhost:27017/atmosphere-prod\","
+                          "\"timestamp\": \"1581425017114\""
+                        "}");
+  response= Api->GETInfoUpdateDate(opts.url,"token");
+  assertEqual(response.c_str(),"none");
 
   response=Api->GETDescr(opts.url,token);
-  assertEqual(response,"{"
+  assertEqual(response.c_str(),"200{"
         "\"features\": ["
           " \"temperature\""
         "],"
@@ -519,7 +565,9 @@ testF(Settings,APIRest){
             "\"group-temperature\""
         "],"
         "\"visibility\": \"private\","
-        "\"period\": 10,"
+        "\"period\": \"5s\","
+        "\"cycle\": \"10m\","
+        "\"retryTime\": \"10s\","
         "\"_id\": \"temperature-sensor-riccardo-office\","
         "\"owner\": {"
             "\"_id\": \"5dcec66bc67ed54963bc865c\","
@@ -527,11 +575,11 @@ testF(Settings,APIRest){
             "\"type\": \"provider\""
         "}"
       "}");
-  response=Api->GETDescr(opts.url.c_str(),"token");
-  assertEqual(response,"none");
+  response=Api->GETDescr(opts.url,"token");
+  assertEqual(response.c_str(),"none");
 
-  response=Api->GETScript(opts.url.c_str()+String("/v1/scripts?filter={\"_id\":\"group-temperature\"}"),token.c_str());
-  assertEqual(response,"{\"docs\": ["
+  response=Api->GETScript(opts.url+"/v1/scripts?filter={\"_id\":\"group-temperature\"}",token);
+  assertEqual(response.c_str(),"200{\"docs\": ["
 					  "{"
 						  "\"visibility\": \"private\","
 						  "\"tags\": [],"
@@ -544,8 +592,8 @@ testF(Settings,APIRest){
 					  "}"
 					"],"
 					"\"totalDocs\": 1, \"limit\": 10, \"hasPrevPage\": false, \"hasNextPage\": false, \"page\": 1, \"totalPages\": 1, \"pagingCounter\": 1, \"prevPage\": null, \"nextPage\": null}");
-  response=Api->GETScript(opts.url.c_str()+String("/v1/scripts?filter={\"_id\":\"average-hourly-temperature\"}"),token.c_str());
-  assertEqual(response,"{\"docs\": ["
+  response=Api->GETScript(opts.url+"/v1/scripts?filter={\"_id\":\"average-hourly-temperature\"}",token);
+  assertEqual(response.c_str(),"200{\"docs\": ["
 					  "{"
 						  "\"visibility\": \"private\","
 						  "\"tags\": [],"
@@ -559,26 +607,30 @@ testF(Settings,APIRest){
 					  "],"
 					"\"totalDocs\": 1, \"limit\": 10, \"hasPrevPage\": false, \"hasNextPage\": false, \"page\": 1, \"totalPages\": 1, \"pagingCounter\": 1, \"prevPage\": null, \"nextPage\": null}");
     
-  response=Api->GETScript(opts.url.c_str(),"token");
-  assertEqual(response,"none");
+  response=Api->GETScript(opts.url,"token");
+  assertEqual(response.c_str(),"none");
 
-  boolean success= Api->POSTMeasurement(*sam,token.c_str());
+  boolean success= Api->POSTMeasurement(*sam,token);
   assertTrue(success);
+  assertEqual(Api->getSampleDBsize(),0);
   success= Api->POSTMeasurement(*sam,"token");
   assertFalse(success);
+  assertEqual(Api->getSampleDBsize(),1);
 
-  success=Api->POSTError(opts.url.c_str(),token.c_str(),opts.thing.c_str(),
-                          "temperature",opts.device.c_str(),"group-temperature");
+  success=Api->POSTAlert(opts.url,token,opts.thing,
+                          "temperature",opts.device,"group-temperature");
   assertTrue(success);
-  success=Api->POSTError(opts.url.c_str(),"token",opts.thing.c_str(),
-                          "temperature",opts.device.c_str(),"group-temperature");
+  assertEqual(Api->getAlertDBsize(),0);
+  success=Api->POSTAlert(opts.url,"token",opts.thing,
+                          "temperature",opts.device,"group-temperature");
   assertFalse(success);
+  assertEqual(Api->getAlertDBsize(),1);
 
 }
 
 testF(Settings, connection){
   assertFalse(conn->isConnected());
-  conn->setupConnection(ssidWIFI.c_str(),passWIFI.c_str());
+  conn->setupConnection(ssidWIFI,passWIFI);
   assertTrue(conn->isConnected());
 }
 

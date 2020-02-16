@@ -18,6 +18,7 @@ class operation{
   sample* input=NULL;
   //methods
   boolean isaNumber(string);
+  void deleteSpaces(string&);
   
   public:
   //variables
@@ -82,5 +83,12 @@ boolean operation::isaNumber(string numberStr){
     }
   }
   return true;
+}
+
+void operation::deleteSpaces(string& str){
+  int pos=0;
+  while ( ( pos=str.find(" ") ) !=-1){
+    str.erase(pos,1);//delete whitespace
+  }
 }
 #endif 

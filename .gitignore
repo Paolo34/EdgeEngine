@@ -121,3 +121,6 @@ ArduinoOutput/sketch/src/slidingWindow.h
 ArduinoOutput/sketch/src/window.h
 ArduinoOutput/sketch/UnitTestingEdgeEngine/ArduinoOutput/sketch/UnitTestingEdgeEngine.ino.cpp
 ArduinoOutput/core/stP1kAlM
+ArduinoOutput/sketch/src/average.h
+ArduinoOutput/sketch/src/median.h
+ArduinoOutput/sketch/src/stdDeviation.h
