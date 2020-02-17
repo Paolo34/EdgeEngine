@@ -48,6 +48,10 @@ sample* mapVal::execute() {
 }
 
 void mapVal::parseArgument(string arguments){
+  if(arguments.empty()){// if it is empty is a invalid operation
+    valid=false;
+    return;
+  }
   deleteSpaces(arguments);
   //arguments example : "a/6" so charAt(0) is useless
   //first argument is the operation type

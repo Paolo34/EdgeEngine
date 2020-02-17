@@ -38,11 +38,13 @@ class reception : public operation{
 reception::reception(string opName):operation(opName){
   valid=true;
   interval=parseIntervalToSec(opName.substr( opName.find("(")+1, opName.find(")")-(opName.find("(")+1) ));
-  initializeCounter();
+  if(valid){
+    initializeCounter();
+  }
 }
- reception:: ~reception(){
- }
-
+  
+reception:: ~reception(){
+}
 
 //methods
 void reception::initializeCounter(){
@@ -62,7 +64,7 @@ sample* reception::execute(){
 int reception::parseIntervalToSec( string numString){
   int numberValue=0; 
   
-  if(numString!=""){ // if there is no time interval we assign 0 because there is not deltaTime between two measurements
+  if(!numString.empty()){ // if there is no time interval we assign 0 because there is not deltaTime between two measurements
     char lastChar = numString.at(numString.length()-1);
     if (lastChar>'9' || lastChar<'0'){ // if the last char is not a number we try to interpret it as a measure unit
       //check the validity of the interval, there must be only numbers 

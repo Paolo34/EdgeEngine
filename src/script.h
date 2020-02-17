@@ -119,7 +119,6 @@ void script::parseScript(string scriptString){
   string interval = scriptString.substr(startIndex,endIndex-startIndex);
   operations.push_back( createOperation("accept("+interval+")") );//the first operation is always "accept" which verify the time elapsed
   if(!operations[counter]->valid){
-    //operations.clear();
     return; //end here the parsing
   }
 	  
@@ -133,7 +132,6 @@ void script::parseScript(string scriptString){
     operations.push_back( createOperation(scriptString.substr(startIndex,endIndex-startIndex)) ); //Add element at the end
     
     if(!operations[counter]->valid){ // if something is wrong in the script
-      //operations.clear();// Removes all elements from the vector (which are destroyed), leaving the container with a size of 0.
       return;//end here the parsing
     }
     counter++;
@@ -214,6 +212,7 @@ boolean script::execute(sample* value){
   delete nextInput;
   return true;
 }
+
 void script::deleteSpaces(string& str){
   int pos=0;
   while ( ( pos=str.find(" ") ) !=-1){

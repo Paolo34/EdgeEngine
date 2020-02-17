@@ -17,7 +17,7 @@ typedef struct{
   string scps;
   string measurements;
   string info;
-  string alerts;
+  string issues;
   //descriptors
   string thing;
   string device;
@@ -119,14 +119,14 @@ void edgine::init( options opts){
     if(isOKresponse(response)){
       temp = stringToSec( ParseResponse(response,"token_expiration_time"));
       if(temp==-1){
-         Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,"Invalid token_expiration_time interval ","field_issue");
+         Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid token_expiration_time interval ","field_issue");
       }else
       {
         token_expiration_time=temp;
       }
     }
     else{
-      Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,response+" retrieving info","initialization_issue");
+      Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,response+" retrieving info","initialization_issue");
     }
     while(!isOKresponse(response) && ( ((double)clock() / CLOCKS_PER_SEC)-startGetCount ) < retryTime);//wait here "retryTime" if GETDescr failed, then retry GETDescr
 
@@ -140,27 +140,24 @@ void edgine::init( options opts){
     startGetDescrCount=(double)clock() / CLOCKS_PER_SEC;
     response = Api->GETDescr(opts.url+"/"+opts.ver+"/"+opts.devs+"/"+opts.id, token); // Get the description
     if(isOKresponse(response)){
-      // temp = stringToSec(ParseResponse(response,"period"));
-      // if(temp==-1){
-      //    Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,"Invalid period interval ","field_issue");
-
-      // }else
-      // {
-      //   period=temp;
-      // }
+      temp = stringToSec(ParseResponse(response,"period"));
+      if(temp==-1){
+         Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid period interval ","field_issue");
+      }else
+      {
+        period=temp;
+      }
     
-      // temp = stringToSec(ParseResponse(response,"cycle"));
-      // if(temp==-1){
-      //    Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,"Invalid cycle interval ","field_issue");
-
-      // }else
-      // {
-      //   cycle=temp;
-      // }
+      temp = stringToSec(ParseResponse(response,"cycle"));
+      if(temp==-1){
+         Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid cycle interval ","field_issue");
+      }else
+      {
+        cycle=temp;
+      }
       temp = stringToSec(ParseResponse(response,"retryTime"));
       if(temp==-1){
-         Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,"Invalid retryTime interval ","field_issue");
-
+         Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid retryTime interval ","field_issue");
       }else
       {
         retryTime=temp;
@@ -169,13 +166,13 @@ void edgine::init( options opts){
       features= ParseResponse(response,"features");
     }
     else{
-      Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,response+" retrieving description","initialization_issue");
+      Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,response+" retrieving description","initialization_issue");
     }
     while(!isOKresponse(response) && ( ((double)clock() / CLOCKS_PER_SEC)-startGetDescrCount ) < retryTime);//wait here "retryTime" if GETDescr failed, then retry GETDescr
 
   }while(!isOKresponse(response));
   
-
+  
   do{// GET SCRIPTS
     if( ( ((double)clock() / CLOCKS_PER_SEC) - startLogCount ) >= token_expiration_time ){//verify token validity
       authenticate();
@@ -185,7 +182,8 @@ void edgine::init( options opts){
     
     while(firstGetScriptsResponse=="none" && ( ((double)clock() / CLOCKS_PER_SEC)-startGetCount ) < retryTime);//wait here "retryTime" if login failed, then retry login
   }while(firstGetScriptsResponse=="none" );
- 
+
+  setToken(token); //useful for testing only
   initialization=false;
 }
 
@@ -202,14 +200,14 @@ int edgine::evaluate(vector<sample*> samples){
     if(isOKresponse(response)){
       temp = stringToSec( ParseResponse(response,"token_expiration_time"));
       if(temp==-1){
-         Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,"Invalid token_expiration_time interval ","field_issue");
+         Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid token_expiration_time interval ","field_issue");
       }else
       {
         token_expiration_time=temp;
       }
     }
     else{
-      Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,response+" retrieving info"); // generic
+      Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,response+" retrieving info"); // generic
     }
   }
 
@@ -223,21 +221,21 @@ int edgine::evaluate(vector<sample*> samples){
     if(isOKresponse(response)){
       // temp = stringToSec(ParseResponse(response,"period"));
       // if(temp==-1){
-      //    Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,"Invalid period interval ","field_issue");
+      //    Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid period interval ","field_issue");
       // }else
       // {
       //   period=temp;
       // }    
       // temp = stringToSec(ParseResponse(response,"cycle"));
       // if(temp==-1){
-      //    Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,"Invalid cycle interval ","field_issue");
+      //    Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid cycle interval ","field_issue");
       // }else
       // {
       //   cycle=temp;
       // }
       temp = stringToSec(ParseResponse(response,"retryTime"));
       if(temp==-1){
-         Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,"Invalid retryTime interval ","field_issue");
+         Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid retryTime interval ","field_issue");
       }else
       {
         retryTime=temp;
@@ -248,7 +246,7 @@ int edgine::evaluate(vector<sample*> samples){
       //if retrieve fails does not matter, the engine use the previous scripts
     }
     else{
-      Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,response+" retrieving virtual description");// generic
+      Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,response+" retrieving virtual description");// generic
     }
     /*
     if (isOKresponse(response)){
@@ -272,9 +270,9 @@ void edgine::authenticate(){
       token = ParseToken(response);
     }else{
       if(initialization)
-        Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,response+" LOGIN FAILED","initialization_issue");
+        Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,response+" LOGIN FAILED","initialization_issue");
       else
-        Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,response+" LOGIN FAILED");// generic
+        Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,response+" LOGIN FAILED");// generic
 
     }
 
@@ -287,22 +285,24 @@ void edgine::retrieveScriptsCode(string token, string scriptsId){
   int startIndex=1;
   int endIndex=1;
   deleteSpaces(scriptsId);
-  
+
+
   while( startIndex < scriptsId.length() ){
-    
     endIndex=scriptsId.find("\"",startIndex+1); // start the search from the next charater    
     scriptId= scriptsId.substr(startIndex,endIndex-startIndex);
 
     codeResponse = Api->GETScript(opts.url + "/" + opts.ver + "/" + opts.scps + "?filter={\"_id\":\"" + scriptId + "\"}", token);   
-
+    
+    Serial.println(scriptId.c_str());
+    
     if (!isOKresponse(codeResponse)){//if any of the requests fails
       firstGetScriptsResponse = "none";// THIS VARIABLE MATTERS ONLY THE FIRST TIME WE GET SCRIPTS
       tempCode="none";// do not block all scripts retrieve because only one fails, try others
       if(initialization){
-        Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,codeResponse+" retrieving "+scriptId+" script","initialization_issue");
+        Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,codeResponse+" retrieving "+scriptId+" script","initialization_issue");
       }
       else{
-        Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,codeResponse+" retrieving "+scriptId+" script");//generic issue
+        Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,codeResponse+" retrieving "+scriptId+" script");//generic issue
 
         for(int i=0;i<scripts.size();i++){
          if(scripts[i]->scriptId==scriptId){
@@ -340,10 +340,10 @@ void edgine::retrieveScriptsCode(string token, string scriptsId){
         
         if(scripts.back()->operations.size()<=1){ // if the script has only one operation the error is in the feature
           string feature = scripts.back()->feature;// the feature is the one with the error
-          Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,feature+" has an error","script_issue"); 
+          Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,feature+" has an error","script_issue"); 
         }else{
           string invalidOperation = scripts.back()->operations.back()->getName();// the last operation created is the one with the error
-          Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,invalidOperation+" has an error","script_issue"); 
+          Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,invalidOperation+" has an error","script_issue"); 
         }
         delete scripts.back(); //delete the script to free memory
         scripts.pop_back();//remove last script
@@ -352,7 +352,7 @@ void edgine::retrieveScriptsCode(string token, string scriptsId){
       cnt:; //go directly here if a script already exists and it is not changed
     
     }
-
+    
     startIndex=endIndex+3;//+3 because we want to avoid: "," characters between two scripts id
 
     
@@ -399,7 +399,6 @@ void edgine::setToken(string token){
   }
 }
 
-
 string edgine::ParseToken(string response){
   if(response.find("J")!=-1){
     return response.substr( response.find("J"), response.rfind("\"")-response.find("J") );
@@ -411,7 +410,7 @@ string edgine::ParseToken(string response){
 string edgine::ParseResponse( string response, string fieldName ){
   
   if( response.find(fieldName) ==-1){
-    Api->POSTAlert(opts.url+"/"+opts.ver+"/"+opts.alerts,token,opts.device,fieldName+" field is not present!","field_issue");
+    Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,fieldName+" field is not present!","field_issue");
     Serial.print(fieldName.c_str());
     Serial.println(" field is not present!");
     return "none";
@@ -470,35 +469,35 @@ int edgine::FindEndIndex (char first,char last, int start, string response){
 }
 
 int edgine::stringToSec( string numString){
-  int numberValue ;
-  if(numString!=""){ // if there is no time interval we assign 0 
+  int numberValue=-1 ;
+
+  if(!numString.empty()){ // if there is no time interval we assign 0 
     char lastChar = numString.at(numString.length()-1);
     if (lastChar>'9' || lastChar<'0'){ // if the last char is not a number we try to interpret it as a measure unit
       //check the validity of the interval, there must be only numbers (last may be the unit)
-      if(!isaDigit(numString.substr(0,numString.length()-1)))
+      if(isaDigit(numString.substr(0,numString.length()-1)))
       {
-        return -1;// if there is an error in the numString
-      }
-      numberValue = atoi( numString.substr(0,numString.length()-1).c_str() ); // if conversion fails a 0 is returned
-      
-      switch( lastChar ){
-      case 's'://do nothing is already in Second
-        break;
-      case 'm':// minutes
-        numberValue*=60;
-        break;
-      case 'h':// hours
-        numberValue*=60*60;
-        break;
-      case 'd':// days
-        numberValue*=60*60*24;
-        break;
-      default:// if  char non contemplated
-        return -1;// if there is an error in the numString
-        break;
+        numberValue = atoi( numString.substr(0,numString.length()-1).c_str() ); // if conversion fails a 0 is returned
+        
+        switch( lastChar ){
+        case 's'://do nothing is already in Second
+          break;
+        case 'm':// minutes
+          numberValue*=60;
+          break;
+        case 'h':// hours
+          numberValue*=60*60;
+          break;
+        case 'd':// days
+          numberValue*=60*60*24;
+          break;
+        default:// if  char non contemplated
+          return -1;// if there is an error in the numString
+          break;
+        }  
       }
     }
-    else{
+    else if(isaDigit(numString)){
       numberValue = atoi( numString.c_str() );
     }
   }

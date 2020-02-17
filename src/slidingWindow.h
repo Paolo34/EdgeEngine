@@ -36,11 +36,13 @@ class slidingWindow : public operation{
 
 slidingWindow::slidingWindow(string opName):operation(opName){
   valid=true;
-  Serial.println( opName.substr( opName.find("(")+1, opName.find(")")-(opName.find("(")+1)).c_str());
   parseArgument( opName.substr( opName.find("(")+1, opName.find(")")-(opName.find("(")+1)) );
-  samples.reserve(windowSize);// allocate in advance what needed, because dynamically it is done in power of 2 (2,4,8,16,32,..) and so waste memory
-  counter=0;    
-  accumulator = initial; //initialize
+  if(valid){
+    samples.reserve(windowSize);// allocate in advance what needed, because dynamically it is done in power of 2 (2,4,8,16,32,..) and so waste memory
+    counter=0;    
+    accumulator = initial; //initialize
+  }
+  
 }
 slidingWindow:: ~slidingWindow(){
   for(int i=0;i<samples.size();i++){
@@ -74,6 +76,10 @@ sample* slidingWindow::execute() {
 }
 
 void slidingWindow::parseArgument(string arguments){
+  if(arguments.empty()){
+    valid=false;
+    return;
+  }
   deleteSpaces(arguments);
   int firstIndex = arguments.find(",");
   int endIndex;
@@ -100,7 +106,6 @@ void slidingWindow::parseArgument(string arguments){
   
   if( !isaNumber(arguments.substr(firstIndex+1,endIndex-(firstIndex+1))) )
   {
-    Serial.println( arguments.substr(firstIndex+1,endIndex-(firstIndex+1)).c_str() );
     valid=false;
     return;
   }

@@ -22,7 +22,7 @@ typedef struct{
   string message;
   string type;
   string url;
-} alert;
+} issue;
 
 typedef struct{
   //input
@@ -44,7 +44,7 @@ class APIRest{
   unsigned long timeElapsed;
   string timestamp;
   char actualDate [15];
-  vector<alert> alertDB;
+  vector<issue> issueDB;
   vector<sample> database;
   boolean reposting;
 
@@ -63,7 +63,7 @@ class APIRest{
   string ParseResponse(string,string,boolean);
   void deleteSpaces(string);
   void rePOSTMeasurement(string);
-  void rePOSTAlert(string);
+  void rePOSTIssue(string);
 
   static void POSTMeasurement_task( void *  );
 
@@ -77,11 +77,11 @@ class APIRest{
   string GETDescr(string,string);
   string GETScript(string,string);
   boolean POSTMeasurement(sample,string);
-  boolean POSTAlert(string,string,string,string,string,string);
+  boolean POSTIssue(string,string,string,string,string,string);
   string getActualDate();
   boolean TESTING;
   int getSampleDBsize();
-  int getAlertDBsize();
+  int getIssueDBsize();
   
 };
 
@@ -101,33 +101,38 @@ APIRest::APIRest(){
 
 string APIRest::POSTLogin (string url, string username, string password){
   if(!TESTING){
-    HTTPClient https;
-    https.begin(url.c_str()); //Specify the URL and certificate
-    https.addHeader("Content-Type","application/json");
-    httpCode = https.POST( ("{\"username\": \"" + username + "\",\"password\": \"" + password + "\"}").c_str() );//this is the body
+    HTTPClient http;
+    http.begin(url.c_str()); //Specify the URL and certificate
+    http.addHeader("Content-Type","application/json");
+    httpCode = http.POST( ("{\"username\": \"" + username + "\",\"password\": \"" + password + "\"}").c_str() );//this is the body
     
     itoa(httpCode,httpCodeTmp,10);
     
-    response=string(httpCodeTmp)+https.getString().c_str();
+    response=string(httpCodeTmp)+http.getString().c_str();
     
     if (!isHTTPCodeOk(httpCode)) { //Check for the returning code
       Serial.print(F("[HTTPS] POST Login... failed," ));
       if(httpCode<0)
-        response=response+" error: "+https.errorToString(httpCode).c_str();      
+        response=response+" error: "+http.errorToString(httpCode).c_str();      
     }
     Serial.println(response.c_str());
-    https.end(); //Free the resources
+    http.end(); //Free the resources
     
     return response;
   }
   else  // Mocking for the Unit Test
   { //example of token response
-    if(username=="username" && password =="password")
+    if(username=="username" && password =="password"){
       return "200{\"token\": \"JWT token\"}";
-      else
-      {
-        return "none";
-      }
+
+    }
+    else if(username=="username1" && password =="password1"){
+      return "200{\"token\": \"JWT token1\"}";
+    }
+    else
+    {
+      return "none";
+    }
       
   }
   
@@ -135,12 +140,12 @@ string APIRest::POSTLogin (string url, string username, string password){
 string APIRest::GETInfoUpdateDate(string url, string token){
   if(!TESTING)
   {
-    HTTPClient https;
-    https.begin(url.c_str()); //Specify the URL and certificate
-    https.addHeader("Authorization",token.c_str());
-    httpCode = https.GET();//the body is empty
+    HTTPClient http;
+    http.begin(url.c_str()); //Specify the URL and certificate
+    http.addHeader("Authorization",token.c_str());
+    httpCode = http.GET();//the body is empty
     itoa(httpCode,httpCodeTmp,10);
-    response=string(httpCodeTmp)+https.getString().c_str();
+    response=string(httpCodeTmp)+http.getString().c_str();
     if (isHTTPCodeOk(httpCode)) { //Check for the returning code
           
           startingTime = ((double)clock() / CLOCKS_PER_SEC)*SECOND; //milliseconds
@@ -149,12 +154,12 @@ string APIRest::GETInfoUpdateDate(string url, string token){
     }
     else {
       if(httpCode<0)
-        response=response+" error: "+https.errorToString(httpCode).c_str();
+        response=response+" error: "+http.errorToString(httpCode).c_str();
       Serial.print(F("[HTTPS] GET Date... failed, "));
 
     }
     Serial.println(response.c_str());
-    https.end(); //Free the resources
+    http.end(); //Free the resources
 
     
     return response;
@@ -170,6 +175,15 @@ string APIRest::GETInfoUpdateDate(string url, string token){
                 "\"timestamp\": \"1581425017114\""
               "}";
     }
+    else if(token=="JWT token1"){
+      return "200{"
+                "\"version\": \"0.2.001\","
+                "\"environment\": \"production\","
+                "\"token_expiration_time\": \"30h\","
+                "\"database\": \"mongodb://localhost:27017/atmosphere-prod\","
+                "\"timestamp\": \"1581425017114\""
+              "}";
+    }
     else{
       return "none";
     }
@@ -179,20 +193,20 @@ string APIRest::GETInfoUpdateDate(string url, string token){
 
 string APIRest::GETDescr(string url, string token){
   if(!TESTING){
-    HTTPClient https;
-    https.begin(url.c_str()); //Specify the URL and certificate
+    HTTPClient http;
+    http.begin(url.c_str()); //Specify the URL and certificate
 
-    https.addHeader("Authorization",token.c_str());
-    httpCode = https.GET();//the body is empty
+    http.addHeader("Authorization",token.c_str());
+    httpCode = http.GET();//the body is empty
     itoa(httpCode,httpCodeTmp,10);
-    response=string(httpCodeTmp)+https.getString().c_str();
+    response=string(httpCodeTmp)+http.getString().c_str();
     if (!isHTTPCodeOk(httpCode)) { //Check for the returning code
       if(httpCode<0)
-        response=response+" error: "+https.errorToString(httpCode).c_str();
+        response=response+" error: "+http.errorToString(httpCode).c_str();
       Serial.print(F("[HTTPS] GET Description... failed, "));      
     }
     Serial.println(response.c_str());
-    https.end(); //Free the resources
+    http.end(); //Free the resources
 
     return response;
   }
@@ -218,6 +232,27 @@ string APIRest::GETDescr(string url, string token){
             "\"type\": \"provider\""
         "}"
       "}";
+    }else if(token=="JWT token1"){
+      return "200{"
+        "\"features\": ["
+          " \"temperature\""
+        "],"
+        "\"tags\": [],"
+        "\"scripts\": ["
+          "\"average-hourly-temperature\","
+            "\"group-temperature\""
+        "],"
+        "\"visibility\": \"private\","
+        "\"period\": \"5a\","
+        "\"cycl\": \"10m\","
+        "\"retryTime\": \"1d0s\","
+        "\"_id\": \"temperature-sensor-riccardo-office\","
+        "\"owner\": {"
+            "\"_id\": \"5dcec66bc67ed54963bc865c\","
+            "\"username\": \"riccardo-office-temperature-sensor-username\","
+            "\"type\": \"provider\""
+        "}"
+      "}";
     }
     else{
       return "none";
@@ -228,58 +263,98 @@ string APIRest::GETDescr(string url, string token){
 
 string APIRest::GETScript(string url, string token){
   if(!TESTING){
-    HTTPClient https;
-    https.begin(url.c_str()); //Specify the URL and certificate
+    HTTPClient http;
+    http.begin(url.c_str()); //Specify the URL and certificate
 
-    https.addHeader("Authorization",token.c_str());
-    httpCode = https.GET();//the body is empty
+    http.addHeader("Authorization",token.c_str());
+    httpCode = http.GET();//the body is empty
     itoa(httpCode,httpCodeTmp,10);
-    response=string(httpCodeTmp)+https.getString().c_str();
+    response=string(httpCodeTmp)+http.getString().c_str();
 
     if (!isHTTPCodeOk(httpCode)) { //Check for the returning code
       if(httpCode<0)
-        response=response+" error: "+https.errorToString(httpCode).c_str();
+        response=response+" error: "+http.errorToString(httpCode).c_str();
       Serial.print(F("[HTTPS] GET Script... failed, "));
     }
     Serial.println(response.c_str());
-    https.end(); //Free the resources
+    http.end(); //Free the resources
 
     return response;
   }
+
   else{
+
     if(token=="JWT token"){
-		if( ParseResponse(url,"_id",true) == "group-temperature"){
-			return "200{\"docs\": ["
-					  "{"
-						  "\"visibility\": \"private\","
-						  "\"tags\": [],"
-						  "\"_id\": \"group-temperature\","
-						  "\"code\": \"temperature().send(5)\","
-						  "\"owner\": {"
-							  "\"_id\": \"5dcec66bc67ed54963bc865c\","
-							  "\"username\": \"riccardo-office-temperature-sensor-username\","
-							  "\"type\": \"provider\"}"
-					  "}"
-					"],"
-					"\"totalDocs\": 1, \"limit\": 10, \"hasPrevPage\": false, \"hasNextPage\": false, \"page\": 1, \"totalPages\": 1, \"pagingCounter\": 1, \"prevPage\": null, \"nextPage\": null}";
-		}
-		else if(ParseResponse(url,"_id",true)=="average-hourly-temperature"){
-			return "200{\"docs\": ["
-					  "{"
-						  "\"visibility\": \"private\","
-						  "\"tags\": [],"
-						  "\"_id\": \"average-hourly-temperature\","
-						  "\"code\": \"temperature(10).window(+, 0, 60).map(a/60).send()\","
-						  "\"owner\": {"
-							  "\"_id\": \"5dcec66bc67ed54963bc865c\","
-							  "\"username\": \"riccardo-office-temperature-sensor-username\","
-							  "\"type\": \"provider\"}"
-						  "}"
-					  "],"
-					"\"totalDocs\": 1, \"limit\": 10, \"hasPrevPage\": false, \"hasNextPage\": false, \"page\": 1, \"totalPages\": 1, \"pagingCounter\": 1, \"prevPage\": null, \"nextPage\": null}";
-    
-		}
-	}
+      if( ParseResponse(url,"_id",true) == "group-temperature"){
+        return "200{\"docs\": ["
+              "{"
+                "\"visibility\": \"private\","
+                "\"tags\": [],"
+                "\"_id\": \"group-temperature\","
+                "\"code\": \"temperature().send(5)\","
+                "\"owner\": {"
+                  "\"_id\": \"5dcec66bc67ed54963bc865c\","
+                  "\"username\": \"riccardo-office-temperature-sensor-username\","
+                  "\"type\": \"provider\"}"
+              "}"
+            "],"
+            "\"totalDocs\": 1, \"limit\": 10, \"hasPrevPage\": false, \"hasNextPage\": false, \"page\": 1, \"totalPages\": 1, \"pagingCounter\": 1, \"prevPage\": null, \"nextPage\": null}";
+      }
+      else if(ParseResponse(url,"_id",true)=="average-hourly-temperature"){
+        return "200{\"docs\": ["
+              "{"
+                "\"visibility\": \"private\","
+                "\"tags\": [],"
+                "\"_id\": \"average-hourly-temperature\","
+                "\"code\": \"temperature(10).window(+, 0, 60).map(a/60).send()\","
+                "\"owner\": {"
+                  "\"_id\": \"5dcec66bc67ed54963bc865c\","
+                  "\"username\": \"riccardo-office-temperature-sensor-username\","
+                  "\"type\": \"provider\"}"
+                "}"
+              "],"
+            "\"totalDocs\": 1, \"limit\": 10, \"hasPrevPage\": false, \"hasNextPage\": false, \"page\": 1, \"totalPages\": 1, \"pagingCounter\": 1, \"prevPage\": null, \"nextPage\": null}";
+      
+      }
+    }
+    if(token=="JWT token1"){
+
+      if( ParseResponse(url,"_id",true) == "group-temperature"){
+        return "200{\"docs\": ["
+              "{"
+                "\"visibility\": \"private\","
+                "\"tags\": [],"
+                "\"_id\": \"group-temperature\","
+                "\"code\": \"temperature().send(5)\","
+                "\"owner\": {"
+                  "\"_id\": \"5dcec66bc67ed54963bc865c\","
+                  "\"username\": \"riccardo-office-temperature-sensor-username\","
+                  "\"type\": \"provider\"}"
+              "}"
+            "],"
+            "\"totalDocs\": 1, \"limit\": 10, \"hasPrevPage\": false, \"hasNextPage\": false, \"page\": 1, \"totalPages\": 1, \"pagingCounter\": 1, \"prevPage\": null, \"nextPage\": null}";
+      }
+      else if(ParseResponse(url,"_id",true)=="average-hourly-temperature"){
+
+        return "200{\"docs\": ["
+              "{"
+                "\"visibility\": \"private\","
+                "\"tags\": [],"
+                "\"_id\": \"average-hourly-temperature\","
+                "\"code\": \"temperature(10).window(+, 0, 60).map(a/60).send()\","
+                "\"owner\": {"
+                  "\"_id\": \"5dcec66bc67ed54963bc865c\","
+                  "\"username\": \"riccardo-office-temperature-sensor-username\","
+                  "\"type\": \"provider\"}"
+                "}"
+              "],"
+            "\"totalDocs\": 1, \"limit\": 10, \"hasPrevPage\": false, \"hasNextPage\": false, \"page\": 1, \"totalPages\": 1, \"pagingCounter\": 1, \"prevPage\": null, \"nextPage\": null}";
+      
+      }
+      else{
+        return "none";
+      }
+    }
     else{
       return "none";
     }
@@ -296,12 +371,12 @@ void *printThreadId(void *threadid) {
 // void APIRest::POSTMeasurement_task( void * pvParameters ){
 //     taskParameter param = *(taskParameter *) pvParameters;
 
-//     HTTPClient https;
-//     https.begin(param.sam->url); //Specify the URL and certificate 
-//     https.addHeader("Content-Type","application/json");
-//     https.addHeader("Authorization",param.token);
-//     int httpCode = https.POST("{\"thing\": \""+param.sam->thing+"\", \"feature\": \""+param.sam->feature+"\", \"device\": \""+param.sam->device+"\", \"script\": \""+param.sam->scriptId+"\", \"samples\": {\"values\":"+param.sam->value+"}, \"startDate\": \""+param.sam->startDate+"\", \"endDate\": \""+param.sam->endDate+"\"}" );//this is the body
-//     String response=httpCode+https.getString();
+//     HTTPClient http;
+//     http.begin(param.sam->url); //Specify the URL and certificate 
+//     http.addHeader("Content-Type","application/json");
+//     http.addHeader("Authorization",param.token);
+//     int httpCode = http.POST("{\"thing\": \""+param.sam->thing+"\", \"feature\": \""+param.sam->feature+"\", \"device\": \""+param.sam->device+"\", \"script\": \""+param.sam->scriptId+"\", \"samples\": {\"values\":"+param.sam->value+"}, \"startDate\": \""+param.sam->startDate+"\", \"endDate\": \""+param.sam->endDate+"\"}" );//this is the body
+//     String response=httpCode+http.getString();
     
 //     if (!isHTTPCodeOk(httpCode)) {// something has gone wrong in the POST
 //       // if the post has encoutered an error, we want to save datum that will be resent as soon as possible
@@ -319,7 +394,7 @@ void *printThreadId(void *threadid) {
       
 //     }
 //     Serial.println(response);
-//     https.end(); //Free the resources
+//     http.end(); //Free the resources
 
 //     if(!reposting){
 //       reposting=true;
@@ -327,7 +402,7 @@ void *printThreadId(void *threadid) {
 //     }
 //     if(!reposting){
 //       reposting=true;
-//       rePOSTAlert(param.token); // every time we post a new measurement retry to post all the failed alerts
+//       rePOSTIssue(param.token); // every time we post a new measurement retry to post all the failed alerts
 //     }
 
 //     vTaskDelete(NULL);
@@ -339,15 +414,15 @@ boolean APIRest::POSTMeasurement(sample sam,string token){
     // parameters.sam=&sam;
     // parameters.token=token;
     // xTaskCreatePinnedToCore( POSTMeasurement_task,"POSTMeas TASK",1000,&parameters,2,NULL,1);
-    HTTPClient https;
-    https.begin(sam.url.c_str()); //Specify the URL and certificate 
-    https.addHeader("Content-Type","application/json");
-    https.addHeader("Authorization",token.c_str());
+    HTTPClient http;
+    http.begin(sam.url.c_str()); //Specify the URL and certificate 
+    http.addHeader("Content-Type","application/json");
+    http.addHeader("Authorization",token.c_str());
     //Arduino does not support std::to_string(double) so I used here String(double).c_str()
-    httpCode = https.POST(("{\"thing\": \""+sam.thing+"\", \"feature\": \""+sam.feature+"\", \"device\": \""+sam.device+"\", \"script\": \""+sam.scriptId+"\", \"samples\": {\"values\":"+String(sam.value).c_str()+"}, \"startDate\": \""+sam.startDate+"\", \"endDate\": \""+sam.endDate+"\"}").c_str() );//this is the body
+    httpCode = http.POST(("{\"thing\": \""+sam.thing+"\", \"feature\": \""+sam.feature+"\", \"device\": \""+sam.device+"\", \"script\": \""+sam.scriptId+"\", \"samples\": {\"values\":"+String(sam.value).c_str()+"}, \"startDate\": \""+sam.startDate+"\", \"endDate\": \""+sam.endDate+"\"}").c_str() );//this is the body
 
     itoa(httpCode,httpCodeTmp,10);
-    response=string(httpCodeTmp)+https.getString().c_str();
+    response=string(httpCodeTmp)+http.getString().c_str();
 
     if (isHTTPCodeOk(httpCode)) { //Check for the returning code
       success=true;
@@ -355,7 +430,7 @@ boolean APIRest::POSTMeasurement(sample sam,string token){
     else {// something has gone wrong in the POST
       // if the post has encoutered an error, we want to save datum that will be resent as soon as possible
       if(httpCode<0)
-        response=response+" error: "+https.errorToString(httpCode).c_str();
+        response=response+" error: "+http.errorToString(httpCode).c_str();
       if( needToBeRePOST(response)){
         database.push_back(sam);// save the datum in a local database
         Serial.print(F("[HTTPS] POST NewMeas... failed"));
@@ -372,7 +447,7 @@ boolean APIRest::POSTMeasurement(sample sam,string token){
       
     }
     Serial.println(response.c_str());
-    https.end(); //Free the resources
+    http.end(); //Free the resources
 
     if(!reposting){
       reposting=true;
@@ -380,7 +455,7 @@ boolean APIRest::POSTMeasurement(sample sam,string token){
     }
     if(!reposting){
       reposting=true;
-      rePOSTAlert(token); // every time we post a new measurement retry to post all the failed alerts
+      rePOSTIssue(token); // every time we post a new measurement retry to post all the failed alerts
     }
     
     return success;
@@ -396,11 +471,15 @@ boolean APIRest::POSTMeasurement(sample sam,string token){
     }
     if(!reposting){
       reposting=true;
+      Serial.println(token.c_str());
+      Serial.println("resPOSTMeasurement");
       rePOSTMeasurement(token); // every time we post a new measurement retry to post all the failed ones
     }
     if(!reposting){
       reposting=true;
-      rePOSTAlert(token); // every time we post a new measurement retry to post all the failed alerts
+      Serial.println(token.c_str());
+      Serial.println("resPOSTIssue");
+      rePOSTIssue(token); // every time we post a new measurement retry to post all the failed alerts
     }
     
     return success;    
@@ -422,42 +501,42 @@ void APIRest::rePOSTMeasurement(string token){
   reposting=false;
 } 
 
-boolean APIRest::POSTAlert(string url,string token,string device,string message,string type="generic",string date=APIRest::getInstance()->getActualDate()){
+boolean APIRest::POSTIssue(string url,string token,string device,string message,string type="generic",string date=APIRest::getInstance()->getActualDate()){
   if(!TESTING){
 
-    HTTPClient https;
-    https.begin(url.c_str()); //Specify the URL and certificate 
-    https.addHeader("Content-Type","application/json");
-    https.addHeader("Authorization",token.c_str());
-    httpCode = https.POST(("{\"device\": \""+device+"\",  \"date\": \""+date+"\", \"message\": \""+message+"\",\"type\": \""+type+"\"}").c_str() );//this is the body
+    HTTPClient http;
+    http.begin(url.c_str()); //Specify the URL and certificate 
+    http.addHeader("Content-Type","application/json");
+    http.addHeader("Authorization",token.c_str());
+    httpCode = http.POST(("{\"device\": \""+device+"\",  \"date\": \""+date+"\", \"message\": \""+message+"\",\"type\": \""+type+"\"}").c_str() );//this is the body
     itoa(httpCode,httpCodeTmp,10);
-    response=string(httpCodeTmp)+https.getString().c_str();
+    response=string(httpCodeTmp)+http.getString().c_str();
 
     if (isHTTPCodeOk(httpCode)) { //Check for the returning code
       success=true;
     }
     else {// something has gone wrong in the POST
       if(httpCode<0)
-        response=response+" error: "+https.errorToString(httpCode).c_str();
+        response=response+" error: "+http.errorToString(httpCode).c_str();
       if( needToBeRePOST(response)){
-        alert al;
+        issue al;
         al.date=date;
         al.device=device;
         al.message=message;
         al.type=type;
         al.url=url;
         // if the post has encoutered an error, we want to save datum that will be resent as soon as possible
-        alertDB.push_back(al);// save the datum in a local database
-        Serial.println(F("[HTTPS] POST Alert... failed"));
+        issueDB.push_back(al);// save the datum in a local database
+        Serial.println(F("[HTTPS] POST Issue... failed"));
         
         success=false;
       }else{
-        Serial.println(F("Alert aleady POSTed"));
+        Serial.println(F("Issue aleady POSTed"));
         success=true;// if don't need to be resent
       }
     }
     Serial.println(response.c_str());
-    https.end(); //Free the resources
+    http.end(); //Free the resources
 
     return success;
   }
@@ -467,35 +546,35 @@ boolean APIRest::POSTAlert(string url,string token,string device,string message,
       success= true; 
     }
     else{
-      alert al;
+      issue al;
       al.date=date;
       al.device=device;
       al.message=message;
       al.type=type;
       al.url=url;
       // if the post has encoutered an error, we want to save datum that will be resent as soon as possible
-      alertDB.push_back(al);// save the datum in a local database
+      issueDB.push_back(al);// save the datum in a local database
       success= false;
     }
 
     return success;
   }
 }
-void APIRest::rePOSTAlert(string token){
+void APIRest::rePOSTIssue(string token){
   
   // j is useful to count the number of iteration equal to database size; 
   // since after repost the first element we erase it, the next one shift to the first position so access database[0] till end
-  for(int j=0; j<alertDB.size(); j++){
-    APIRest::POSTAlert(alertDB[0].url,token,alertDB[0].device,alertDB[0].message,alertDB[0].type,alertDB[0].date);
-    alertDB.erase( alertDB.begin() );// don't need to delete every alert individually because we passed the struct and not the pointer
+  for(int j=0; j<issueDB.size(); j++){
+    APIRest::POSTIssue(issueDB[0].url,token,issueDB[0].device,issueDB[0].message,issueDB[0].type,issueDB[0].date);
+    issueDB.erase( issueDB.begin() );// don't need to delete every issue individually because we passed the struct and not the pointer
   }
-  vector<alert>(alertDB).swap(alertDB);// this create a new database with capacity equal to the size
+  vector<issue>(issueDB).swap(issueDB);// this create a new database with capacity equal to the size
   reposting=false;
 } 
 
 
 boolean APIRest::isHTTPCodeOk(int code){
-  return  code>=200 && code<210;
+  return  code>=200 && code<=308;
 }
 
 
@@ -518,6 +597,7 @@ string APIRest::getActualDate(){
 string APIRest::ParseResponse( string response, string fieldName, boolean quotedField = true ){
   
   if( response.find(fieldName) ==-1){
+    Serial.println("NONE FIELD");
     return "";
   }
   deleteSpaces(response);
@@ -557,8 +637,8 @@ void APIRest::deleteSpaces(string str){
 int APIRest:: getSampleDBsize(){
  return database.size();
 }
-int APIRest::getAlertDBsize(){
-  return alertDB.size();
+int APIRest::getIssueDBsize(){
+  return issueDB.size();
 }
 
 

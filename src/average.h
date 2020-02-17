@@ -36,8 +36,10 @@ average::average(string opName):operation(opName){
   valid=true;
   Serial.println( opName.substr( opName.find("(")+1, opName.find(")")-(opName.find("(")+1)).c_str());
   parseNumOfSamples( opName.substr( opName.find("(")+1, opName.find(")")-(opName.find("(")+1)) );
-  samples.reserve(numOfSamples);// allocate in advance what needed, because dynamically it is done in power of 2 (2,4,8,16,32,..) and so waste memory
-  counter=0;    
+  if(valid){
+    samples.reserve(numOfSamples);// allocate in advance what needed, because dynamically it is done in power of 2 (2,4,8,16,32,..) and so waste memory
+    counter=0;  
+  }
 }
 average:: ~average(){
   for(int i=0;i<samples.size();i++){
@@ -70,18 +72,17 @@ sample* average::execute() {
 
 int average::parseNumOfSamples(string numString){
   int numberValue=0; 
+  if(numString.empty()){// if it is empty is a invalid operation
+    valid=false;
+    return numberValue;
+  }
   
-  if(numString!="") {// if there is an argument is a valid operation
 	if(isaNumber(numString)){// if there is only digits is a valid operation
         numberValue = atoi(numString.c_str());      
     }
     else{
         valid=false;
-    }
-  }	
-  else{// if there is no argument is an invalid operation
-    valid=false;
-  } 
+    } 
   return numberValue;
 }
 

@@ -37,8 +37,11 @@ class window : public operation{
 window::window(string opName):operation(opName){
   valid=true;
   parseArgument( opName.substr( opName.find("(")+1, opName.find(")")-(opName.find("(")+1)) );
-  counter=0;    
-  accumulator = initial; //initialize
+  if(valid){
+    counter=0;    
+    accumulator = initial; //initialize
+  }
+  
 }
 window:: ~window(){
 }

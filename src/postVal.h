@@ -53,10 +53,13 @@ postVal::postVal(string opName, string thing, string device, string url, string 
   this->feature=feature;
   this->scriptId=scriptId;
   numOfSamples = parseNumOfSamples(opName.substr( opName.find("(")+1, opName.find(")")-(opName.find("(")+1) ));
-  batch.reserve(numOfSamples);// allocate in advance what need, because dynamically it is done in power of 2 (2,4,8,16,32,..) and so waste memory
+  if(valid){
+    batch.reserve(numOfSamples);// allocate in advance what need, because dynamically it is done in power of 2 (2,4,8,16,32,..) and so waste memory
 
-  counter=0; 
-  Api=APIRest::getInstance();
+    counter=0; 
+    Api=APIRest::getInstance();
+  }
+  
 }
 
  postVal::~postVal(){
@@ -100,7 +103,8 @@ sample* postVal::execute() {
         delete batch[j];// deallocate it
     }
     batch.clear();//remove all samples
-    return new sample("");//return empty sample pointer, for testing purpose
+    
+    return new sample("");//return empty sample pointer, only for testing purpose
   }
   return NULL;//this means the input is not been POSTed
 }
@@ -108,7 +112,7 @@ sample* postVal::execute() {
 int postVal::parseNumOfSamples( string numString){
   int numberValue=1; 
   
-  if(numString!="")// if there is no number we assign 1 because we post one measurement at a time 
+  if(!numString.empty())// if there is no number we assign 1 because we post one measurement at a time 
   {
 	if(!isaNumber(numString))
     {

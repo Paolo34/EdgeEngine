@@ -55,6 +55,10 @@ sample* filter::execute() {
 }
 
 void filter::parseArgument(string arguments){
+  if(arguments.empty()){
+    valid=false;
+    return;
+  }
   deleteSpaces(arguments);
   //arguments example : "a<6" or "a<=6" so charAt(0) is useless
   //first argument is the operation type

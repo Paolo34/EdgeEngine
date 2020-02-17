@@ -65,12 +65,12 @@ void operation::setCode(string code){
 }
 
 sample* operation::execute(){
-  Serial.println("base execute");
+  Serial.println("base execution");
   return NULL;
   //must be overridden
 }
 void operation::setToken(string token){
-  Serial.println("base execute");
+  Serial.println("base setToken execution");
 }
 
 boolean operation::isaNumber(string numberStr){
