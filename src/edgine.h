@@ -57,11 +57,21 @@ class edgine{
   int period= 2;//5 seconds; interval between two loop execution: max speed of loop
   int retryTime=10; //retry every 10 seconds if the login or the first GETDescr/GETScript/GETDate fails
 
+  int scriptListMaxSize= 5; // max num of scripts in the engine 
+  int measurementBufferSize= 20; // max num of measurements saved if their POST falis
+  int issueBufferSize= 20; // max num of issues saved if their POST falis
+  int sendBufferSize= 20; // max num of measurements in a batch 
+  int scriptStatementMaxSize= 5; // max num of operations per script
+  int statementBufferSize= 10; // max num of sample involved in one operation
+  string measurementBufferPolicy= "newest"; //policy of deletion of measurements whose POST failed 
+  string policies="newest,decimation,average";
+
   double logCount=(double)token_expiration_time;
   double getDescrCount=(double)cycle;
   
   int temp;
-  string tempCode;
+  string tempPol;
+  //string tempCode;
   string codeResponse;
   string scriptId;
   string firstGetScriptsResponse;
@@ -70,13 +80,15 @@ class edgine{
   void authenticate();
   void retrieveScriptsCode(string, string);
   int executeScripts(vector<sample*>);
-  string ParseResponse( string, string);
-  int FindEndIndex (char, char, int, string);
+  string parseResponse( string, string,boolean);
+  void checkFields();
+  int findEndIndex (char, char, int, string);
   int stringToSec(string);
   boolean isaDigit(string);
   boolean isOKresponse(string);
-  string ParseToken(string);
+  string parseToken(string);
   void setToken(string);
+  boolean isAllowed(string,string);
   void deleteSpaces(string&);
   
   public:
@@ -117,16 +129,16 @@ void edgine::init( options opts){
     Serial.println(token.c_str());
     response = Api->GETInfoUpdateDate(opts.url+"/"+opts.ver+"/"+opts.info,token); // Get the infos
     if(isOKresponse(response)){
-      temp = stringToSec( ParseResponse(response,"token_expiration_time"));
+      temp = stringToSec( parseResponse(response,"token_expiration_time",true));
       if(temp==-1){
-         Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid token_expiration_time interval ","field_issue");
+         Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid token_expiration_time interval ","field");
       }else
       {
         token_expiration_time=temp;
       }
     }
     else{
-      Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,response+" retrieving info","initialization_issue");
+      Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,response+" retrieving info","initialization");
     }
     while(!isOKresponse(response) && ( ((double)clock() / CLOCKS_PER_SEC)-startGetCount ) < retryTime);//wait here "retryTime" if GETDescr failed, then retry GETDescr
 
@@ -140,33 +152,12 @@ void edgine::init( options opts){
     startGetDescrCount=(double)clock() / CLOCKS_PER_SEC;
     response = Api->GETDescr(opts.url+"/"+opts.ver+"/"+opts.devs+"/"+opts.id, token); // Get the description
     if(isOKresponse(response)){
-      temp = stringToSec(ParseResponse(response,"period"));
-      if(temp==-1){
-         Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid period interval ","field_issue");
-      }else
-      {
-        period=temp;
-      }
-    
-      temp = stringToSec(ParseResponse(response,"cycle"));
-      if(temp==-1){
-         Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid cycle interval ","field_issue");
-      }else
-      {
-        cycle=temp;
-      }
-      temp = stringToSec(ParseResponse(response,"retryTime"));
-      if(temp==-1){
-         Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid retryTime interval ","field_issue");
-      }else
-      {
-        retryTime=temp;
-      }
-      scriptsId = ParseResponse(response,"scripts");
-      features= ParseResponse(response,"features");
+      checkFields();
+      scriptsId = parseResponse(response,"scripts",true);
+      features= parseResponse(response,"features",true);
     }
     else{
-      Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,response+" retrieving description","initialization_issue");
+      Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,response+" retrieving description","initialization");
     }
     while(!isOKresponse(response) && ( ((double)clock() / CLOCKS_PER_SEC)-startGetDescrCount ) < retryTime);//wait here "retryTime" if GETDescr failed, then retry GETDescr
 
@@ -198,9 +189,9 @@ int edgine::evaluate(vector<sample*> samples){
 
     response = Api->GETInfoUpdateDate(opts.url+"/"+opts.ver+"/"+opts.info,token); // To update tokentoken_expiration_time and datetime
     if(isOKresponse(response)){
-      temp = stringToSec( ParseResponse(response,"token_expiration_time"));
+      temp = stringToSec( parseResponse(response,"token_expiration_time",true));
       if(temp==-1){
-         Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid token_expiration_time interval ","field_issue");
+         Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid token_expiration_time interval ","field");
       }else
       {
         token_expiration_time=temp;
@@ -219,43 +210,16 @@ int edgine::evaluate(vector<sample*> samples){
     response = Api->GETDescr(opts.url+"/"+opts.ver+"/"+opts.devs+"/"+opts.id, token); // Get the description
     //if GET fails does not matter, the engine use the previous description 
     if(isOKresponse(response)){
-      // temp = stringToSec(ParseResponse(response,"period"));
-      // if(temp==-1){
-      //    Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid period interval ","field_issue");
-      // }else
-      // {
-      //   period=temp;
-      // }    
-      // temp = stringToSec(ParseResponse(response,"cycle"));
-      // if(temp==-1){
-      //    Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid cycle interval ","field_issue");
-      // }else
-      // {
-      //   cycle=temp;
-      // }
-      temp = stringToSec(ParseResponse(response,"retryTime"));
-      if(temp==-1){
-         Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid retryTime interval ","field_issue");
-      }else
-      {
-        retryTime=temp;
-      }
-      scriptsId = ParseResponse(response,"scripts");
-      features= ParseResponse(response,"features");
+
+      checkFields();
+      scriptsId = parseResponse(response,"scripts",true);
+      features= parseResponse(response,"features",true);
       retrieveScriptsCode(token, scriptsId);
       //if retrieve fails does not matter, the engine use the previous scripts
     }
     else{
       Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,response+" retrieving virtual description");// generic
     }
-    /*
-    if (isOKresponse(response)){
-      cycle = ParseResponse(response,"cycle")!="" ? ParseResponse(response,"cycle").toInt():600; //default 10 minutes
-      scriptsId = ParseResponse(response,"scripts");
-      features= ParseResponse(response,"features");
-      retrieveScriptsCode(token, scriptsId);
-      //if retrieve fails does not matter, the engine use the previous scripts
-    }*/
     
   }
   return executeScripts(samples);
@@ -267,12 +231,12 @@ void edgine::authenticate(){
     response=Api->POSTLogin(opts.url+"/"+opts.ver+"/"+opts.login, opts.username, opts.password); // Authentication
 
     if(isOKresponse(response)){
-      token = ParseToken(response);
+      token = parseToken(response);
     }else{
       if(initialization)
-        Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,response+" LOGIN FAILED","initialization_issue");
+        Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,response+" LOGIN FAILED","initialization");
       else
-        Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,response+" LOGIN FAILED");// generic
+        Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,response+" LOGIN FAILED","token");
 
     }
 
@@ -284,6 +248,7 @@ void edgine::retrieveScriptsCode(string token, string scriptsId){
   firstGetScriptsResponse="ok";
   int startIndex=1;
   int endIndex=1;
+  string tempCode;
   deleteSpaces(scriptsId);
 
 
@@ -299,7 +264,7 @@ void edgine::retrieveScriptsCode(string token, string scriptsId){
       firstGetScriptsResponse = "none";// THIS VARIABLE MATTERS ONLY THE FIRST TIME WE GET SCRIPTS
       tempCode="none";// do not block all scripts retrieve because only one fails, try others
       if(initialization){
-        Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,codeResponse+" retrieving "+scriptId+" script","initialization_issue");
+        Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,codeResponse+" retrieving "+scriptId+" script","initialization");
       }
       else{
         Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,codeResponse+" retrieving "+scriptId+" script");//generic issue
@@ -314,7 +279,7 @@ void edgine::retrieveScriptsCode(string token, string scriptsId){
       }
     }
     else{
-      tempCode=ParseResponse( codeResponse,"code");
+      tempCode=parseResponse( codeResponse,"code",true);
     }
     
     if(tempCode!="none"){
@@ -332,22 +297,29 @@ void edgine::retrieveScriptsCode(string token, string scriptsId){
           scripts[i]->valid=false;// invalidate the old version of the script and then create the new version of it   
         }
       }    
-      
       //create the script
-      scripts.push_back(new script(scriptId, tempCode, opts.thing, opts.device, opts.url+"/"+opts.ver+"/"+opts.measurements, token, features) );
+      scripts.push_back(new script(scriptId, tempCode, opts.thing, opts.device, opts.url+"/"+opts.ver+"/"+opts.measurements, token, features,sendBufferSize,scriptStatementMaxSize,statementBufferSize) );
       if(scripts.back()->valid==false){//if the creation of the script has failed 
-
         
         if(scripts.back()->operations.size()<=1){ // if the script has only one operation the error is in the feature
           string feature = scripts.back()->feature;// the feature is the one with the error
-          Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,feature+" has an error","script_issue"); 
-        }else{
-          string invalidOperation = scripts.back()->operations.back()->getName();// the last operation created is the one with the error
-          Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,invalidOperation+" has an error","script_issue"); 
+          Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,feature+" has an error","script"); 
+        }
+        else{
+          if(scripts.back()->operations.size()>scriptStatementMaxSize){
+            string id=scripts.back()->scriptId;
+            Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,id+" has too many statements!","script"); 
+          }
+          else{
+            string invalidOperation = scripts.back()->operations.back()->getName();// the last operation created is the one with the error
+            Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,invalidOperation+" has an error in "+scripts.back()->scriptId,"script"); 
+          }
+          
         }
         delete scripts.back(); //delete the script to free memory
         scripts.pop_back();//remove last script
       }
+      
       
       cnt:; //go directly here if a script already exists and it is not changed
     
@@ -374,6 +346,14 @@ void edgine::retrieveScriptsCode(string token, string scriptsId){
       scripts[i]->valid=false;// preset valid to false, to be reconfirmed on the next check in the API
     }
   }
+  while (scripts.size()>scriptListMaxSize){
+    Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Script list full!, "+scripts.back()->scriptId+" not added ","script"); 
+    Serial.print(scripts.back()->scriptId.c_str());
+    Serial.println(" removed because list is full");
+    delete scripts.back();
+    scripts.pop_back();
+  }
+
   Serial.print("There are: ");
   Serial.print((int)scripts.size());
   Serial.println(" scripts");
@@ -393,13 +373,80 @@ int edgine::executeScripts(vector<sample*> samples){
   return samplesSent;
 }
 
+void edgine::checkFields(){
+  // temp = stringToSec(parseResponse(response,"period",true));
+  // if(temp==-1){
+  //     Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid period interval ","field");
+  // }else{
+  //   period=temp;
+  // }
+  // temp = stringToSec(parseResponse(response,"cycle",true));
+  // if(temp==-1){
+  //     Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid cycle interval ","field");
+  // }else{
+  //   cycle=temp;
+  // }
+  // temp = stringToSec(parseResponse(response,"retryTime",true));
+  // if(temp==-1){
+  //     Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid retryTime interval ","field");
+  // }else{
+  //   retryTime=temp;
+  // }
+  temp = stringToSec(parseResponse(response,"scriptListMaxSize",false));  
+  if(temp==-1){
+      Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid scriptListMaxSize size ","field");
+  }else{
+    scriptListMaxSize=temp;
+    scripts.reserve(scriptListMaxSize);
+  }
+  temp = stringToSec(parseResponse(response,"measurementBufferSize",false));
+  if(temp==-1){
+      Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid measurementBufferSize size ","field");
+  }else{
+    measurementBufferSize=temp;
+    Api->setSampleBufferSize(measurementBufferSize);
+  }
+  temp = stringToSec(parseResponse(response,"issueBufferSize",false));
+  if(temp==-1){
+      Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid issueBufferSize size ","field");
+  }else{
+    issueBufferSize=temp;
+    Api->setIssueBufferSize(issueBufferSize);
+  }
+  temp = stringToSec(parseResponse(response,"sendBufferSize",false));
+  if(temp==-1){
+      Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid sendBufferSize size ","field");
+  }else{
+    sendBufferSize=temp;
+  }
+  temp = stringToSec(parseResponse(response,"scriptStatementMaxSize",false));
+  if(temp==-1){
+      Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid scriptStatementMaxSize size ","field");
+  }else{
+    scriptStatementMaxSize=temp;
+  }
+  temp = stringToSec(parseResponse(response,"statementBufferSize",false));
+  if(temp==-1){
+      Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid statementBufferSize size ","field");
+  }else{
+    statementBufferSize=temp;
+  }
+  tempPol = parseResponse(response,"measurementBufferPolicy",true);
+  if(!isAllowed(tempPol,policies)){
+    Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid measurementBufferPolicy policy ","field");
+  }else{
+    measurementBufferPolicy=temp;
+  }
+  
+}
+
 void edgine::setToken(string token){
   for(int i=0;i<scripts.size();i++){
     scripts[i]->setToken(token);
   }
 }
 
-string edgine::ParseToken(string response){
+string edgine::parseToken(string response){
   if(response.find("J")!=-1){
     return response.substr( response.find("J"), response.rfind("\"")-response.find("J") );
   }
@@ -407,38 +454,57 @@ string edgine::ParseToken(string response){
 }
 
 //NOT WORKS WITH CUSTOM OPERATIONS 
-string edgine::ParseResponse( string response, string fieldName ){
-  
+string edgine::parseResponse( string response, string fieldName, boolean delimitedField = true){
+  deleteSpaces(response);
   if( response.find(fieldName) ==-1){
-    Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,fieldName+" field is not present!","field_issue");
+    Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,fieldName+" field is not present!","field");
     Serial.print(fieldName.c_str());
     Serial.println(" field is not present!");
     return "none";
   }
-  deleteSpaces(response);
 
   int beginOfValue = response.find( ":", response.find(fieldName) )+1;//find starting index of field value
   int endOfValue;
-  switch ( response.at( beginOfValue ) ){
+  string fieldValue;
+
+  if(delimitedField){ // examples: "fieldName": "fieldValue", "fieldName": ["fieldValue"], "fieldName": {"fieldValue"}
+    switch ( response.at( beginOfValue ) ){
     case '\"':
       endOfValue = response.find('\"',beginOfValue+1);// start looking for the last delimiter from the next value
       break;
     case '(':
-      endOfValue = FindEndIndex('(',')', beginOfValue+1,response);
+      endOfValue = findEndIndex('(',')', beginOfValue+1,response);
       break;
     case '[':
-      endOfValue = FindEndIndex('[',']', beginOfValue+1,response);
+      endOfValue = findEndIndex('[',']', beginOfValue+1,response);
       break;
     case '{':
-      endOfValue = FindEndIndex('{','}', beginOfValue+1,response);
+      endOfValue = findEndIndex('{','}', beginOfValue+1,response);
       break;
+    }
+      
+    fieldValue= response.substr( beginOfValue+1, endOfValue-(beginOfValue+1));
   }
-    
-  return response.substr( beginOfValue+1, endOfValue-(beginOfValue+1));
+  else{ // example "fieldName": fieldValue
+    endOfValue = response.find(',',beginOfValue);// start looking for the last delimiter from the next value
+    if(response.at(endOfValue-1) =='}' || response.at(endOfValue-1) ==']'){// if the field is the last of the a JSON objects( {...} ) or JSON array( [...] )
+      endOfValue-=1;
+    }
+    else if(endOfValue==-1){ //if the object is the last of response
+      endOfValue = response.find('}',beginOfValue);
+
+      if(endOfValue==-1){//if the array is the last of response
+        endOfValue = response.find(']',beginOfValue);
+
+      }
+    }
+    fieldValue=response.substr( beginOfValue, endOfValue-beginOfValue);
+  }
+  return fieldValue;
 }
 
 
-int edgine::FindEndIndex (char first,char last, int start, string response){
+int edgine::findEndIndex (char first,char last, int start, string response){
   int nextClose;
   while(true){
     string delimiters= "";
@@ -522,6 +588,16 @@ boolean edgine::isaDigit(string numberStr){
     }
   }
   return true;
+}
+boolean edgine::isAllowed(string policy,string policiesAllowed){
+  int startIndex=policiesAllowed.find(policy);
+  if(startIndex!=-1){
+	  int endIndex=policiesAllowed.find(",",startIndex);
+
+	  if( policiesAllowed.substr( startIndex, (endIndex!=-1? endIndex-startIndex : policiesAllowed.length()-startIndex) )== policy )
+		  return true;
+  }
+  return false;
 }
 
 void edgine::deleteSpaces(string& str){

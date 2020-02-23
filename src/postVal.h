@@ -24,11 +24,11 @@ class postVal : public operation{
   int counter;
 
   //methods
-  int parseNumOfSamples(string);
+  void parseNumOfSamples(string,int);
 
   public:
   //constructors
-  postVal(string,string,string,string,string,string,string);
+  postVal(string,string,string,string,string,string,string,int);
   //destructor
    ~postVal();
   
@@ -44,7 +44,7 @@ class postVal : public operation{
   void setScriptId(string);
 };
 //constructors
-postVal::postVal(string opName, string thing, string device, string url, string token, string feature, string scriptId):operation(opName){
+postVal::postVal(string opName, string thing, string device, string url, string token, string feature, string scriptId,int batchMaxSize):operation(opName){
   valid=true;
   this->thing=thing;
   this->device=device;
@@ -52,10 +52,9 @@ postVal::postVal(string opName, string thing, string device, string url, string 
   this->token=token;
   this->feature=feature;
   this->scriptId=scriptId;
-  numOfSamples = parseNumOfSamples(opName.substr( opName.find("(")+1, opName.find(")")-(opName.find("(")+1) ));
+  parseNumOfSamples(opName.substr( opName.find("(")+1, opName.find(")")-(opName.find("(")+1) ), batchMaxSize);
   if(valid){
     batch.reserve(numOfSamples);// allocate in advance what need, because dynamically it is done in power of 2 (2,4,8,16,32,..) and so waste memory
-
     counter=0; 
     Api=APIRest::getInstance();
   }
@@ -65,6 +64,7 @@ postVal::postVal(string opName, string thing, string device, string url, string 
  postVal::~postVal(){
    for(int i=0;i<batch.size();i++){
     delete batch[i];
+    batch[i]=NULL;
   }
    batch.clear();
  }
@@ -101,6 +101,7 @@ sample* postVal::execute() {
       //if( Api->POSTMeasurement(*batch[j], token) )
         Api->POSTMeasurement(*batch[j], token);// pass a copy 
         delete batch[j];// deallocate it
+        batch[j]=NULL;
     }
     batch.clear();//remove all samples
     
@@ -109,7 +110,7 @@ sample* postVal::execute() {
   return NULL;//this means the input is not been POSTed
 }
 
-int postVal::parseNumOfSamples( string numString){
+void postVal::parseNumOfSamples( string numString,int batchMaxSize){
   int numberValue=1; 
   
   if(!numString.empty())// if there is no number we assign 1 because we post one measurement at a time 
@@ -117,11 +118,15 @@ int postVal::parseNumOfSamples( string numString){
 	if(!isaNumber(numString))
     {
       valid=false;
-      return numberValue;
+      return;
     }
     numberValue = atoi(numString.c_str());
+    if(numberValue > batchMaxSize){
+      valid=false;
+      return;
+    }
   }	 
-  return numberValue;
+  numOfSamples= numberValue;
 }
 
 #endif 

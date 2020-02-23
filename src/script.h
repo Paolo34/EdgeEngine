@@ -31,6 +31,7 @@ class script{
   string device;
   string featuresAllowed;// features allowed for this device
   string url;
+  int sendBufferSize, scriptStatementMaxSize, statementBufferSize;
   
   //methods
   void parseScript(string);
@@ -47,7 +48,7 @@ class script{
   string scriptId;
   sample* nextInput=NULL;
   //constructor
-  script(string,string,string,string,string,string,string);
+  script(string,string,string,string,string,string,string,int,int,int);
   //destructor
   ~script();
   
@@ -58,7 +59,7 @@ class script{
   void setToken(string);
 };
 
-script::script( string scriptId,string scriptStr, string thing, string device, string url, string token, string features){
+script::script( string scriptId,string scriptStr, string thing, string device, string url, string token, string features, int sendBufferSize,int scriptStatementMaxSize,int statementBufferSize){
   this->scriptId=scriptId;
   this->scriptStr=scriptStr; //save the string
   this->thing=thing;
@@ -66,6 +67,9 @@ script::script( string scriptId,string scriptStr, string thing, string device, s
   this->url=url;
   this->token=token;
   this->featuresAllowed=features;
+  this->sendBufferSize=sendBufferSize;
+  this->scriptStatementMaxSize=scriptStatementMaxSize;
+  this->statementBufferSize=statementBufferSize;
   valid=false;
   
   parseScript(scriptStr);
@@ -83,14 +87,12 @@ script::~script(){
   for(int i=0;i<operations.size();i++){
     delete operations[i];
   }
-  //  for ( operation* op : operations ){
-  //    delete op;//call destructor for each operation
-  //  }
    operations.clear();
 
    if (nextInput)//if nextInput is pointing to something 
    {
       delete nextInput;
+      nextInput=NULL;
    }
 }
 
@@ -131,7 +133,7 @@ void script::parseScript(string scriptString){
 
     operations.push_back( createOperation(scriptString.substr(startIndex,endIndex-startIndex)) ); //Add element at the end
     
-    if(!operations[counter]->valid){ // if something is wrong in the script
+    if(!operations[counter]->valid || counter>scriptStatementMaxSize){ // if something is wrong in the script or there are too many operations
       return;//end here the parsing
     }
     counter++;
@@ -168,13 +170,13 @@ operation* script::createOperation(string op){
     return new maxVal(op);
     
   }else if(opName=="send"){
-    return new postVal(op,thing, device, url, token, feature, scriptId);    
+    return new postVal(op,thing, device, url, token, feature, scriptId,sendBufferSize);    
   }
   else if(opName=="window"){
-    return new window(op);    
+    return new window(op,statementBufferSize);    
   }
   else if(opName=="slidingWindow"){
-    return new slidingWindow(op);    
+    return new slidingWindow(op,statementBufferSize);    
   }
   else if(opName=="map"){
     return new mapVal(op);    
@@ -183,13 +185,13 @@ operation* script::createOperation(string op){
     return new filter(op);    
   }
   else if(opName=="average"){
-    return new average(op);    
+    return new average(op,statementBufferSize);    
   }
   else if(opName=="median"){
-    return new median(op);    
+    return new median(op,statementBufferSize);    
   }
   else if(opName=="stdDeviation"){
-    return new stdDeviation(op);    
+    return new stdDeviation(op,statementBufferSize);    
   }
   else{
     Serial.print("wrong operation: ");
@@ -210,6 +212,7 @@ boolean script::execute(sample* value){
     
   }
   delete nextInput;
+  nextInput=NULL;
   return true;
 }
 

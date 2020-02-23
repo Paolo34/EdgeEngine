@@ -16,13 +16,13 @@ clock_t sleepTime;
 sample* motion=NULL;
 sample* potentiometer=NULL;
 sample* light=NULL;
-
+/*
 const char* ssidWifi = "TIM-91746045";
 const char* passWifi = "1Oj3eyR5qHD3jAaT5Jfj1Ooh";
-/*
+*/
 const char* ssidWifi = "TORNATOREwifi";
 const char* passWifi = "finalborgo";
-*/
+
 /*
 const char* ssid = "S7Chicco";
 const char* password = "LLLLLLLL";
@@ -82,7 +82,7 @@ void setup() {
   opts.scps = "scripts";
   opts.measurements = "measurements";
   opts.info= "info";
-  opts.alerts="issues";
+  opts.issues="issues";
   //Edgine identifiers
   opts.thing = "riccardo-office";
   opts.device = "environment-riccardo-office";
@@ -126,7 +126,9 @@ void loop() {
   samples.clear(); // after evaluated all samples delete them
 
   delete potentiometer;
+  potentiometer=NULL;
   delete light;
+  light =NULL;
   //delete motion;
 
   // if( ((double)clock()-pirCounter)>=2000){// pir sensor needs 2 seconds to be ready to give another measurement
@@ -141,9 +143,6 @@ void loop() {
     
   }
   cycleCounter=clock()-cycleCounter;// duration of the exexution of th cycle
-
-  Serial.print("CYCLE DURATION: ");
-  Serial.println(cycleCounter);
   
   // subtract te execution time to the Sleep period if result is not negative
   (cycleCounter/CLOCKS_PER_SEC) < Edge->getPeriod() ? sleepTime=(Edge->getPeriod()-cycleCounter/CLOCKS_PER_SEC)*1000 : sleepTime=0;//delay in milliseconds

@@ -21,11 +21,11 @@ class window : public operation{
   string startDate;
 
   //methods
-  void parseArgument(string);
+  void parseArgument(string,int);
   double calculate(double);
   public:
   //constructors
-  window(string);
+  window(string,int);
   //destructor
   ~window();
   
@@ -34,9 +34,9 @@ class window : public operation{
 };
 //constructors
 
-window::window(string opName):operation(opName){
+window::window(string opName,int maxWindowBuffer):operation(opName){
   valid=true;
-  parseArgument( opName.substr( opName.find("(")+1, opName.find(")")-(opName.find("(")+1)) );
+  parseArgument( opName.substr( opName.find("(")+1, opName.find(")")-(opName.find("(")+1)), maxWindowBuffer );
   if(valid){
     counter=0;    
     accumulator = initial; //initialize
@@ -64,10 +64,11 @@ sample* window::execute() {
     return input;
   }
   delete input;// free memory from this copy of sample because it is useless 
+  input=NULL;
   return NULL;//this should block the execution of the next operation
 }
 
-void window::parseArgument(string arguments){
+void window::parseArgument(string arguments,int maxWindowBuffer){
   deleteSpaces(arguments);
   //example "*,2,4"
   int firstIndex = arguments.find(",");
@@ -97,6 +98,10 @@ void window::parseArgument(string arguments){
     return;
   }
   windowSize=atoi( arguments.substr(firstIndex,endIndex-firstIndex).c_str() );
+  if(windowSize>maxWindowBuffer){
+    valid=false;
+    return;
+  }
 }
 double window::calculate(double input) {
   switch(function){

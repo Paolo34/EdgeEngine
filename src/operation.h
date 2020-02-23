@@ -77,7 +77,7 @@ boolean operation::isaNumber(string numberStr){
   for (int i = 0; i < numberStr.length(); i++)
   {
     char c=numberStr.at(i);
-    if(c>'9' || c<'0')
+    if((c>'9' || c<'0') && c!='.')// only numbers and point are valid
     {
       return false;
     }
@@ -88,7 +88,7 @@ boolean operation::isaNumber(string numberStr){
 void operation::deleteSpaces(string& str){
   int pos=0;
   while ( ( pos=str.find(" ") ) !=-1){
-    str.erase(pos,1);//delete whitespace
+    str.erase(pos,1);//delete space
   }
 }
 #endif 

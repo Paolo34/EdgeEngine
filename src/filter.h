@@ -51,6 +51,7 @@ sample* filter::execute() {
         return input;
   }
   delete input;
+  input=NULL;
   return NULL;//this should block the execution of the next operation
 }
 

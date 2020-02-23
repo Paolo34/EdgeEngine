@@ -40,14 +40,16 @@ class APIRest{
   char httpCodeTmp [4];
   string response;
   boolean success;
-  unsigned long startingTime;
-  unsigned long timeElapsed;
+  long  startingTime;
+  double timeElapsed;
   string timestamp;
-  char actualDate [15];
-  vector<issue> issueDB;
-  vector<sample> database;
+  string actualDate ;
+  vector<issue> issueBuffer;
+  vector<sample> sampleBuffer;
+  int issueBufferSize=20;
+  int sampleBufferSize=20;
+  int decimationPolicyFactor = 2; // size/decimationPolicyFactor; that is half of data will be deleted
   boolean reposting;
-
   
   taskParameter parameters;
   
@@ -60,10 +62,12 @@ class APIRest{
   //methods
   boolean isHTTPCodeOk(int);
   boolean needToBeRePOST(string);
-  string ParseResponse(string,string,boolean);
+  string parseResponse(string,string,boolean);
   void deleteSpaces(string);
   void rePOSTMeasurement(string);
   void rePOSTIssue(string);
+  void checkIssueBufferSize();
+  void checkSampleBufferSize();
 
   static void POSTMeasurement_task( void *  );
 
@@ -80,9 +84,10 @@ class APIRest{
   boolean POSTIssue(string,string,string,string,string,string);
   string getActualDate();
   boolean TESTING;
-  int getSampleDBsize();
-  int getIssueDBsize();
-  
+  int getSampleBufferSize();
+  int getIssueBufferSize();
+  void setSampleBufferSize(int);
+  void setIssueBufferSize(int);
 };
 
 APIRest* APIRest::instance=NULL;
@@ -149,7 +154,7 @@ string APIRest::GETInfoUpdateDate(string url, string token){
     if (isHTTPCodeOk(httpCode)) { //Check for the returning code
           
           startingTime = ((double)clock() / CLOCKS_PER_SEC)*SECOND; //milliseconds
-          timestamp = ParseResponse(response,"timestamp",true);
+          timestamp = parseResponse(response,"timestamp",true);
           //example of timestamp in milliseconds: "1580394697254" 
     }
     else {
@@ -225,6 +230,13 @@ string APIRest::GETDescr(string url, string token){
         "\"period\": \"5s\","
         "\"cycle\": \"10m\","
         "\"retryTime\": \"10s\","
+        "\"scriptListMaxSize\": 5,"
+        "\"measurementBufferSize\": 20,"
+        "\"issueBufferSize\": 20,"
+        "\"sendBufferSize\": 20,"
+        "\"scriptStatementMaxSize\": 5,"
+        "\"statementBufferSize\": 10,"
+        "\"measurementBufferPolicy\": \"decimation\","
         "\"_id\": \"temperature-sensor-riccardo-office\","
         "\"owner\": {"
             "\"_id\": \"5dcec66bc67ed54963bc865c\","
@@ -246,6 +258,13 @@ string APIRest::GETDescr(string url, string token){
         "\"period\": \"5a\","
         "\"cycl\": \"10m\","
         "\"retryTime\": \"1d0s\","
+        "\"scriptListMaxSize\": 5,"
+        "\"measurementBufferSize\": 20,"
+        "\"issueBufferSize\": 20,"
+        "\"sendBufferSize\": 20,"
+        "\"scriptStatementMaxSize\": 5,"
+        "\"statementBufferSize\": 10,"
+        "\"measurementBufferPolicy\": \"decimation\","
         "\"_id\": \"temperature-sensor-riccardo-office\","
         "\"owner\": {"
             "\"_id\": \"5dcec66bc67ed54963bc865c\","
@@ -285,7 +304,7 @@ string APIRest::GETScript(string url, string token){
   else{
 
     if(token=="JWT token"){
-      if( ParseResponse(url,"_id",true) == "group-temperature"){
+      if( parseResponse(url,"_id",true) == "group-temperature"){
         return "200{\"docs\": ["
               "{"
                 "\"visibility\": \"private\","
@@ -300,13 +319,13 @@ string APIRest::GETScript(string url, string token){
             "],"
             "\"totalDocs\": 1, \"limit\": 10, \"hasPrevPage\": false, \"hasNextPage\": false, \"page\": 1, \"totalPages\": 1, \"pagingCounter\": 1, \"prevPage\": null, \"nextPage\": null}";
       }
-      else if(ParseResponse(url,"_id",true)=="average-hourly-temperature"){
+      else if(parseResponse(url,"_id",true)=="average-hourly-temperature"){
         return "200{\"docs\": ["
               "{"
                 "\"visibility\": \"private\","
                 "\"tags\": [],"
                 "\"_id\": \"average-hourly-temperature\","
-                "\"code\": \"temperature(10).window(+, 0, 60).map(a/60).send()\","
+                "\"code\": \"temperature(60).window(+, 0, 10).map(a/100).send()\","
                 "\"owner\": {"
                   "\"_id\": \"5dcec66bc67ed54963bc865c\","
                   "\"username\": \"riccardo-office-temperature-sensor-username\","
@@ -318,8 +337,7 @@ string APIRest::GETScript(string url, string token){
       }
     }
     if(token=="JWT token1"){
-
-      if( ParseResponse(url,"_id",true) == "group-temperature"){
+      if( parseResponse(url,"_id",true) == "group-temperature"){
         return "200{\"docs\": ["
               "{"
                 "\"visibility\": \"private\","
@@ -334,14 +352,14 @@ string APIRest::GETScript(string url, string token){
             "],"
             "\"totalDocs\": 1, \"limit\": 10, \"hasPrevPage\": false, \"hasNextPage\": false, \"page\": 1, \"totalPages\": 1, \"pagingCounter\": 1, \"prevPage\": null, \"nextPage\": null}";
       }
-      else if(ParseResponse(url,"_id",true)=="average-hourly-temperature"){
+      else if(parseResponse(url,"_id",true)=="average-hourly-temperature"){
 
         return "200{\"docs\": ["
               "{"
                 "\"visibility\": \"private\","
                 "\"tags\": [],"
                 "\"_id\": \"average-hourly-temperature\","
-                "\"code\": \"temperature(10).window(+, 0, 60).map(a/60).send()\","
+                "\"code\": \"temperature(60).window(+, 0, 10).map(a/100).send()\","
                 "\"owner\": {"
                   "\"_id\": \"5dcec66bc67ed54963bc865c\","
                   "\"username\": \"riccardo-office-temperature-sensor-username\","
@@ -383,7 +401,7 @@ void *printThreadId(void *threadid) {
 //       if(httpCode<0)
 //         response+=" error: "+HTTPClient::errorToString(httpCode);
 //       if( needToBeRePOST(response)){
-//         database.push_back(param.sam);// save the datum in a local database
+//         sampleBuffer.push_back(param.sam);// save the datum in a local sampleBuffer
 //         Serial.print(F("[HTTPS] POST NewMeas... failed"));
 //         Serial.print(", value: "+String(param.sam->value));
 //         Serial.println(", script: "+param.sam->scriptId);
@@ -418,7 +436,7 @@ boolean APIRest::POSTMeasurement(sample sam,string token){
     http.begin(sam.url.c_str()); //Specify the URL and certificate 
     http.addHeader("Content-Type","application/json");
     http.addHeader("Authorization",token.c_str());
-    //Arduino does not support std::to_string(double) so I used here String(double).c_str()
+    //[TBD] Arduino does not support std::to_string(double) so I used here String(double).c_str()
     httpCode = http.POST(("{\"thing\": \""+sam.thing+"\", \"feature\": \""+sam.feature+"\", \"device\": \""+sam.device+"\", \"script\": \""+sam.scriptId+"\", \"samples\": {\"values\":"+String(sam.value).c_str()+"}, \"startDate\": \""+sam.startDate+"\", \"endDate\": \""+sam.endDate+"\"}").c_str() );//this is the body
 
     itoa(httpCode,httpCodeTmp,10);
@@ -432,7 +450,8 @@ boolean APIRest::POSTMeasurement(sample sam,string token){
       if(httpCode<0)
         response=response+" error: "+http.errorToString(httpCode).c_str();
       if( needToBeRePOST(response)){
-        database.push_back(sam);// save the datum in a local database
+        checkSampleBufferSize();//if there is not space, make it
+        sampleBuffer.push_back(sam);// save the datum in a local sampleBuffer
         Serial.print(F("[HTTPS] POST NewMeas... failed"));
         Serial.print(", value: ");
         Serial.print(sam.value);
@@ -466,19 +485,16 @@ boolean APIRest::POSTMeasurement(sample sam,string token){
     }
     else{
       // if the post has encoutered an error, we want to save datum that will be resent as soon as possible
-      database.push_back(sam);// save the datum in a local database
+      checkSampleBufferSize();//if there is not space, make it
+      sampleBuffer.push_back(sam);// save the datum in a local sampleBuffer
       success = false;
     }
     if(!reposting){
       reposting=true;
-      Serial.println(token.c_str());
-      Serial.println("resPOSTMeasurement");
       rePOSTMeasurement(token); // every time we post a new measurement retry to post all the failed ones
     }
     if(!reposting){
       reposting=true;
-      Serial.println(token.c_str());
-      Serial.println("resPOSTIssue");
       rePOSTIssue(token); // every time we post a new measurement retry to post all the failed alerts
     }
     
@@ -487,16 +503,14 @@ boolean APIRest::POSTMeasurement(sample sam,string token){
 }
 
 void APIRest::rePOSTMeasurement(string token){
-  // j is useful to count the number of iteration equal to database size; 
-  // since after repost the first element we erase it, the next one shift to the first position so access database[0] till end
-  int size=database.size();
+  // j is useful to count the number of iteration equal to sampleBuffer size; 
+  // since after repost the first element we erase it, the next one shift to the first position so access sampleBuffer[0] till end
+  int size=sampleBuffer.size();
   for(int j=0; j<size; j++){
-    APIRest::POSTMeasurement(database[j], token);
-    //APIRest::POSTError(database[0].url, token, database[0].thing, database[0].feature, database[0].device, database[0].scriptId, database[0].value, database[0].date);
+    APIRest::POSTMeasurement(sampleBuffer[j], token);
+    sampleBuffer.erase( sampleBuffer.begin());
   }
-  
-  database.erase( database.begin(), database.begin()+size);//remove all samples rePOSTed
-  vector<sample>(database).swap(database);// this create a new database with capacity equal to the size
+  vector<sample>(sampleBuffer).swap(sampleBuffer);// this create a new sampleBuffer with capacity equal to the size
   
   reposting=false;
 } 
@@ -518,15 +532,19 @@ boolean APIRest::POSTIssue(string url,string token,string device,string message,
     else {// something has gone wrong in the POST
       if(httpCode<0)
         response=response+" error: "+http.errorToString(httpCode).c_str();
-      if( needToBeRePOST(response)){
+
+      if( needToBeRePOST(response) ){
         issue al;
         al.date=date;
         al.device=device;
         al.message=message;
         al.type=type;
         al.url=url;
+
+        checkIssueBufferSize();//if there is not space, make it
         // if the post has encoutered an error, we want to save datum that will be resent as soon as possible
-        issueDB.push_back(al);// save the datum in a local database
+        issueBuffer.push_back(al);// save the datum in a local sampleBuffer
+        
         Serial.println(F("[HTTPS] POST Issue... failed"));
         
         success=false;
@@ -552,8 +570,10 @@ boolean APIRest::POSTIssue(string url,string token,string device,string message,
       al.message=message;
       al.type=type;
       al.url=url;
+
+      checkIssueBufferSize();//if there is not space, make it
       // if the post has encoutered an error, we want to save datum that will be resent as soon as possible
-      issueDB.push_back(al);// save the datum in a local database
+      issueBuffer.push_back(al);// save the datum in a local Buffer
       success= false;
     }
 
@@ -561,14 +581,14 @@ boolean APIRest::POSTIssue(string url,string token,string device,string message,
   }
 }
 void APIRest::rePOSTIssue(string token){
-  
-  // j is useful to count the number of iteration equal to database size; 
-  // since after repost the first element we erase it, the next one shift to the first position so access database[0] till end
-  for(int j=0; j<issueDB.size(); j++){
-    APIRest::POSTIssue(issueDB[0].url,token,issueDB[0].device,issueDB[0].message,issueDB[0].type,issueDB[0].date);
-    issueDB.erase( issueDB.begin() );// don't need to delete every issue individually because we passed the struct and not the pointer
+  // j is useful to count the number of iteration equal to Buffer size; 
+  // since after repost the first element we erase it, the next one shift to the first position so access issueBuffer[0] till end
+  int size=issueBuffer.size();
+  for(int j=0; j<size; j++){
+    APIRest::POSTIssue(issueBuffer[0].url,token,issueBuffer[0].device,issueBuffer[0].message,issueBuffer[0].type,issueBuffer[0].date);
+    issueBuffer.erase( issueBuffer.begin() );// don't need to deallocate every issue individually because we passed the struct and not the pointer
   }
-  vector<issue>(issueDB).swap(issueDB);// this create a new database with capacity equal to the size
+  vector<issue>(issueBuffer).swap(issueBuffer);// this create a new Buffer with capacity equal to the size, that frees memory
   reposting=false;
 } 
 
@@ -579,29 +599,27 @@ boolean APIRest::isHTTPCodeOk(int code){
 
 
 boolean APIRest::needToBeRePOST(string response){
-    if( ParseResponse(response,"value",false)=="6"){// "value"= 6 means that the resource was not created for some problem(usually because it already exists), so do not try create it again
+    if( parseResponse(response,"value",false)=="6"){// "value"= 6 means that the resource was not created for some problem(usually because it already exists), so do not try create it again
       return false;
     }
     return true;
 }
- 
 
 string APIRest::getActualDate(){
 
-  timeElapsed = ((unsigned long)clock() / CLOCKS_PER_SEC)*SECOND - startingTime ; //in milliseconds
-  ultoa(atol(timestamp.c_str()) + timeElapsed, actualDate, 10);
-  return string(actualDate);
+  timeElapsed = ((double)clock() / CLOCKS_PER_SEC)*SECOND - startingTime ; //in milliseconds
+  //[TBD] Arduino does not support std::to_string(double) so I used here String(double).c_str()
+  //ftoa(atof(timestamp.c_str()) + timeElapsed, actualDate, 10);
+  return string( String( atof(timestamp.c_str()) + timeElapsed ).c_str() );
 }
 
 
-string APIRest::ParseResponse( string response, string fieldName, boolean quotedField = true ){
-  
+string APIRest::parseResponse( string response, string fieldName, boolean quotedField = true ){
+  deleteSpaces(response);
   if( response.find(fieldName) ==-1){
     Serial.println("NONE FIELD");
     return "";
   }
-  deleteSpaces(response);
-  
   int beginOfValue = response.find( ":", response.find(fieldName) )+1;//find starting index of field value
   int endOfValue;
   string fieldValue;
@@ -634,12 +652,53 @@ void APIRest::deleteSpaces(string str){
     str.erase(pos,1);//delete whitespace
   }
 }
-int APIRest:: getSampleDBsize(){
- return database.size();
+
+int APIRest:: getSampleBufferSize(){
+ return sampleBuffer.size();
 }
-int APIRest::getIssueDBsize(){
-  return issueDB.size();
+int APIRest::getIssueBufferSize(){
+  return issueBuffer.size();
 }
 
+void APIRest:: setSampleBufferSize(int size){
+  // if(size<sampleBuffer.size()){ [TBD]
+  //   //Call the correct policy
+  // }
+  if(size<sampleBuffer.size()){
+    sampleBuffer.erase(sampleBuffer.begin(), sampleBuffer.begin()+(sampleBuffer.size()-size));
+    vector<sample>(sampleBuffer).swap(sampleBuffer);// this create a new Buffer with capacity equal to the size, that frees memory allocated with the erased issue
+  }
+  sampleBufferSize=size;
+  sampleBuffer.reserve(size);//useful if (size>sampleBuffer.size()) in other cases it does nothing, no need of "if clause"
+
+}
+
+void APIRest::setIssueBufferSize(int size){
+  if(size<issueBuffer.size()){
+    issueBuffer.erase( issueBuffer.begin(), issueBuffer.begin()+(issueBuffer.size()-size) );// don't need to delete every issue individually because we passed the struct and not the pointer
+    vector<issue>(issueBuffer).swap(issueBuffer);// this create a new Buffer with capacity equal to the size, that frees memory allocated with the erased issue
+  }
+  issueBufferSize=size;
+  issueBuffer.reserve(size);//useful if (size>issueBuffer.size()) in other cases it does nothing, no need of "if clause"
+}
+
+void APIRest::checkIssueBufferSize(){
+  if(issueBufferSize<=issueBuffer.size()-(reposting? 1:0) ){ //if the rePOSTing of an issue fails, when this check is done the issue is already at the begin of issueBuffer,
+    // so do not take into account its presence (so issueBuffer.size()-1), beacuse the issue will be deleted from the begin of the queue and added back to the end.
+    // don't need to deallocate every issue individually because we passed the struct and not the pointer
+    issueBuffer.erase( issueBuffer.begin(), issueBuffer.begin()+ issueBufferSize/decimationPolicyFactor); //delete issueBufferSize/decimationPolicyFactor issue 
+    vector<issue>(issueBuffer).swap(issueBuffer);// this create a new Buffer with capacity equal to the size, that frees memory allocated with the erased issues
+  }
+}
+void APIRest::checkSampleBufferSize(){
+  if(sampleBufferSize<=sampleBuffer.size()-(reposting? 1:0) ){ //if the rePOSTing of a sample fails, when this check is done the sample is already at the begin of sampleBuffer,
+    // so do not take into account its presence (so sampleBuffer.size()-1), beacuse the sample will be deleted from the begin of the queue and added back to the end.
+    //[TBD]
+    
+    // don't need to deallocate every sample individually because we passed the struct and not the pointer
+    sampleBuffer.erase( sampleBuffer.begin(), sampleBuffer.begin()+ sampleBufferSize/decimationPolicyFactor); //delete sampleBufferSize/decimationPolicyFactor sample 
+    vector<sample>(sampleBuffer).swap(sampleBuffer);// this create a new Buffer with capacity equal to the size, that frees memory allocated with the erased samples
+  }
+}
 
 #endif

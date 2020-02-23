@@ -47,6 +47,7 @@ sample* maxVal::execute() {
     return input;
   }
   delete input; // free memory from this copy of sample because it is useless 
+  input=NULL;
   return NULL;//this should block the execution of the next operation
 }
 

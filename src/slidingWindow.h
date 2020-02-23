@@ -20,12 +20,12 @@ class slidingWindow : public operation{
   int counter;
 
   //methods
-  void parseArgument(string);
+  void parseArgument(string,int);
   double calculate(vector<sample*>);
   
   public:
   //constructors
-  slidingWindow(string);
+  slidingWindow(string,int);
   //destructor
   ~slidingWindow();
   
@@ -34,9 +34,9 @@ class slidingWindow : public operation{
 };
 //constructors
 
-slidingWindow::slidingWindow(string opName):operation(opName){
+slidingWindow::slidingWindow(string opName,int maxWindowBuffer):operation(opName){
   valid=true;
-  parseArgument( opName.substr( opName.find("(")+1, opName.find(")")-(opName.find("(")+1)) );
+  parseArgument( opName.substr( opName.find("(")+1, opName.find(")")-(opName.find("(")+1)),maxWindowBuffer );
   if(valid){
     samples.reserve(windowSize);// allocate in advance what needed, because dynamically it is done in power of 2 (2,4,8,16,32,..) and so waste memory
     counter=0;    
@@ -47,6 +47,7 @@ slidingWindow::slidingWindow(string opName):operation(opName){
 slidingWindow:: ~slidingWindow(){
   for(int i=0;i<samples.size();i++){
     delete samples[i];
+    samples[i]=NULL;
   }
    samples.clear();
 
@@ -68,6 +69,7 @@ sample* slidingWindow::execute() {
     output->value=accumulator; //beacuse we want a sample (with all its info) with the script resulting value
     output->startDate=samples.front()->startDate; //take startDate from the first sample of the slidingWindow
     delete samples[0]; // free memory from this copy of sample because it is useless now
+    samples[0]=NULL;
     samples.erase( samples.begin() );//remove first sample from the vector
 
     return output;//output will be deallocated by next operations
@@ -75,7 +77,7 @@ sample* slidingWindow::execute() {
   return NULL; // this should block the execution of the next operation
 }
 
-void slidingWindow::parseArgument(string arguments){
+void slidingWindow::parseArgument(string arguments,int maxWindowBuffer){
   if(arguments.empty()){
     valid=false;
     return;
@@ -111,6 +113,10 @@ void slidingWindow::parseArgument(string arguments){
   }
   
   windowSize=atoi( arguments.substr(firstIndex,endIndex-firstIndex).c_str() );
+  if(windowSize>maxWindowBuffer){
+    valid=false;
+    return;
+  }
   
 }
 
