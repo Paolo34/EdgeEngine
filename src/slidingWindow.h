@@ -82,6 +82,7 @@ void slidingWindow::parseArgument(string arguments,int maxWindowBuffer){
     valid=false;
     return;
   }
+  
   deleteSpaces(arguments);
   int firstIndex = arguments.find(",");
   int endIndex;
@@ -99,19 +100,15 @@ void slidingWindow::parseArgument(string arguments,int maxWindowBuffer){
     valid=false;
     return;
   }
-  
   initial=atof( arguments.substr(firstIndex+1,endIndex-(firstIndex+1)).c_str() );
-  
   //third argument is the size
   firstIndex = endIndex+1;
   endIndex=arguments.length();
-  
-  if( !isaNumber(arguments.substr(firstIndex+1,endIndex-(firstIndex+1))) )
+  if( !isaNumber(arguments.substr(firstIndex,endIndex-(firstIndex))) )
   {
     valid=false;
     return;
   }
-  
   windowSize=atoi( arguments.substr(firstIndex,endIndex-firstIndex).c_str() );
   if(windowSize>maxWindowBuffer){
     valid=false;

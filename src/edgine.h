@@ -42,6 +42,7 @@ class edgine{
   static edgine* instance;
   options opts;
   boolean initialization;
+  boolean WiFiconnected;
   
   string token="none";
   string response;
@@ -94,6 +95,7 @@ class edgine{
   public:
   //variables
   APIRest* Api; //Wrapper for the Rest API
+  connection* conn;
   
   //methods
   static edgine* getInstance();
@@ -115,10 +117,13 @@ edgine* edgine::getInstance(){
 
 edgine::edgine(){
   Api=APIRest::getInstance();  
+  conn=connection::getInstance();
 }
 
 void edgine::init( options opts){
   initialization=true;
+  WiFiconnected=true;
+
   this->opts=opts; 
   authenticate();
   do{//GET INFO
@@ -222,6 +227,14 @@ int edgine::evaluate(vector<sample*> samples){
     }
     
   }
+  if(!conn->isConnected()){
+    WiFiconnected=false;
+  }
+  if(conn->isConnected() && WiFiconnected==false){
+    WiFiconnected=true;
+    Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Connection had been lost! Now the engine is reconnected","connection");
+  }
+
   return executeScripts(samples);
 }
 
@@ -238,6 +251,12 @@ void edgine::authenticate(){
       else
         Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,response+" LOGIN FAILED","token");
 
+    }
+    if(!conn->isConnected() && initialization){// if it looses connection during initialization, reconnect (when init is completed the connection should be checked by main program)
+      WiFiconnected=false;
+      conn->reconnect();
+      if(conn->isConnected())
+        WiFiconnected=true;
     }
 
     while(!isOKresponse(response) && ( ((double)clock() / CLOCKS_PER_SEC)-startLogCount ) < retryTime);//wait "retryTime" if login failed, then retry login
@@ -374,24 +393,24 @@ int edgine::executeScripts(vector<sample*> samples){
 }
 
 void edgine::checkFields(){
-  // temp = stringToSec(parseResponse(response,"period",true));
-  // if(temp==-1){
-  //     Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid period interval ","field");
-  // }else{
-  //   period=temp;
-  // }
-  // temp = stringToSec(parseResponse(response,"cycle",true));
-  // if(temp==-1){
-  //     Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid cycle interval ","field");
-  // }else{
-  //   cycle=temp;
-  // }
-  // temp = stringToSec(parseResponse(response,"retryTime",true));
-  // if(temp==-1){
-  //     Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid retryTime interval ","field");
-  // }else{
-  //   retryTime=temp;
-  // }
+  temp = stringToSec(parseResponse(response,"period",true));
+  if(temp==-1){
+      Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid period interval ","field");
+  }else{
+    period=temp;
+  }
+  temp = stringToSec(parseResponse(response,"cycle",true));
+  if(temp==-1){
+      Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid cycle interval ","field");
+  }else{
+    cycle=temp;
+  }
+  temp = stringToSec(parseResponse(response,"retryTime",true));
+  if(temp==-1){
+      Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid retryTime interval ","field");
+  }else{
+    retryTime=temp;
+  }
   temp = stringToSec(parseResponse(response,"scriptListMaxSize",false));  
   if(temp==-1){
       Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,"Invalid scriptListMaxSize size ","field");

@@ -507,7 +507,7 @@ void APIRest::rePOSTMeasurement(string token){
   // since after repost the first element we erase it, the next one shift to the first position so access sampleBuffer[0] till end
   int size=sampleBuffer.size();
   for(int j=0; j<size; j++){
-    APIRest::POSTMeasurement(sampleBuffer[j], token);
+    APIRest::POSTMeasurement(sampleBuffer[0], token);
     sampleBuffer.erase( sampleBuffer.begin());
   }
   vector<sample>(sampleBuffer).swap(sampleBuffer);// this create a new sampleBuffer with capacity equal to the size
@@ -617,7 +617,8 @@ string APIRest::getActualDate(){
 string APIRest::parseResponse( string response, string fieldName, boolean quotedField = true ){
   deleteSpaces(response);
   if( response.find(fieldName) ==-1){
-    Serial.println("NONE FIELD");
+    Serial.print(fieldName.c_str());
+    Serial.println(" field is not present!");
     return "";
   }
   int beginOfValue = response.find( ":", response.find(fieldName) )+1;//find starting index of field value
@@ -694,7 +695,7 @@ void APIRest::checkSampleBufferSize(){
   if(sampleBufferSize<=sampleBuffer.size()-(reposting? 1:0) ){ //if the rePOSTing of a sample fails, when this check is done the sample is already at the begin of sampleBuffer,
     // so do not take into account its presence (so sampleBuffer.size()-1), beacuse the sample will be deleted from the begin of the queue and added back to the end.
     //[TBD]
-    
+    Serial.println("sample buffer FULL");
     // don't need to deallocate every sample individually because we passed the struct and not the pointer
     sampleBuffer.erase( sampleBuffer.begin(), sampleBuffer.begin()+ sampleBufferSize/decimationPolicyFactor); //delete sampleBufferSize/decimationPolicyFactor sample 
     vector<sample>(sampleBuffer).swap(sampleBuffer);// this create a new Buffer with capacity equal to the size, that frees memory allocated with the erased samples

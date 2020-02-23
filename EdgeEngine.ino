@@ -140,12 +140,12 @@ void loop() {
     Serial.print("WIFI STATUS: ");
     Serial.println(WiFi.status());
     Connection->reconnect();
-    
   }
+
   cycleCounter=clock()-cycleCounter;// duration of the exexution of th cycle
   
   // subtract te execution time to the Sleep period if result is not negative
-  (cycleCounter/CLOCKS_PER_SEC) < Edge->getPeriod() ? sleepTime=(Edge->getPeriod()-cycleCounter/CLOCKS_PER_SEC)*1000 : sleepTime=0;//delay in milliseconds
+  ((double)cycleCounter/CLOCKS_PER_SEC) < Edge->getPeriod() ? sleepTime=(Edge->getPeriod()-(double)cycleCounter/CLOCKS_PER_SEC)*1000 : sleepTime=0;//delay in milliseconds
   
   
   delay(sleepTime);

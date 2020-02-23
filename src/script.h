@@ -128,9 +128,8 @@ void script::parseScript(string scriptString){
   startIndex = endIndex+2;//+2 because there is also the point in the syntax
   
   while( endIndex!=-1 ){
-  
+    
     endIndex = scriptString.find(".",startIndex+1); // start the search from the next charater
-
     operations.push_back( createOperation(scriptString.substr(startIndex,endIndex-startIndex)) ); //Add element at the end
     
     if(!operations[counter]->valid || counter>scriptStatementMaxSize){ // if something is wrong in the script or there are too many operations

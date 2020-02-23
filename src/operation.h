@@ -74,14 +74,17 @@ void operation::setToken(string token){
 }
 
 boolean operation::isaNumber(string numberStr){
-  for (int i = 0; i < numberStr.length(); i++)
-  {
+  if( numberStr.empty()){
+    return false;
+  }
+  for (int i = 0; i < numberStr.length(); i++){
     char c=numberStr.at(i);
     if((c>'9' || c<'0') && c!='.')// only numbers and point are valid
     {
       return false;
     }
   }
+  
   return true;
 }
 

@@ -54,7 +54,7 @@ void mapVal::parseArgument(string arguments){
     return;
   }
   deleteSpaces(arguments);
-  //arguments example : "a/6" so charAt(0) is useless
+  //arguments example : "a/6" so at(0) is useless
   //first argument is the operation type
   function=arguments.at(1);
   if(function!='+' && function!='*' && function!='-' && function!='/' && function!='^'){

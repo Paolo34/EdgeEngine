@@ -115,17 +115,17 @@ void postVal::parseNumOfSamples( string numString,int batchMaxSize){
   
   if(!numString.empty())// if there is no number we assign 1 because we post one measurement at a time 
   {
-	if(!isaNumber(numString))
-    {
-      valid=false;
-      return;
-    }
-    numberValue = atoi(numString.c_str());
-    if(numberValue > batchMaxSize){
-      valid=false;
-      return;
-    }
-  }	 
+    if(!isaNumber(numString))
+      {
+        valid=false;
+        return;
+      }
+      numberValue = atoi(numString.c_str());
+      if(numberValue > batchMaxSize){
+        valid=false;
+        return;
+      }
+    }	 
   numOfSamples= numberValue;
 }
 

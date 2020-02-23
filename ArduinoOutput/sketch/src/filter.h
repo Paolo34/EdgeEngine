@@ -12,8 +12,8 @@ class filter : public operation{
   private:
   //variable
   string function;
-  double operand;
-
+  double operand1;
+  double operand2;
   //methods
   void parseArgument(string);
   
@@ -39,16 +39,20 @@ filter:: ~filter(){
 sample* filter::execute() {
   if(input!=NULL ){
       //ex: filter(a<5)
-    if(function=="<" && input->value<operand)
+    if(function=="<" && input->value<operand1)
         return input;
-    else if(function==">" && input->value>operand)
+    else if(function==">" && input->value>operand1)
         return input;
-    else if(function=="<=" && input->value<=operand)
+    else if(function=="<=" && input->value<=operand1)
         return input;
-    else if(function==">=" && input->value>=operand)
+    else if(function==">=" && input->value>=operand1)
         return input;
-    else if(function=="==" && input->value==operand)
+    else if(function=="==" && input->value==operand1)
         return input;
+    else if(function=="C" && (input->value>=operand1 && input->value<=operand2) )
+      return input;
+    else if(function=="/C" && (input->value<=operand1 || input->value>=operand2) )
+      return input;
   }
   delete input;
   input=NULL;
@@ -65,31 +69,82 @@ void filter::parseArgument(string arguments){
   //first argument is the operation type
   
   char func=arguments.at(1);
-  if( func!='<' && func!='>' && func!='=' ){
+  if( func=='<' || func=='>' || func=='=' ){
+    function=func;
+    if(arguments.size()<3){
+      valid=false;
+      return;
+    }
+    func=arguments.at(2);
+    if(func=='='){//if it is a 2-chars function
+      function.push_back(func);
+      if(!isaNumber(arguments.substr(3,arguments.length()-3)))
+      {
+        valid=false;
+        return;
+      }
+      //second argument is the operand1
+      operand1=atof( arguments.substr(3,arguments.length()-3).c_str() ); 
+    }
+    else{//if it is a 1-char function
+      if(!isaNumber(arguments.substr(2,arguments.length()-2)))
+      {
+        valid=false;
+        return;
+      }
+      //second argument is the operand1
+      operand1=atof( arguments.substr(2,arguments.length()-2).c_str() ); 
+    }
+  }
+  else if(func=='C'){//disjoint interval
+    int separator;
+    function=func;
+    if(arguments.size()<3){
+      valid=false;
+      return;
+    }
+    if( arguments.at(2)=='[' ){
+      if( (separator=arguments.find(',',2))!=-1 && isaNumber(arguments.substr(3,separator-3)) ){
+        operand1=atof(arguments.substr(3,separator-3).c_str());
+        if( arguments.at(arguments.length()-1)==']' && isaNumber(arguments.substr(separator+1,arguments.length()-1-(separator+1))) ){
+          operand2= atof( arguments.substr(separator+1,arguments.length()-1-(separator+1)).c_str() );
+          if(operand1<operand2)
+            return;
+        }
+      }
+    }
+    valid= false;
+    return;
+  }
+  else if (func=='/'){
+    int separator;
+    function=func;
+    if(arguments.size()<4){
+      valid=false;
+      return;
+    }
+    func=arguments.at(2);
+    if(func=='C'){
+      function.push_back(func);
+      if( arguments.at(3)=='[' ){
+        if( (separator=arguments.find(',',3))!=-1 && isaNumber(arguments.substr(4,separator-4)) ){
+          operand1=atof(arguments.substr(4,separator-4).c_str());
+          if( arguments.at(arguments.length()-1)==']' && isaNumber(arguments.substr(separator+1,arguments.length()-1-(separator+1))) ){
+            operand2= atof( arguments.substr(separator+1,arguments.length()-1-(separator+1)).c_str() );
+            if(operand1<operand2)
+              return;
+          }
+        }
+      }
+    }
+    valid= false;
+    return;
+  }
+  else{
     valid=false;
     return;
   }
-  function=func;
-  func=arguments.at(2);
-  if(func=='='){//if it is a 2-chars function
-    function.push_back(func);
-    if(!isaNumber(arguments.substr(3,arguments.length()-3)))
-    {
-      valid=false;
-      return;
-    }
-    //second argument is the operand
-    operand=atof( arguments.substr(3,arguments.length()-3).c_str() ); 
-  }
-  else{//if it is a 1-char function
-    if(!isaNumber(arguments.substr(2,arguments.length()-2)))
-    {
-      valid=false;
-      return;
-    }
-    //second argument is the operand
-    operand=atof( arguments.substr(2,arguments.length()-2).c_str() ); 
-  }
+
 }
 
 
