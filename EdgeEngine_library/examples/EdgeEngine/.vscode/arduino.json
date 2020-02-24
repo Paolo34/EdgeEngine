@@ -1,0 +1,8 @@
+{
+    "board": "esp32:esp32:m5stack-core-esp32",
+    "configuration": "FlashMode=qio,FlashFreq=80,PartitionScheme=default,UploadSpeed=921600,DebugLevel=none",
+    "port": "COM18",
+    "sketch": "EdgeEngine.ino",
+    "output": "ArduinoOutput",
+    "programmer": "AVRISP mkII"
+}

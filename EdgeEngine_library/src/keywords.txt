@@ -1,0 +1,36 @@
+#######################################
+# Syntax Coloring Map For EdgeEngine
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+APIRest	KEYWORD1
+average	KEYWORD1
+connection	KEYWORD1
+edgine	KEYWORD1
+filter	KEYWORD1
+mapVal	KEYWORD1
+maxVal	KEYWORD1
+median	KEYWORD1
+minVal	KEYWORD1
+operation	KEYWORD1
+postVal	KEYWORD1
+reception	KEYWORD1
+sample	KEYWORD1
+script	KEYWORD1
+slidingWindow	KEYWORD1
+stdDevation	KEYWORD1
+window	KEYWORD1
+
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+2
+
+
+
+#######################################
+# Constants (LITERAL1)
+#######################################

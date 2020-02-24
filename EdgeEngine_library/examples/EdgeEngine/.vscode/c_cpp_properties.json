@@ -1,0 +1,29 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "C:\\Users\\chicc\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\**",
+                "C:\\Users\\chicc\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\1.0.3\\**",
+                "C:\\Users\\chicc\\Documents\\Arduino\\libraries\\**",
+                "C:\\Program Files (x86)\\Arduino\\hardware\\espressif\\esp32\\libraries\\**",
+                "${workspaceFolder}"
+            ],
+            "browse": {
+                "limitSymbolsToIncludedHeaders": false,
+                "path": [
+                    "C:\\Users\\chicc\\AppData\\Local\\Arduino15\\packages\\esp32\\tools\\**",
+                    "C:\\Users\\chicc\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\1.0.3\\**",
+                    "C:\\Users\\chicc\\Documents\\Arduino\\libraries\\**",
+                    "C:\\Program Files (x86)\\Arduino\\hardware\\espressif\\esp32\\libraries\\**",
+                    "${workspaceFolder}"
+                ]
+            },
+            "intelliSenseMode": "msvc-x64",
+            "compilerPath": "C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.15.26726/bin/Hostx64/x64/cl.exe",
+            "cStandard": "c11",
+            "cppStandard": "c++17"
+        }
+    ],
+    "version": 4
+}

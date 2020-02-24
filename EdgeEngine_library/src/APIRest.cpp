@@ -1,94 +1,11 @@
 /*
-  APIRest.h - Library for make Edge Engine HTTP requests.
+  APIRest.cpp - Class for make Edge Engine HTTP requests.
   Created by Francesco Tornatore, February 24, 2020.
   Released into the public domain.
 */
-#ifndef APIRest_h
-#define APIRest_h
+#include "APIRest.h"
 
-using std::string;
-#include <string>
-#include <HTTPClient.h>
-#include <time.h>
-//#include <pthread.h>
-#include "sample.h"
-
-#define SECOND  1000 // 1000 milliseconds in a second
-
-typedef struct{
-  string device;
-  string date;
-  string message;
-  string type;
-  string url;
-} issue;
-
-// typedef struct{
-  // //input
-  // sample* sam;
-  // string token;
-// } taskParameter;
-
-//SINGLETON wrapper
-class APIRest{
-
-  private:
-
-  //variables
-  int httpCode;
-  char httpCodeTmp [4];
-  string response;
-  boolean success;
-  long  startingTime;
-  double timeElapsed;
-  string timestamp;
-  string actualDate ;
-  vector<issue> issueBuffer;
-  vector<sample> sampleBuffer;
-  int issueBufferSize=20;
-  int sampleBufferSize=20;
-  int decimationPolicyFactor = 2; // size/decimationPolicyFactor; that is half of data will be deleted
-  boolean reposting;
-  
-  taskParameter parameters;
-  
-  //constructor
-  APIRest();
-  
-  //variables
-  static APIRest* instance;
-  
-  //methods
-  boolean isHTTPCodeOk(int);
-  boolean needToBeRePOST(string);
-  string parseResponse(string,string,boolean);
-  void deleteSpaces(string);
-  void rePOSTMeasurement(string);
-  void rePOSTIssue(string);
-  void checkIssueBufferSize();
-  void checkSampleBufferSize();
-
-  static void POSTMeasurement_task( void *  );
-
-  public:
-  //variables
-  
-  //methods
-  static APIRest* getInstance();
-  string POSTLogin(string,string,string);
-  string GETInfoUpdateDate(string,string);
-  string GETDescr(string,string);
-  string GETScript(string,string);
-  boolean POSTMeasurement(sample,string);
-  boolean POSTIssue(string,string,string,string,string,string);
-  string getActualDate();
-  boolean TESTING;
-  int getSampleBufferSize();
-  int getIssueBufferSize();
-  void setSampleBufferSize(int);
-  void setIssueBufferSize(int);
-};
-
+#include <stdlib.h>
 APIRest* APIRest::instance=NULL;
 
 APIRest* APIRest::getInstance(){
@@ -97,7 +14,7 @@ APIRest* APIRest::getInstance(){
   }
   return instance;
 }
-//constructor
+// constructor
 APIRest::APIRest(){
   reposting=false;
   TESTING=false;
@@ -153,8 +70,8 @@ string APIRest::GETInfoUpdateDate(string url, string token){
     if (isHTTPCodeOk(httpCode)) { //Check for the returning code
           
           startingTime = ((double)clock() / CLOCKS_PER_SEC)*SECOND; //milliseconds
-          timestamp = parseResponse(response,"timestamp",true);
-          //example of timestamp in milliseconds: "1580394697254" 
+          timestamp = parseResponse(response,"timestamp");
+          // example of timestamp in milliseconds: "1580394697254" 
     }
     else {
       if(httpCode<0)
@@ -303,7 +220,7 @@ string APIRest::GETScript(string url, string token){
   else{
 
     if(token=="JWT token"){
-      if( parseResponse(url,"_id",true) == "group-temperature"){
+      if( parseResponse(url,"_id") == "group-temperature"){
         return "200{\"docs\": ["
               "{"
                 "\"visibility\": \"private\","
@@ -318,7 +235,7 @@ string APIRest::GETScript(string url, string token){
             "],"
             "\"totalDocs\": 1, \"limit\": 10, \"hasPrevPage\": false, \"hasNextPage\": false, \"page\": 1, \"totalPages\": 1, \"pagingCounter\": 1, \"prevPage\": null, \"nextPage\": null}";
       }
-      else if(parseResponse(url,"_id",true)=="average-hourly-temperature"){
+      else if(parseResponse(url,"_id")=="average-hourly-temperature"){
         return "200{\"docs\": ["
               "{"
                 "\"visibility\": \"private\","
@@ -336,7 +253,7 @@ string APIRest::GETScript(string url, string token){
       }
     }
     if(token=="JWT token1"){
-      if( parseResponse(url,"_id",true) == "group-temperature"){
+      if( parseResponse(url,"_id") == "group-temperature"){
         return "200{\"docs\": ["
               "{"
                 "\"visibility\": \"private\","
@@ -351,7 +268,7 @@ string APIRest::GETScript(string url, string token){
             "],"
             "\"totalDocs\": 1, \"limit\": 10, \"hasPrevPage\": false, \"hasNextPage\": false, \"page\": 1, \"totalPages\": 1, \"pagingCounter\": 1, \"prevPage\": null, \"nextPage\": null}";
       }
-      else if(parseResponse(url,"_id",true)=="average-hourly-temperature"){
+      else if(parseResponse(url,"_id")=="average-hourly-temperature"){
 
         return "200{\"docs\": ["
               "{"
@@ -386,46 +303,46 @@ void *printThreadId(void *threadid) {
 }*/
 
 // void APIRest::POSTMeasurement_task( void * pvParameters ){
-//     taskParameter param = *(taskParameter *) pvParameters;
+    // taskParameter param = *(taskParameter *) pvParameters;
 
-//     HTTPClient http;
-//     http.begin(param.sam->url); //Specify the URL and certificate 
-//     http.addHeader("Content-Type","application/json");
-//     http.addHeader("Authorization",param.token);
-//     int httpCode = http.POST("{\"thing\": \""+param.sam->thing+"\", \"feature\": \""+param.sam->feature+"\", \"device\": \""+param.sam->device+"\", \"script\": \""+param.sam->scriptId+"\", \"samples\": {\"values\":"+param.sam->value+"}, \"startDate\": \""+param.sam->startDate+"\", \"endDate\": \""+param.sam->endDate+"\"}" );//this is the body
-//     String response=httpCode+http.getString();
+    // HTTPClient http;
+    // http.begin(param.sam->url); //Specify the URL and certificate 
+    // http.addHeader("Content-Type","application/json");
+    // http.addHeader("Authorization",param.token);
+    // int httpCode = http.POST("{\"thing\": \""+param.sam->thing+"\", \"feature\": \""+param.sam->feature+"\", \"device\": \""+param.sam->device+"\", \"script\": \""+param.sam->scriptId+"\", \"samples\": {\"values\":"+param.sam->value+"}, \"startDate\": \""+param.sam->startDate+"\", \"endDate\": \""+param.sam->endDate+"\"}" );//this is the body
+    // String response=httpCode+http.getString();
     
-//     if (!isHTTPCodeOk(httpCode)) {// something has gone wrong in the POST
-//       // if the post has encoutered an error, we want to save datum that will be resent as soon as possible
-//       if(httpCode<0)
-//         response+=" error: "+HTTPClient::errorToString(httpCode);
-//       if( needToBeRePOST(response)){
-//         sampleBuffer.push_back(param.sam);// save the datum in a local sampleBuffer
-//         Serial.print(F("[HTTPS] POST NewMeas... failed"));
-//         Serial.print(", value: "+String(param.sam->value));
-//         Serial.println(", script: "+param.sam->scriptId);
-//       }
-//       else{
-//         Serial.println(F("Measurement aleady POSTed"));
-//       }
+    // if (!isHTTPCodeOk(httpCode)) {// something has gone wrong in the POST
+      //if the post has encoutered an error, we want to save datum that will be resent as soon as possible
+      // if(httpCode<0)
+        // response+=" error: "+HTTPClient::errorToString(httpCode);
+      // if( needToBeRePOST(response)){
+        // sampleBuffer.push_back(param.sam);// save the datum in a local sampleBuffer
+        // Serial.print(F("[HTTPS] POST NewMeas... failed"));
+        // Serial.print(", value: "+String(param.sam->value));
+        // Serial.println(", script: "+param.sam->scriptId);
+      // }
+      // else{
+        // Serial.println(F("Measurement aleady POSTed"));
+      // }
       
-//     }
-//     Serial.println(response);
-//     http.end(); //Free the resources
+    // }
+    // Serial.println(response);
+    // http.end(); //Free the resources
 
-//     if(!reposting){
-//       reposting=true;
-//       rePOSTMeasurement(param.token); // every time we post a new measurement retry to post all the failed ones
-//     }
-//     if(!reposting){
-//       reposting=true;
-//       rePOSTIssue(param.token); // every time we post a new measurement retry to post all the failed alerts
-//     }
+    // if(!reposting){
+      // reposting=true;
+      // rePOSTMeasurement(param.token); // every time we post a new measurement retry to post all the failed ones
+    // }
+    // if(!reposting){
+      // reposting=true;
+      // rePOSTIssue(param.token); // every time we post a new measurement retry to post all the failed alerts
+    // }
 
-//     vTaskDelete(NULL);
+    // vTaskDelete(NULL);
 // }
 
-boolean APIRest::POSTMeasurement(sample sam,string token){
+bool APIRest::POSTMeasurement(sample sam,string token){
   if(!TESTING){
     
     // parameters.sam=&sam;
@@ -435,7 +352,7 @@ boolean APIRest::POSTMeasurement(sample sam,string token){
     http.begin(sam.url.c_str()); //Specify the URL and certificate 
     http.addHeader("Content-Type","application/json");
     http.addHeader("Authorization",token.c_str());
-    //[TBD] Arduino does not support std::to_string(double) so I used here String(double).c_str()
+    // [TBD] Arduino does not support std::to_string(double) so I used here String(double).c_str()
     httpCode = http.POST(("{\"thing\": \""+sam.thing+"\", \"feature\": \""+sam.feature+"\", \"device\": \""+sam.device+"\", \"script\": \""+sam.scriptId+"\", \"samples\": {\"values\":"+String(sam.value).c_str()+"}, \"startDate\": \""+sam.startDate+"\", \"endDate\": \""+sam.endDate+"\"}").c_str() );//this is the body
 
     itoa(httpCode,httpCodeTmp,10);
@@ -514,7 +431,7 @@ void APIRest::rePOSTMeasurement(string token){
   reposting=false;
 } 
 
-boolean APIRest::POSTIssue(string url,string token,string device,string message,string type="generic",string date=APIRest::getInstance()->getActualDate()){
+bool APIRest::POSTIssue(string url,string token,string device,string message,string type,string date){
   if(!TESTING){
 
     HTTPClient http;
@@ -592,12 +509,12 @@ void APIRest::rePOSTIssue(string token){
 } 
 
 
-boolean APIRest::isHTTPCodeOk(int code){
+bool APIRest::isHTTPCodeOk(int code){
   return  code>=200 && code<=308;
 }
 
 
-boolean APIRest::needToBeRePOST(string response){
+bool APIRest::needToBeRePOST(string response){
     if( parseResponse(response,"value",false)=="6"){// "value"= 6 means that the resource was not created for some problem(usually because it already exists), so do not try create it again
       return false;
     }
@@ -607,13 +524,13 @@ boolean APIRest::needToBeRePOST(string response){
 string APIRest::getActualDate(){
 
   timeElapsed = ((double)clock() / CLOCKS_PER_SEC)*SECOND - startingTime ; //in milliseconds
-  //[TBD] Arduino does not support std::to_string(double) so I used here String(double).c_str()
-  //ftoa(atof(timestamp.c_str()) + timeElapsed, actualDate, 10);
+  // [TBD] Arduino does not support std::to_string(double) so I used here String(double).c_str()
+  // ftoa(atof(timestamp.c_str()) + timeElapsed, actualDate, 10);
   return string( String( atof(timestamp.c_str()) + timeElapsed ).c_str() );
 }
 
 
-string APIRest::parseResponse( string response, string fieldName, boolean quotedField = true ){
+string APIRest::parseResponse( string response, string fieldName, bool quotedField ){
   deleteSpaces(response);
   if( response.find(fieldName) ==-1){
     Serial.print(fieldName.c_str());
@@ -662,7 +579,7 @@ int APIRest::getIssueBufferSize(){
 
 void APIRest:: setSampleBufferSize(int size){
   // if(size<sampleBuffer.size()){ [TBD]
-  //   //Call the correct policy
+    //Call the correct policy
   // }
   if(size<sampleBuffer.size()){
     sampleBuffer.erase(sampleBuffer.begin(), sampleBuffer.begin()+(sampleBuffer.size()-size));
@@ -693,12 +610,10 @@ void APIRest::checkIssueBufferSize(){
 void APIRest::checkSampleBufferSize(){
   if(sampleBufferSize<=sampleBuffer.size()-(reposting? 1:0) ){ //if the rePOSTing of a sample fails, when this check is done the sample is already at the begin of sampleBuffer,
     // so do not take into account its presence (so sampleBuffer.size()-1), beacuse the sample will be deleted from the begin of the queue and added back to the end.
-    //[TBD]
+    // [TBD]
     Serial.println("sample buffer FULL");
     // don't need to deallocate every sample individually because we passed the struct and not the pointer
     sampleBuffer.erase( sampleBuffer.begin(), sampleBuffer.begin()+ sampleBufferSize/decimationPolicyFactor); //delete sampleBufferSize/decimationPolicyFactor sample 
     vector<sample>(sampleBuffer).swap(sampleBuffer);// this create a new Buffer with capacity equal to the size, that frees memory allocated with the erased samples
   }
 }
-
-#endif
