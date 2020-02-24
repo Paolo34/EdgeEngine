@@ -125,3 +125,4 @@ ArduinoOutput/sketch/src/average.h
 ArduinoOutput/sketch/src/median.h
 ArduinoOutput/sketch/src/stdDeviation.h
 EdgeEngine_library/examples/EdgeEngine/ArduinoOutput/
+EdgeEngine_library/test/UnitTestEdgeEngine/ArduinoOutput/

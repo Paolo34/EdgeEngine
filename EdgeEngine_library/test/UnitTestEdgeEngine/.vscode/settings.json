@@ -1,0 +1,24 @@
+{
+    "files.associations": {
+        "*.idl": "cpp",
+        "functional": "cpp",
+        "system_error": "cpp",
+        "xtr1common": "cpp",
+        "array": "cpp",
+        "string_view": "cpp",
+        "initializer_list": "cpp",
+        "utility": "cpp",
+        "deque": "cpp",
+        "list": "cpp",
+        "queue": "cpp",
+        "random": "cpp",
+        "type_traits": "cpp",
+        "vector": "cpp",
+        "xhash": "cpp",
+        "xstring": "cpp",
+        "xtree": "cpp",
+        "xutility": "cpp",
+        "algorithm": "cpp",
+        "cmath": "cpp"
+    }
+}
