@@ -7,6 +7,7 @@
 #include "connection.h"
 
 #include <Arduino.h>
+#include <esp_wifi.h>
 #include <WiFi.h>
 
 
@@ -25,6 +26,12 @@ connection::connection(){
 }
 
 void connection::setupConnection(const char* ssidWifi,const char* passWifi){
+  wifi_config_t current_conf;
+  esp_wifi_get_config(WIFI_IF_STA, &current_conf);
+  current_conf.sta.listen_interval = (uint16_t)65535;// max uint16
+  esp_wifi_set_config(WIFI_IF_STA, &current_conf);
+
+  esp_wifi_set_ps(WIFI_PS_MAX_MODEM);// set Power Saving Mode without shutdown WIFI
   if(!TESTING){
     delay(1000);
     WiFi.begin(ssidWifi, passWifi); 

@@ -121,7 +121,7 @@ void loop() {
   // subtract te execution time to the Sleep period if result is not negative
   ((double)cycleCounter/CLOCKS_PER_SEC) < Edge->getPeriod() ? sleepTime=(Edge->getPeriod()-(double)cycleCounter/CLOCKS_PER_SEC)*1000 : sleepTime=0;//delay in milliseconds
   
-  
+
   delay(sleepTime);
 }
 
