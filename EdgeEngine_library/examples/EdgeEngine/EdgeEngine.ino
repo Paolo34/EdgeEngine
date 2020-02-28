@@ -3,16 +3,27 @@ using std::string;
 #include <time.h>
 #include <EdgeEngine_library.h>
 
+#include <SparkFunTSL2561.h>
+#include <Wire.h>
+
+#define I2C_SDA 33
+#define I2C_SCL 32
+
 int pirPin = 35;
 int lightPin = 34;// pin 27 not working with this sketch
 int potPin = 32;
+
+// Create an SFE_TSL2561 object, here called "light":
+SFE_TSL2561 lightSensor;
+bool lightSensorGain;
+unsigned int lightSensorms;
 
 clock_t pirCounter;
 clock_t cycleCounter; // count execution cycle time
 clock_t sleepTime;
 
 sample* motion=NULL;
-sample* potentiometer=NULL;
+sample* temperature=NULL;
 sample* light=NULL;
 /*
 const char* ssidWifi = "TIM-91746045";
@@ -20,12 +31,6 @@ const char* passWifi = "1Oj3eyR5qHD3jAaT5Jfj1Ooh";
 */
 const char* ssidWifi = "TORNATOREwifi";
 const char* passWifi = "finalborgo";
-
-/*
-const char* ssid = "S7Chicco";
-const char* password = "LLLLLLLL";
-*/
-
 
 edgine* Edge;
 connection* Connection; //Wrapper for the wifi connection
@@ -35,10 +40,18 @@ vector<sample*> samples;
 /**
  * setup
  */
-int i;
 void setup() {
   
   Serial.begin(115200);
+
+  //setup I2C
+  Wire.begin(I2C_SDA, I2C_SCL);
+
+  //setup sensors
+  lightSensor.begin();//Can pass nothing to light.begin(), default I2C address (0x39), or use one presets if you have changed the ADDR jumper on the board
+  lightSensorGain=0;
+  lightSensor.setTiming(lightSensorGain,2,lightSensorms);
+  lightSensor.setPowerUp();
 
   //setup connection
   Connection = connection::getInstance();
@@ -69,38 +82,31 @@ void setup() {
   //Interrupt sensor setup
   pinMode(pirPin, INPUT);
   //attachInterrupt(digitalPinToInterrupt(pirPin), detectedMotion, FALLING);
-  i=0;
   
 }
-
-
 
 void loop() {
   cycleCounter=clock();
   
   //create a light measurement sample
   light = new sample("light");
-  int lig=analogRead(lightPin);
   light->startDate=Edge->Api->getActualDate();
   light->endDate=light->startDate;
-  // light->value= lig;
-  light->value=(double)ESP.getFreeHeap();
+  light->value=getLux();
   samples.push_back(light);
   
-  //create a potentiometer measurement sample
+  //create a temperature measurement sample
+  temperature = new sample("temperature");
+  temperature->startDate=Edge->Api->getActualDate();
+  temperature->endDate=temperature->startDate;
+  temperature->value=0;
+  samples.push_back(temperature);
 
-  potentiometer = new sample("temperature");
-  int pot=analogRead(potPin);
-  potentiometer->startDate=Edge->Api->getActualDate();
-  potentiometer->endDate=potentiometer->startDate;
-  //potentiometer->value=pot;
-  potentiometer->value=i++;
-  samples.push_back(potentiometer);
   Edge->evaluate(samples);
   samples.clear(); // after evaluated all samples delete them
 
-  delete potentiometer;
-  potentiometer=NULL;
+  delete temperature;
+  temperature=NULL;
   delete light;
   light =NULL;
   //delete motion;
@@ -125,9 +131,6 @@ void loop() {
   delay(sleepTime);
 }
 
-
-
-
 // void detectedMotion(){
 //   detachInterrupt(digitalPinToInterrupt(pirPin)); //PIR sensor needs 2 seconds to take an image to compare to
 //   pirCounter=(double)clock();
@@ -138,3 +141,22 @@ void loop() {
 //   motion->value=1;
 //   samples.push_back(motion);
 // }
+
+double getLux(){
+  unsigned int data0, data1;
+  if (lightSensor.getData(data0,data1))
+  {
+    double lux;// Resulting lux value
+    if (!lightSensor.getLux(lightSensorGain,lightSensorms,data0,data1,lux)) 
+    { 
+      //sensor saturated
+    }
+    return lux;
+  }
+  else{
+     //I2C error
+  }
+  
+}
+
+
