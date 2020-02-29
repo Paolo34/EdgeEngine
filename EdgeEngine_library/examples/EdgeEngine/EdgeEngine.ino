@@ -5,15 +5,15 @@ using std::string;
 
 #include <SparkFunTSL2561.h>
 #include <Wire.h>
-
+//I2C wires
 #define I2C_SDA 33
 #define I2C_SCL 32
 
 int pirPin = 35;
-int lightPin = 34;// pin 27 not working with this sketch
-int potPin = 32;
 
-// Create an SFE_TSL2561 object, here called "light":
+int tmpSensorAddress = 0x48;
+
+// Create an SFE_TSL2561 object
 SFE_TSL2561 lightSensor;
 bool lightSensorGain;
 unsigned int lightSensorms;
@@ -99,7 +99,7 @@ void loop() {
   temperature = new sample("temperature");
   temperature->startDate=Edge->Api->getActualDate();
   temperature->endDate=temperature->startDate;
-  temperature->value=0;
+  temperature->value=getTemperature();
   samples.push_back(temperature);
 
   Edge->evaluate(samples);
@@ -157,6 +157,14 @@ double getLux(){
      //I2C error
   }
   
+}
+
+float getTemperature(){
+  Wire.requestFrom(tmpSensorAddress,2); //size: 2 bytes 
+  byte MSB = Wire.read();
+  byte LSB = Wire.read();
+  int TemperatureSum = ((MSB << 8) | LSB) >> 4; //12 bit int, two's complement for negative
+  return TemperatureSum*0.0625;//quantization level is 0.0625 celsius
 }
 
 

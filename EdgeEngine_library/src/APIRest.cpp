@@ -611,7 +611,6 @@ void APIRest::checkSampleBufferSize(){
   if(sampleBufferSize<=sampleBuffer.size()-(reposting? 1:0) ){ //if the rePOSTing of a sample fails, when this check is done the sample is already at the begin of sampleBuffer,
     // so do not take into account its presence (so sampleBuffer.size()-1), beacuse the sample will be deleted from the begin of the queue and added back to the end.
     // [TBD]
-    Serial.println("sample buffer FULL");
     // don't need to deallocate every sample individually because we passed the struct and not the pointer
     sampleBuffer.erase( sampleBuffer.begin(), sampleBuffer.begin()+ sampleBufferSize/decimationPolicyFactor); //delete sampleBufferSize/decimationPolicyFactor sample 
     vector<sample>(sampleBuffer).swap(sampleBuffer);// this create a new Buffer with capacity equal to the size, that frees memory allocated with the erased samples
