@@ -115,12 +115,12 @@ void loop() {
   //   //attachInterrupt(digitalPinToInterrupt(pirPin), detectedMotion, FALLING);
   //   //Serial.println("attachInterrupt");
   // }
-  if (!Connection->isConnected()) {
-    Serial.println("Device disconnected");
-    Serial.print("WIFI STATUS: ");
-    Serial.println(WiFi.status());
-    Connection->reconnect();
-  }
+  // if (!Connection->isConnected()) {
+  //   Serial.println("Device disconnected");
+  //   Serial.print("WIFI STATUS: ");
+  //   Serial.println(WiFi.status());
+  //   Connection->reconnect();
+  // }
 
   cycleCounter=clock()-cycleCounter;// duration of the exexution of th cycle
   
