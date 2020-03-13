@@ -25,10 +25,7 @@ clock_t sleepTime;
 sample* motion=NULL;
 sample* temperature=NULL;
 sample* light=NULL;
-/*
-const char* ssidWifi = "TIM-91746045";
-const char* passWifi = "1Oj3eyR5qHD3jAaT5Jfj1Ooh";
-*/
+
 const char* ssidWifi = "TORNATOREwifi";
 const char* passWifi = "finalborgo";
 
@@ -81,7 +78,7 @@ void setup() {
   
   //Interrupt sensor setup
   pinMode(pirPin, INPUT);
-  //attachInterrupt(digitalPinToInterrupt(pirPin), detectedMotion, FALLING);
+  attachInterrupt(digitalPinToInterrupt(pirPin), detectedMotion, FALLING);
   
 }
 
@@ -109,18 +106,17 @@ void loop() {
   temperature=NULL;
   delete light;
   light =NULL;
-  //delete motion;
+  if(!motion){
+    delete motion;
+    motion=NULL;
+  }
+  
 
-  // if( ((double)clock()-pirCounter)>=2000){// pir sensor needs 2 seconds to be ready to give another measurement
-  //   //attachInterrupt(digitalPinToInterrupt(pirPin), detectedMotion, FALLING);
-  //   //Serial.println("attachInterrupt");
-  // }
-  // if (!Connection->isConnected()) {
-  //   Serial.println("Device disconnected");
-  //   Serial.print("WIFI STATUS: ");
-  //   Serial.println(WiFi.status());
-  //   Connection->reconnect();
-  // }
+  if( ((double)clock()-pirCounter)>=2000){// pir sensor needs 2 seconds to be ready to give another measurement
+    attachInterrupt(digitalPinToInterrupt(pirPin), detectedMotion, FALLING);
+    Serial.println("attachInterrupt");
+  }
+ 
 
   cycleCounter=clock()-cycleCounter;// duration of the exexution of th cycle
   
@@ -131,16 +127,16 @@ void loop() {
   delay(sleepTime);
 }
 
-// void detectedMotion(){
-//   detachInterrupt(digitalPinToInterrupt(pirPin)); //PIR sensor needs 2 seconds to take an image to compare to
-//   pirCounter=(double)clock();
-//   Serial.println("Motion detected");
-//   motion = new sample("motion");
-//   motion->startDate=Edge->Api->getActualDate();
-//   motion->endDate=motion->startDate;
-//   motion->value=1;
-//   samples.push_back(motion);
-// }
+void detectedMotion(){
+  detachInterrupt(digitalPinToInterrupt(pirPin)); //PIR sensor needs 2 seconds to take an image to compare to
+  pirCounter=(double)clock();
+  Serial.println("Motion detected");
+  motion = new sample("motion");
+  motion->startDate=Edge->Api->getActualDate();
+  motion->endDate=motion->startDate;
+  motion->value=1;
+  samples.push_back(motion);
+}
 
 double getLux(){
   unsigned int data0, data1;
