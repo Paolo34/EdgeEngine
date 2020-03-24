@@ -43,7 +43,7 @@ class APIRest{
   string response;
   bool success;
   long  startingTime;
-  double timeElapsed;
+  float timeElapsed;
   string timestamp;
   string actualDate ;
   vector<issue> issueBuffer;

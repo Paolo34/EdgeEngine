@@ -14,7 +14,7 @@ class reception : public operation{
   private:
   //variables
   int interval;// always in seconds
-  double startInstant; // in milliseconds
+  float startInstant; // in milliseconds
   
   //methods
   void initializeCounter();

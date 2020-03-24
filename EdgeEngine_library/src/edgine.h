@@ -54,9 +54,9 @@ class edgine{
   vector<script*> scripts;
   string scriptsId; // id of the scripts
   string features;
-  double startLogCount=0;// starting instant of counter of Login
-  double startGetDescrCount=0;// starting instant of counter of Get description
-  double startGetCount=0;// starting instant of counter of Get scripts/date
+  float startLogCount=0;// starting instant of counter of Login
+  float startGetDescrCount=0;// starting instant of counter of Get description
+  float startGetCount=0;// starting instant of counter of Get scripts/date
   
   int token_expiration_time=1800;//30 minutes= 1800 seconds; interval between two login
   int cycle=10;//10 minutes; interval between two GET script
@@ -72,8 +72,8 @@ class edgine{
   string measurementBufferPolicy= "newest"; //policy of deletion of measurements whose POST failed 
   string policies="newest,decimation,average";
 
-  double logCount=(double)token_expiration_time;
-  double getDescrCount=(double)cycle;
+  float logCount=(float)token_expiration_time;
+  float getDescrCount=(float)cycle;
   
   int temp;
   string tempPol;

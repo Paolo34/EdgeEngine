@@ -25,12 +25,12 @@ reception:: ~reception(){
 
 //methods
 void reception::initializeCounter(){
-  startInstant = (double)clock() / CLOCKS_PER_SEC;
+  startInstant = (float)clock() / CLOCKS_PER_SEC;
 }
 
 sample* reception::execute(){
   
-  if( ( ((double)clock() / CLOCKS_PER_SEC) -startInstant ) < interval ){ //if not elapsed enough time 
+  if( ( ((float)clock() / CLOCKS_PER_SEC) -startInstant ) < interval ){ //if not elapsed enough time 
     delete input; // free memory from this copy of sample because it is useless 
     input=NULL;
     return NULL;//this should block the execution of the next operation

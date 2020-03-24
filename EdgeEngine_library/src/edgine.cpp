@@ -28,10 +28,10 @@ void edgine::init( options opts){
   this->opts=opts; 
   authenticate();
   do{//GET INFO
-    if( ( ((double)clock() / CLOCKS_PER_SEC) - startLogCount ) >= token_expiration_time ){//verify token validity
+    if( ( ((float)clock() / CLOCKS_PER_SEC) - startLogCount ) >= token_expiration_time ){//verify token validity
       authenticate();
     }
-    startGetCount = (double)clock() / CLOCKS_PER_SEC;
+    startGetCount = (float)clock() / CLOCKS_PER_SEC;
     Serial.println(token.c_str());
     response = Api->GETInfoUpdateDate(opts.url+"/"+opts.ver+"/"+opts.info,token); // Get the infos
     if(isOKresponse(response)){
@@ -46,16 +46,16 @@ void edgine::init( options opts){
     else{
       Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,response+" retrieving info","initialization");
     }
-    while(!isOKresponse(response) && ( ((double)clock() / CLOCKS_PER_SEC)-startGetCount ) < retryTime);//wait here "retryTime" if GETDescr failed, then retry GETDescr
+    while(!isOKresponse(response) && ( ((float)clock() / CLOCKS_PER_SEC)-startGetCount ) < retryTime);//wait here "retryTime" if GETDescr failed, then retry GETDescr
 
   }while(!isOKresponse(response));
 
 
   do{// GET DESCRIPTION
-    if( ( ((double)clock() / CLOCKS_PER_SEC) - startLogCount ) >= token_expiration_time ){//verify token validity
+    if( ( ((float)clock() / CLOCKS_PER_SEC) - startLogCount ) >= token_expiration_time ){//verify token validity
       authenticate();
     }
-    startGetDescrCount=(double)clock() / CLOCKS_PER_SEC;
+    startGetDescrCount=(float)clock() / CLOCKS_PER_SEC;
     response = Api->GETDescr(opts.url+"/"+opts.ver+"/"+opts.devs+"/"+opts.id, token); // Get the description
     if(isOKresponse(response)){
       checkFields();
@@ -65,19 +65,19 @@ void edgine::init( options opts){
     else{
       Api->POSTIssue(opts.url+"/"+opts.ver+"/"+opts.issues,token,opts.device,response+" retrieving description","initialization");
     }
-    while(!isOKresponse(response) && ( ((double)clock() / CLOCKS_PER_SEC)-startGetDescrCount ) < retryTime);//wait here "retryTime" if GETDescr failed, then retry GETDescr
+    while(!isOKresponse(response) && ( ((float)clock() / CLOCKS_PER_SEC)-startGetDescrCount ) < retryTime);//wait here "retryTime" if GETDescr failed, then retry GETDescr
 
   }while(!isOKresponse(response));
   
   
   do{// GET SCRIPTS
-    if( ( ((double)clock() / CLOCKS_PER_SEC) - startLogCount ) >= token_expiration_time ){//verify token validity
+    if( ( ((float)clock() / CLOCKS_PER_SEC) - startLogCount ) >= token_expiration_time ){//verify token validity
       authenticate();
     }
-    startGetCount = (double)clock() / CLOCKS_PER_SEC;  
+    startGetCount = (float)clock() / CLOCKS_PER_SEC;  
     retrieveScriptsCode(token, scriptsId); 
     
-    while(firstGetScriptsResponse=="none" && ( ((double)clock() / CLOCKS_PER_SEC)-startGetCount ) < retryTime);//wait here "retryTime" if login failed, then retry login
+    while(firstGetScriptsResponse=="none" && ( ((float)clock() / CLOCKS_PER_SEC)-startGetCount ) < retryTime);//wait here "retryTime" if login failed, then retry login
   }while(firstGetScriptsResponse=="none" );
 
   setToken(token); //useful for testing only
@@ -88,7 +88,7 @@ void edgine::init( options opts){
 int edgine::evaluate(vector<sample*> samples){
 
   //Check if we have to request a new TOKEN and info & date
-  logCount = ((double)clock() / CLOCKS_PER_SEC)-startLogCount ;      
+  logCount = ((float)clock() / CLOCKS_PER_SEC)-startLogCount ;      
   if( logCount >= token_expiration_time-period  && conn->isConnected()){ //every "token_expiration_time" authenticate (the engine could go to sleep while has to update the token so: token_expiration_time-period)
     authenticate();
     setToken(token); // Update the token in each script
@@ -109,10 +109,10 @@ int edgine::evaluate(vector<sample*> samples){
   }
 
   //Check if we have to update scripts and description
-  getDescrCount = (double)clock() / CLOCKS_PER_SEC-startGetDescrCount;
+  getDescrCount = (float)clock() / CLOCKS_PER_SEC-startGetDescrCount;
 
   if( getDescrCount >= cycle  && conn->isConnected()){
-    startGetDescrCount=(double)clock() / CLOCKS_PER_SEC;
+    startGetDescrCount=(float)clock() / CLOCKS_PER_SEC;
     response = Api->GETDescr(opts.url+"/"+opts.ver+"/"+opts.devs+"/"+opts.id, token); // Get the description
     //if GET fails does not matter, the engine use the previous description 
     if(isOKresponse(response)){
@@ -142,7 +142,7 @@ int edgine::evaluate(vector<sample*> samples){
 
 void edgine::authenticate(){
   do{
-    startLogCount= (double)clock() / CLOCKS_PER_SEC; 
+    startLogCount= (float)clock() / CLOCKS_PER_SEC; 
     response=Api->POSTLogin(opts.url+"/"+opts.ver+"/"+opts.login, opts.username, opts.password); // Authentication
 
     if(isOKresponse(response)){
@@ -161,7 +161,7 @@ void edgine::authenticate(){
         WiFiconnected=true;
     }
 
-    while(!isOKresponse(response) && ( ((double)clock() / CLOCKS_PER_SEC)-startLogCount ) < retryTime);//wait "retryTime" if login failed, then retry login
+    while(!isOKresponse(response) && ( ((float)clock() / CLOCKS_PER_SEC)-startLogCount ) < retryTime);//wait "retryTime" if login failed, then retry login
   }while(!isOKresponse(response));
 }
 

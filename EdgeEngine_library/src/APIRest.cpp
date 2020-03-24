@@ -69,7 +69,7 @@ string APIRest::GETInfoUpdateDate(string url, string token){
     response=string(httpCodeTmp)+http.getString().c_str();
     if (isHTTPCodeOk(httpCode)) { //Check for the returning code
           
-          startingTime = ((double)clock() / CLOCKS_PER_SEC)*SECOND; //milliseconds
+          startingTime = ((float)clock() / CLOCKS_PER_SEC)*SECOND; //milliseconds
           timestamp = parseResponse(response,"timestamp");
           // example of timestamp in milliseconds: "1580394697254" 
     }
@@ -304,7 +304,7 @@ bool APIRest::POSTMeasurement(sample sam,string token){
     http.begin(sam.url.c_str()); //Specify the URL and certificate 
     http.addHeader("Content-Type","application/json");
     http.addHeader("Authorization",token.c_str());
-    // [TBD] Arduino does not support std::to_string(double) so I used here String(double).c_str()
+    // [TBD] Arduino does not support std::to_string(float) so I used here String(float).c_str()
     httpCode = http.POST(("{\"thing\": \""+sam.thing+"\", \"feature\": \""+sam.feature+"\", \"device\": \""+sam.device+"\", \"script\": \""+sam.scriptId+"\", \"samples\": {\"values\":"+String(sam.value,6).c_str()+"}, \"startDate\": \""+sam.startDate+"\", \"endDate\": \""+sam.endDate+"\"}").c_str() );//this is the body
 
     itoa(httpCode,httpCodeTmp,10);
@@ -475,9 +475,8 @@ bool APIRest::needToBeRePOST(string response){
 
 string APIRest::getActualDate(){
 
-  timeElapsed = ((double)clock() / CLOCKS_PER_SEC)*SECOND - startingTime ; //in milliseconds
-  // [TBD] Arduino does not support std::to_string(double) so I used here String(double).c_str()
-  // ftoa(atof(timestamp.c_str()) + timeElapsed, actualDate, 10);
+  timeElapsed = ((float)clock() / CLOCKS_PER_SEC)*SECOND - startingTime ; //in milliseconds
+  // [TBD] Arduino does not support std::to_string('float') so I used here string( String('float').c_str() )
   return string( String( atof(timestamp.c_str()) + timeElapsed ).c_str() );
 }
 

@@ -45,17 +45,18 @@ script::script( string scriptId,string scriptStr, string thing, string device, s
     Serial.println(scriptId.c_str());
   }
 }
+
 script::~script(){
   for(int i=0;i<operations.size();i++){
     delete operations[i];
   }
-   operations.clear();
+  operations.clear();
 
-   if (nextInput)//if nextInput is pointing to something 
-   {
-      delete nextInput;
-      nextInput=NULL;
-   }
+  if (nextInput)//if nextInput is pointing to something 
+  {
+    delete nextInput;
+    nextInput=NULL;
+  }
 }
 
 void script::setToken(string token){
