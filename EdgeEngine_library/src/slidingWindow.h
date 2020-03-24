@@ -16,15 +16,15 @@ class slidingWindow : public operation{
   private:
   //variable
   char function;
-  double initial;
-  double accumulator;
+  float initial;
+  float accumulator;
   vector<sample*> samples;
   int windowSize;
   int counter;
 
   //methods
   void parseArgument(string,int);
-  double calculate(vector<sample*>);
+  float calculate(vector<sample*>);
   
   public:
   //constructors

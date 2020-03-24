@@ -15,7 +15,7 @@ class sample{
   
   public:
   //variables
-  double value;
+  float value;
   string startDate;
   string endDate;
   string url;

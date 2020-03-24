@@ -69,8 +69,8 @@ void average::parseNumOfSamples(string numString,int maxNumOfSamples){
   numOfSamples = numberValue;
 }
 
-double average::calculate(vector<sample*> samples) {
-  double sum=0;
+float average::calculate(vector<sample*> samples) {
+  float sum=0;
   for(int i=0;i<samples.size();i++){
     sum+=samples[i]->value;
   }

@@ -14,16 +14,16 @@ class window : public operation{
   private:
   //variable
   char function;
-  double initial;
-  double accumulator;
-  double result;
+  float initial;
+  float accumulator;
+  float result;
   int windowSize;
   int counter;
   string startDate;
 
   //methods
   void parseArgument(string,int);
-  double calculate(double);
+  float calculate(float);
   public:
   //constructors
   window(string,int);

@@ -15,7 +15,7 @@ maxVal::maxVal(string opName):operation(opName){
     valid=false;
   maxValue=-9999999999;
 }
-maxVal::maxVal( string opName,double initValue):operation(opName){
+maxVal::maxVal( string opName,float initValue):operation(opName){
   valid=true;
   if(opName!="max()")
     valid=false;
@@ -35,6 +35,6 @@ sample* maxVal::execute() {
   return NULL;//this should block the execution of the next operation
 }
 
-double maxVal::getMax(){
+float maxVal::getMax(){
 	return maxValue;
 }

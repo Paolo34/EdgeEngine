@@ -11,19 +11,19 @@ using std::string;
 
 class maxVal : public operation{
   private:
-  double maxValue;
+  float maxValue;
   
   public:
   //constructors
   maxVal(string);
-  maxVal(string,double);
+  maxVal(string,float);
   //destructor
   ~maxVal();
   //methods
   sample* execute() ;
   
   //getters
-  double getMax();
+  float getMax();
 };
 
 

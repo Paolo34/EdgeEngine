@@ -22,7 +22,7 @@ class average : public operation{
 
   //methods
   void parseNumOfSamples(string,int);
-  double calculate(vector<sample*>);
+  float calculate(vector<sample*>);
   
   public:
   //constructors

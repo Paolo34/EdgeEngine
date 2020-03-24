@@ -15,6 +15,8 @@ reception::reception(string opName):operation(opName){
   interval=parseIntervalToSec(opName.substr( opName.find("(")+1, opName.find(")")-(opName.find("(")+1) ));
   if(valid){
     initializeCounter();
+    startInstant-=interval;// the very first value has not to wait the time interval
+    //otherwise the first value is acquired after "interval" from the script creation
   }
 }
   

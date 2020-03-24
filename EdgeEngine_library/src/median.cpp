@@ -74,7 +74,7 @@ void median::parseNumOfSamples(string numString,int maxNumOfSamples){
   numOfSamples= numberValue;
 }
 
-double median::calculate(vector<sample*> samples) {
+float median::calculate(vector<sample*> samples) {
     
     //ORDINARE I DATI
     for (int i = 0; i < numOfSamples; i++)

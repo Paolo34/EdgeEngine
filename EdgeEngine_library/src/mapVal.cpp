@@ -51,7 +51,7 @@ void mapVal::parseArgument(string arguments){
   operand=atof( arguments.substr(2,arguments.length()-2).c_str() );
 }
 
-double mapVal::calculate(double input) {
+float mapVal::calculate(float input) {
   switch(function){
     case '+':
       return input+operand;

@@ -14,8 +14,8 @@ class filter : public operation{
   private:
   //variable
   string function;
-  double operand1;
-  double operand2;
+  float operand1;
+  float operand2;
   //methods
   void parseArgument(string);
   

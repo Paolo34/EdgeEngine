@@ -295,65 +295,17 @@ string APIRest::GETScript(string url, string token){
   }
    
 }
-/*
-pthread_t thread;
-int returnValue;
-void *printThreadId(void *threadid) {
-   Serial.println((int)threadid);
-}*/
 
-// void APIRest::POSTMeasurement_task( void * pvParameters ){
-    // taskParameter param = *(taskParameter *) pvParameters;
-
-    // HTTPClient http;
-    // http.begin(param.sam->url); //Specify the URL and certificate 
-    // http.addHeader("Content-Type","application/json");
-    // http.addHeader("Authorization",param.token);
-    // int httpCode = http.POST("{\"thing\": \""+param.sam->thing+"\", \"feature\": \""+param.sam->feature+"\", \"device\": \""+param.sam->device+"\", \"script\": \""+param.sam->scriptId+"\", \"samples\": {\"values\":"+param.sam->value+"}, \"startDate\": \""+param.sam->startDate+"\", \"endDate\": \""+param.sam->endDate+"\"}" );//this is the body
-    // String response=httpCode+http.getString();
-    
-    // if (!isHTTPCodeOk(httpCode)) {// something has gone wrong in the POST
-      //if the post has encoutered an error, we want to save datum that will be resent as soon as possible
-      // if(httpCode<0)
-        // response+=" error: "+HTTPClient::errorToString(httpCode);
-      // if( needToBeRePOST(response)){
-        // sampleBuffer.push_back(param.sam);// save the datum in a local sampleBuffer
-        // Serial.print(F("[HTTPS] POST NewMeas... failed"));
-        // Serial.print(", value: "+String(param.sam->value));
-        // Serial.println(", script: "+param.sam->scriptId);
-      // }
-      // else{
-        // Serial.println(F("Measurement aleady POSTed"));
-      // }
-      
-    // }
-    // Serial.println(response);
-    // http.end(); //Free the resources
-
-    // if(!reposting){
-      // reposting=true;
-      // rePOSTMeasurement(param.token); // every time we post a new measurement retry to post all the failed ones
-    // }
-    // if(!reposting){
-      // reposting=true;
-      // rePOSTIssue(param.token); // every time we post a new measurement retry to post all the failed alerts
-    // }
-
-    // vTaskDelete(NULL);
-// }
 
 bool APIRest::POSTMeasurement(sample sam,string token){
   if(!TESTING){
     
-    // parameters.sam=&sam;
-    // parameters.token=token;
-    // xTaskCreatePinnedToCore( POSTMeasurement_task,"POSTMeas TASK",1000,&parameters,2,NULL,1);
     HTTPClient http;
     http.begin(sam.url.c_str()); //Specify the URL and certificate 
     http.addHeader("Content-Type","application/json");
     http.addHeader("Authorization",token.c_str());
     // [TBD] Arduino does not support std::to_string(double) so I used here String(double).c_str()
-    httpCode = http.POST(("{\"thing\": \""+sam.thing+"\", \"feature\": \""+sam.feature+"\", \"device\": \""+sam.device+"\", \"script\": \""+sam.scriptId+"\", \"samples\": {\"values\":"+String(sam.value).c_str()+"}, \"startDate\": \""+sam.startDate+"\", \"endDate\": \""+sam.endDate+"\"}").c_str() );//this is the body
+    httpCode = http.POST(("{\"thing\": \""+sam.thing+"\", \"feature\": \""+sam.feature+"\", \"device\": \""+sam.device+"\", \"script\": \""+sam.scriptId+"\", \"samples\": {\"values\":"+String(sam.value,6).c_str()+"}, \"startDate\": \""+sam.startDate+"\", \"endDate\": \""+sam.endDate+"\"}").c_str() );//this is the body
 
     itoa(httpCode,httpCodeTmp,10);
     response=string(httpCodeTmp)+http.getString().c_str();

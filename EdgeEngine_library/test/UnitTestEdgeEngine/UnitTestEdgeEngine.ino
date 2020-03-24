@@ -17,7 +17,7 @@ class Settings :public TestOnce{
     sample* sam;
 
     //methods
-    void createSample(sample* &s, double value=1){
+    void createSample(sample* &s, float value=1){
       s= new sample("temperature");
       s->startDate="2019-12-14T12:25:06.324Z";
       s->endDate=s->startDate;
@@ -76,6 +76,7 @@ testF(Settings,reception){
   rec->setInput(sam);
   assertNotEqual(rec->getInterval(),0);
   assertEqual(rec->getInterval(),10);
+  assertEqual(rec->execute(),(float)3436);
   assertEqual(rec->execute(),NULL);// this function delete sam
   delete rec;
 
@@ -83,6 +84,7 @@ testF(Settings,reception){
   createSample(sam);
   rec->setInput(sam);
   assertEqual(rec->getInterval(),420);
+  assertEqual(rec->execute(),(float)1);
   assertEqual(rec->execute(),NULL);// this function delete sam
   delete rec;
   
@@ -90,6 +92,7 @@ testF(Settings,reception){
   createSample(sam);
   rec->setInput(sam);
   assertEqual(rec->getInterval(),3600);
+  assertEqual(rec->execute(),(float)1);
   assertEqual(rec->execute(),NULL);// this function delete sam
   delete rec;
   
@@ -97,6 +100,7 @@ testF(Settings,reception){
   createSample(sam);
   rec->setInput(sam);
   assertEqual(rec->getInterval(),259200);
+  assertEqual(rec->execute(),(float)1);
   assertEqual(rec->execute(),NULL);// this function delete sam
   delete rec;
   
@@ -104,7 +108,7 @@ testF(Settings,reception){
   createSample(sam,3);
   rec->setInput(sam);
   assertEqual(rec->getInterval(),0);
-  assertEqual((rec->execute())->value,(double)3);
+  assertEqual((rec->execute())->value,(float)3);
   delete sam;
   delete rec;
 
@@ -126,46 +130,46 @@ testF(Settings,mapVal){
   assertEqual(mapV->getName().c_str(),"map(a/6)");  
   createSample(sam,6);
   mapV->setInput(sam);
-  assertEqual((mapV->execute())->value,(double)1);
+  assertEqual((mapV->execute())->value,(float)1);
   sam->value=23;
   mapV->setInput(sam);  
-  assertEqual((mapV->execute())->value,(double)(23)/(double)(6));
+  assertEqual((mapV->execute())->value,(float)(23)/(float)(6));
   delete mapV;
 
   mapV= new mapVal("map(a+101)");
   sam->value=9;
   mapV->setInput(sam);
-  assertEqual((mapV->execute())->value,(double)(9+101));
+  assertEqual((mapV->execute())->value,(float)(9+101));
   sam->value=25;
   mapV->setInput(sam);  
-  assertEqual((mapV->execute())->value,(double)(25+101));
+  assertEqual((mapV->execute())->value,(float)(25+101));
   delete mapV;
 
   mapV= new mapVal("map(a*3)");
   sam->value=9;
   mapV->setInput(sam);
-  assertEqual((mapV->execute())->value,(double)(3*9));
+  assertEqual((mapV->execute())->value,(float)(3*9));
   sam->value=1;
   mapV->setInput(sam);  
-  assertEqual((mapV->execute())->value,(double)(3*1));
+  assertEqual((mapV->execute())->value,(float)(3*1));
   delete mapV;
 
   mapV= new mapVal("map(a-101)");
   sam->value=3;
   mapV->setInput(sam);
-  assertEqual((mapV->execute())->value,(double)(3-101));
+  assertEqual((mapV->execute())->value,(float)(3-101));
   sam->value=205;
   mapV->setInput(sam);  
-  assertEqual((mapV->execute())->value,(double)(205-101));
+  assertEqual((mapV->execute())->value,(float)(205-101));
   delete mapV;
 
   mapV= new mapVal("map(a^4)");
   sam->value=9;
   mapV->setInput(sam);
-  assertEqual((mapV->execute())->value,(double)(pow(9,4)));
+  assertEqual((mapV->execute())->value,(float)(pow(9,4)));
   sam->value=45;
   mapV->setInput(sam);  
-  assertEqual((mapV->execute())->value,(double)(pow(45,4)));
+  assertEqual((mapV->execute())->value,(float)(pow(45,4)));
   delete mapV;
   delete sam;
 
@@ -197,13 +201,13 @@ testF(Settings,maxVal){
   assertEqual(maxV->getName().c_str(),"max()");  
   createSample(sam,-10);
   maxV->setInput(sam);
-  assertEqual((maxV->execute())->value,(double)-10);
+  assertEqual((maxV->execute())->value,(float)-10);
   sam->value=-110;
   maxV->setInput(sam);
   assertEqual(maxV->execute(),NULL);// this function delete sam
   createSample(sam,0);
   maxV->setInput(sam);
-  assertEqual((maxV->execute())->value,(double)0);
+  assertEqual((maxV->execute())->value,(float)0);
   delete maxV;
 
   maxV =new maxVal("max()",10);
@@ -213,7 +217,7 @@ testF(Settings,maxVal){
   assertEqual(maxV->execute(),NULL);// this function delete sam
   createSample(sam,110);
   maxV->setInput(sam);
-  assertEqual((maxV->execute())->value,(double)110);
+  assertEqual((maxV->execute())->value,(float)110);
   sam->value=0;
   maxV->setInput(sam);
   assertEqual(maxV->execute(),NULL);// this function delete sam
@@ -231,10 +235,10 @@ testF(Settings,minVal){
   assertEqual(minV->getName().c_str(),"min()");  
   createSample(sam,8);
   minV->setInput(sam);
-  assertEqual((minV->execute())->value,(double)8);
+  assertEqual((minV->execute())->value,(float)8);
   sam->value=-2340;
   minV->setInput(sam);
-  assertEqual((minV->execute())->value,(double)-2340);
+  assertEqual((minV->execute())->value,(float)-2340);
   sam->value=0;
   minV->setInput(sam);
   assertEqual(minV->execute(),NULL);// this function delete sam
@@ -249,7 +253,7 @@ testF(Settings,minVal){
   assertEqual(minV->execute(),NULL);// this function delete sam
   createSample(sam,0);
   minV->setInput(sam);
-  assertEqual((minV->execute())->value,(double)0);
+  assertEqual((minV->execute())->value,(float)0);
   delete sam;
   delete minV;
 
@@ -265,10 +269,10 @@ testF(Settings,filter){
   assertEqual(flt->getName().c_str(),"filter(a<6)");  
   createSample(sam,5);
   flt->setInput(sam);
-  assertEqual((flt->execute())->value,(double)5);
+  assertEqual((flt->execute())->value,(float)5);
   sam->value=-2340;
   flt->setInput(sam);
-  assertEqual((flt->execute())->value,(double)-2340);
+  assertEqual((flt->execute())->value,(float)-2340);
   sam->value=6;
   flt->setInput(sam);
   assertEqual(flt->execute(),NULL);// this function delete sam
@@ -279,7 +283,7 @@ testF(Settings,filter){
   assertEqual(flt->getName().c_str(),"filter(a==7.3)");  
   createSample(sam,7.3);
   flt->setInput(sam);
-  assertEqual((flt->execute())->value,(double)7.3);
+  assertEqual((flt->execute())->value,(float)7.3);
   sam->value=-2340;
   flt->setInput(sam);
   assertEqual(flt->execute(),NULL);// this function delete sam
@@ -297,7 +301,7 @@ testF(Settings,filter){
   assertEqual(flt->execute(),NULL);// this function delete sam
   createSample(sam,21);
   flt->setInput(sam);
-  assertEqual((flt->execute())->value,(double)21);
+  assertEqual((flt->execute())->value,(float)21);
   delete sam;
   delete flt;
   
@@ -306,16 +310,16 @@ testF(Settings,filter){
   assertEqual(flt->getName().c_str(),"filter(aC[6,95])");  
   createSample(sam,53);
   flt->setInput(sam);
-  assertEqual((flt->execute())->value,(double)53);
+  assertEqual((flt->execute())->value,(float)53);
   sam->value=95;
   flt->setInput(sam);
-  assertEqual((flt->execute())->value,(double)95);
+  assertEqual((flt->execute())->value,(float)95);
   sam->value=6;
   flt->setInput(sam);
-  assertEqual((flt->execute())->value,(double)6);
+  assertEqual((flt->execute())->value,(float)6);
   sam->value=88;
   flt->setInput(sam);
-  assertEqual((flt->execute())->value,(double)88);
+  assertEqual((flt->execute())->value,(float)88);
   sam->value=96;
   flt->setInput(sam);
   assertEqual(flt->execute(),NULL);// this function delete sam
@@ -329,16 +333,16 @@ testF(Settings,filter){
   assertEqual(flt->getName().c_str(),"filter(a/C[6,95])");  
   createSample(sam,6);
   flt->setInput(sam);
-  assertEqual((flt->execute())->value,(double)6);
+  assertEqual((flt->execute())->value,(float)6);
   sam->value=95;
   flt->setInput(sam);
-  assertEqual((flt->execute())->value,(double)95);
+  assertEqual((flt->execute())->value,(float)95);
   sam->value=-10;
   flt->setInput(sam);
-  assertEqual((flt->execute())->value,(double)-10);
+  assertEqual((flt->execute())->value,(float)-10);
   sam->value=188;
   flt->setInput(sam);
-  assertEqual((flt->execute())->value,(double)188);
+  assertEqual((flt->execute())->value,(float)188);
   sam->value=90;
   flt->setInput(sam);
   assertEqual(flt->execute(),NULL);// this function delete sam
@@ -415,7 +419,7 @@ testF(Settings,window){
   }
   createSample(sam,10);
   wind->setInput(sam);
-  assertEqual((wind->execute())->value,(double) 56);
+  assertEqual((wind->execute())->value,(float) 56);
   delete sam;
 
   for (int i = 1; i < 10; i++)
@@ -426,7 +430,7 @@ testF(Settings,window){
   }
   createSample(sam,3);;
   wind->setInput(sam);
-  assertEqual((wind->execute())->value,(double)31);
+  assertEqual((wind->execute())->value,(float)31);
   delete sam;
   delete wind;
 
@@ -439,7 +443,7 @@ testF(Settings,window){
   }
   createSample(sam,10);
   wind->setInput(sam);
-  assertEqual((wind->execute())->value,(double) 2*1*2*3*10);
+  assertEqual((wind->execute())->value,(float) 2*1*2*3*10);
   delete sam;
   delete wind;
 
@@ -452,7 +456,7 @@ testF(Settings,window){
   }
   createSample(sam,5);
   wind->setInput(sam);
-  assertEqual((wind->execute())->value,(double)-8);
+  assertEqual((wind->execute())->value,(float)-8);
   delete sam;
   delete wind;
 
@@ -465,7 +469,7 @@ testF(Settings,window){
   }
   createSample(sam,1);
   wind->setInput(sam);
-  assertEqual((wind->execute())->value,(double)1/1/2/3/4/1);
+  assertEqual((wind->execute())->value,(float)1/1/2/3/4/1);
   delete sam;
   delete wind;
 
@@ -503,13 +507,13 @@ testF(Settings,slidingWindow){
   }
   createSample(sam,33);//different insances of sample are needed
   slidWind->setInput(sam);
-  assertEqual((slidWind->execute())->value,(double)44);
+  assertEqual((slidWind->execute())->value,(float)44);
   createSample(sam,3);//different insances of sample are needed
   slidWind->setInput(sam);
-  assertEqual((slidWind->execute())->value,(double)46);
+  assertEqual((slidWind->execute())->value,(float)46);
   createSample(sam,0);//different insances of sample are needed
   slidWind->setInput(sam);
-  assertEqual((slidWind->execute())->value,(double)44);
+  assertEqual((slidWind->execute())->value,(float)44);
   delete slidWind;
 
   slidWind = new slidingWindow("slidingWindow(-,34,3)",3);
@@ -521,13 +525,13 @@ testF(Settings,slidingWindow){
   }
   createSample(sam,3);//different insances of sample are needed
   slidWind->setInput(sam);
-  assertEqual((slidWind->execute())->value,(double)28);
+  assertEqual((slidWind->execute())->value,(float)28);
   createSample(sam,3);//different insances of sample are needed
   slidWind->setInput(sam);
-  assertEqual((slidWind->execute())->value,(double)26);
+  assertEqual((slidWind->execute())->value,(float)26);
   createSample(sam,0);//different insances of sample are needed
   slidWind->setInput(sam);
-  assertEqual((slidWind->execute())->value,(double)28);
+  assertEqual((slidWind->execute())->value,(float)28);
   delete slidWind;
 
   slidWind = new slidingWindow("slidingWindow(*,1,6)",6);
@@ -539,13 +543,13 @@ testF(Settings,slidingWindow){
   }
   createSample(sam,10);//different insances of sample are needed
   slidWind->setInput(sam);
-  assertEqual((slidWind->execute())->value,(double)1200);
+  assertEqual((slidWind->execute())->value,(float)1200);
   createSample(sam,3);//different insances of sample are needed
   slidWind->setInput(sam);
-  assertEqual((slidWind->execute())->value,(double)3600);
+  assertEqual((slidWind->execute())->value,(float)3600);
   createSample(sam,1);//different insances of sample are needed
   slidWind->setInput(sam);
-  assertEqual((slidWind->execute())->value,(double)1800);
+  assertEqual((slidWind->execute())->value,(float)1800);
   delete slidWind;
 
   slidWind = new slidingWindow("slidingWindow(/,100,6)",6);
@@ -557,13 +561,13 @@ testF(Settings,slidingWindow){
   }
   createSample(sam,10);//different insances of sample are needed
   slidWind->setInput(sam);
-  assertEqual((slidWind->execute())->value,(double)100/1/2/3/4/5/10);
+  assertEqual((slidWind->execute())->value,(float)100/1/2/3/4/5/10);
   createSample(sam,3);//different insances of sample are needed
   slidWind->setInput(sam);
-  assertEqual((slidWind->execute())->value,(double)100/2/3/4/5/10/3);
+  assertEqual((slidWind->execute())->value,(float)100/2/3/4/5/10/3);
   createSample(sam,1);//different insances of sample are needed
   slidWind->setInput(sam);
-  assertEqual((slidWind->execute())->value,(double)100/3/4/5/10/3/1);
+  assertEqual((slidWind->execute())->value,(float)100/3/4/5/10/3/1);
   delete slidWind;
   slidWind = new slidingWindow("slidingWindow(?,1,10)",10);
   assertFalse(slidWind->valid);
@@ -601,13 +605,13 @@ testF(Settings,average){
   }
   createSample(sam,33);//different insances of sample are needed
   avg->setInput(sam);
-  assertEqual((avg->execute())->value,(double)43/5);
+  assertEqual((avg->execute())->value,(float)43/5);
   createSample(sam,3);//different insances of sample are needed
   avg->setInput(sam);
-  assertEqual((avg->execute())->value,(double)45/5);
+  assertEqual((avg->execute())->value,(float)45/5);
   createSample(sam,0);//different insances of sample are needed
   avg->setInput(sam);
-  assertEqual((avg->execute())->value,(double)43/5);
+  assertEqual((avg->execute())->value,(float)43/5);
   delete avg;
 
   avg = new average("average(3)",3);
@@ -619,13 +623,13 @@ testF(Settings,average){
   }
   createSample(sam,3);//different insances of sample are needed
   avg->setInput(sam);
-  assertEqual((avg->execute())->value,(double)6/3);
+  assertEqual((avg->execute())->value,(float)6/3);
   createSample(sam,3);//different insances of sample are needed
   avg->setInput(sam);
-  assertEqual((avg->execute())->value,(double)8/3);
+  assertEqual((avg->execute())->value,(float)8/3);
   createSample(sam,0);//different insances of sample are needed
   avg->setInput(sam);
-  assertEqual((avg->execute())->value,(double)6/3);
+  assertEqual((avg->execute())->value,(float)6/3);
   delete avg;
 
   avg = new average("average(6)",6);
@@ -637,13 +641,13 @@ testF(Settings,average){
   }
   createSample(sam,10);//different insances of sample are needed
   avg->setInput(sam);
-  assertEqual((avg->execute())->value,(double)25/6);
+  assertEqual((avg->execute())->value,(float)25/6);
   createSample(sam,3);//different insances of sample are needed
   avg->setInput(sam);
-  assertEqual((avg->execute())->value,(double)27/6);
+  assertEqual((avg->execute())->value,(float)27/6);
   createSample(sam,1);//different insances of sample are needed
   avg->setInput(sam);
-  assertEqual((avg->execute())->value,(double)26/6);
+  assertEqual((avg->execute())->value,(float)26/6);
   delete avg;
 
   avg = new average("average(6)",6);
@@ -655,13 +659,13 @@ testF(Settings,average){
   }
   createSample(sam,10);//different insances of sample are needed
   avg->setInput(sam);
-  assertEqual((avg->execute())->value,(double)75/6);
+  assertEqual((avg->execute())->value,(float)75/6);
   createSample(sam,3);//different insances of sample are needed
   avg->setInput(sam);
-  assertEqual((avg->execute())->value,(double)67/6);
+  assertEqual((avg->execute())->value,(float)67/6);
   createSample(sam,1);//different insances of sample are needed
   avg->setInput(sam);
-  assertEqual((avg->execute())->value,(double)56/6);
+  assertEqual((avg->execute())->value,(float)56/6);
   delete avg;
   avg = new average("average(?)",10);
   assertFalse(avg->valid);
@@ -702,13 +706,13 @@ testF(Settings,stdDeviation){
   }
   createSample(sam,33);//different insances of sample are needed
   stdDev->setInput(sam);
-  assertNear((stdDev->execute())->value, sqrt( ( pow(1.0-43.0/5,2)+pow(2.0-43.0/5,2)+pow(3.0-43.0/5,2)+pow(4.0-43.0/5,2)+pow(33.0-43.0/5,2) )/5 ), 1e-14  );
+  assertNear((stdDev->execute())->value, (float)sqrt( ( pow(1.0-43.0/5,2)+pow(2.0-43.0/5,2)+pow(3.0-43.0/5,2)+pow(4.0-43.0/5,2)+pow(33.0-43.0/5,2) )/5 ), 1e-6 );
   createSample(sam,3);//different insances of sample are needed
   stdDev->setInput(sam);
-  assertNear((stdDev->execute())->value,sqrt( ( pow(3.0-45.0/5,2)+pow(2.0-45.0/5,2)+pow(3.0-45.0/5,2)+pow(4.0-45.0/5,2)+pow(33.0-45.0/5,2) )/5 ), 1e-14);
+  assertNear((stdDev->execute())->value, (float)sqrt( ( pow(3.0-45.0/5,2)+pow(2.0-45.0/5,2)+pow(3.0-45.0/5,2)+pow(4.0-45.0/5,2)+pow(33.0-45.0/5,2) )/5 ), 1e-6);
   createSample(sam,0);//different insances of sample are needed
   stdDev->setInput(sam);
-  assertNear((stdDev->execute())->value,sqrt( ( pow(3.0-43.0/5,2)+pow(0.0-43.0/5,2)+pow(3.0-43.0/5,2)+pow(4.0-43.0/5,2)+pow(33.0-43.0/5,2) )/5 ), 1e-14);
+  assertNear((stdDev->execute())->value, (float)sqrt( ( pow(3.0-43.0/5,2)+pow(0.0-43.0/5,2)+pow(3.0-43.0/5,2)+pow(4.0-43.0/5,2)+pow(33.0-43.0/5,2) )/5 ), 1e-6);
   delete stdDev;
 
   stdDev = new stdDeviation("stdDeviation(3)",3);
@@ -720,13 +724,13 @@ testF(Settings,stdDeviation){
   }
   createSample(sam,3);//different insances of sample are needed
   stdDev->setInput(sam);
-  assertNear((stdDev->execute())->value,sqrt( ( pow(1.0-6.0/3,2)+pow(2.0-6.0/3,2)+pow(3.0-6.0/3,2) )/3 ), 1e-14);
+  assertNear((stdDev->execute())->value,(float)sqrt( ( pow(1.0-6.0/3,2)+pow(2.0-6.0/3,2)+pow(3.0-6.0/3,2) )/3 ), 1e-6);
   createSample(sam,3);//different insances of sample are needed
   stdDev->setInput(sam);
-  assertNear((stdDev->execute())->value,sqrt( ( pow(3.0-8.0/3,2)+pow(2.0-8.0/3,2)+pow(3.0-8.0/3,2) )/3 ), 1e-14);
+  assertNear((stdDev->execute())->value,(float)sqrt( ( pow(3.0-8.0/3,2)+pow(2.0-8.0/3,2)+pow(3.0-8.0/3,2) )/3 ), 1e-6);
   createSample(sam,0);//different insances of sample are needed
   stdDev->setInput(sam);
-  assertNear((stdDev->execute())->value,sqrt( ( pow(3.0-6.0/3,2)+pow(0.0-6.0/3,2)+pow(3.0-6.0/3,2) )/3 ), 1e-14);
+  assertNear((stdDev->execute())->value,(float)sqrt( ( pow(3.0-6.0/3,2)+pow(0.0-6.0/3,2)+pow(3.0-6.0/3,2) )/3 ), 1e-6);
   delete stdDev;
 
   stdDev = new stdDeviation("stdDeviation(6)",7);
@@ -738,13 +742,13 @@ testF(Settings,stdDeviation){
   }
   createSample(sam,10);//different insances of sample are needed
   stdDev->setInput(sam);
-  assertNear((stdDev->execute())->value, sqrt( ( pow(11.0-75.0/6,2)+pow(12.0-75.0/6,2)+pow(13.0-75.0/6,2)+pow(14.0-75.0/6,2)+pow(15.0-75.0/6,2)+pow(10.0-75.0/6,2) )/6 ), 1e-14 );
+  assertNear((stdDev->execute())->value, (float)sqrt( ( pow(11.0-75.0/6,2)+pow(12.0-75.0/6,2)+pow(13.0-75.0/6,2)+pow(14.0-75.0/6,2)+pow(15.0-75.0/6,2)+pow(10.0-75.0/6,2) )/6 ), 1e-6 );
   createSample(sam,3);//different insances of sample are needed
   stdDev->setInput(sam);
-  assertNear((stdDev->execute())->value,sqrt( ( pow(3.0-67.0/6,2)+pow(12.0-67.0/6,2)+pow(13.0-67.0/6,2)+pow(14.0-67.0/6,2)+pow(15.0-67.0/6,2)+pow(10.0-67.0/6,2) )/6 ), 1e-14);
+  assertNear((stdDev->execute())->value,(float)sqrt( ( pow(3.0-67.0/6,2)+pow(12.0-67.0/6,2)+pow(13.0-67.0/6,2)+pow(14.0-67.0/6,2)+pow(15.0-67.0/6,2)+pow(10.0-67.0/6,2) )/6 ), 1e-6);
   createSample(sam,1);//different insances of sample are needed
   stdDev->setInput(sam);
-  assertNear((stdDev->execute())->value,sqrt( ( pow(3.0-56.0/6,2)+pow(1.0-56.0/6,2)+pow(13.0-56.0/6,2)+pow(14.0-56.0/6,2)+pow(15.0-56.0/6,2)+pow(10.0-56.0/6,2) )/6 ), 1e-14);
+  assertNear((stdDev->execute())->value,(float)sqrt( ( pow(3.0-56.0/6,2)+pow(1.0-56.0/6,2)+pow(13.0-56.0/6,2)+pow(14.0-56.0/6,2)+pow(15.0-56.0/6,2)+pow(10.0-56.0/6,2) )/6 ), 1e-6);
   delete stdDev;
   stdDev = new stdDeviation("stdDeviation(?)",10);
   assertFalse(stdDev->valid);
@@ -784,13 +788,13 @@ testF(Settings,median){
   }
   createSample(sam,33);//different insances of sample are needed
   med->setInput(sam);
-  assertEqual((med->execute())->value,(double)3);
+  assertEqual((med->execute())->value,(float)3);
   createSample(sam,3);//different insances of sample are needed
   med->setInput(sam);
-  assertEqual((med->execute())->value,(double)3);
+  assertEqual((med->execute())->value,(float)3);
   createSample(sam,0);//different insances of sample are needed
   med->setInput(sam);
-  assertEqual((med->execute())->value,(double)2);
+  assertEqual((med->execute())->value,(float)2);
   delete med;
   
   med = new median("median(3)",8);
@@ -802,13 +806,13 @@ testF(Settings,median){
   }
   createSample(sam,3);//different insances of sample are needed
   med->setInput(sam);
-  assertEqual((med->execute())->value,(double)7);
+  assertEqual((med->execute())->value,(float)7);
   createSample(sam,3);//different insances of sample are needed
   med->setInput(sam);
-  assertEqual((med->execute())->value,(double)3);
+  assertEqual((med->execute())->value,(float)3);
   createSample(sam,0);//different insances of sample are needed
   med->setInput(sam);
-  assertEqual((med->execute())->value,(double)3);
+  assertEqual((med->execute())->value,(float)3);
   delete med;
 
   med = new median("median(6)",8);
@@ -820,13 +824,13 @@ testF(Settings,median){
   }
   createSample(sam,10);//different insances of sample are needed
   med->setInput(sam);
-  assertEqual((med->execute())->value,(double)7/2);
+  assertEqual((med->execute())->value,(float)7/2);
   createSample(sam,3);//different insances of sample are needed
   med->setInput(sam);
-  assertEqual((med->execute())->value,(double)7/2);
+  assertEqual((med->execute())->value,(float)7/2);
   createSample(sam,18);//different insances of sample are needed
   med->setInput(sam);
-  assertEqual((med->execute())->value,(double)9/2);
+  assertEqual((med->execute())->value,(float)9/2);
   delete med;
 
   med = new median("median(6)",8);
@@ -838,13 +842,13 @@ testF(Settings,median){
   }
   createSample(sam,10);//different insances of sample are needed
   med->setInput(sam);
-  assertEqual((med->execute())->value,(double)25/2);
+  assertEqual((med->execute())->value,(float)25/2);
   createSample(sam,15);//different insances of sample are needed
   med->setInput(sam);
-  assertEqual((med->execute())->value,(double)27/2);
+  assertEqual((med->execute())->value,(float)27/2);
   createSample(sam,15);//different insances of sample are needed
   med->setInput(sam);
-  assertEqual((med->execute())->value,(double)29/2);
+  assertEqual((med->execute())->value,(float)29/2);
   delete med;
   med = new median("median(?)",10);
   assertFalse(med->valid);
@@ -993,7 +997,7 @@ testF(Settings,postVal){
   assertTrue(postV->valid);
   createSample(sam,5);
   postV->setInput(sam);
-  assertEqual((postV->execute())->value,(double)5);// this function delete sam
+  assertEqual((postV->execute())->value,(float)5);// this function delete sam
   createSample(sam);
   assertEqual(postV->batch.size(),(size_t)(0));
   delete postV;
@@ -1047,7 +1051,7 @@ testF(Settings,sample){
   Serial.println("SAMPLE");
 
   createSample(sam,19);
-  assertEqual(sam->value,(double)19);
+  assertEqual(sam->value,(float)19);
   assertEqual(sam->feature.c_str(),"temperature");
   delete sam;
 }

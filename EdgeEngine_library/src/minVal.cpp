@@ -13,7 +13,7 @@ minVal::minVal(string opName):operation(opName){
     valid=false;
   minValue=9999999999;
 }
-minVal::minVal(string opName, double initValue ):operation(opName){
+minVal::minVal(string opName, float initValue ):operation(opName){
   valid=true;
   if(opName!="min()")
     valid=false;
@@ -33,6 +33,6 @@ sample* minVal::execute(){
   return NULL;//this should block the execution of the next operation
 }
 
-double minVal::getMin(){
+float minVal::getMin(){
 	return minValue;
 }

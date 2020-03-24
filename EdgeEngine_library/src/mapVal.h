@@ -14,11 +14,11 @@ class mapVal : public operation{
   private:
   //variable
   char function;
-  double operand;
+  float operand;
 
   //methods
   void parseArgument(string);
-  double calculate(double);
+  float calculate(float);
   
   public:
   //constructors

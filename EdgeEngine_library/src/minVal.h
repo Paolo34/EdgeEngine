@@ -11,19 +11,19 @@ using std::string;
 
 class minVal : public operation{
   private:
-  double minValue;
+  float minValue;
   
   public:
   //constructors
   minVal(string);
-  minVal(string,double);
+  minVal(string,float);
   //destructor
   ~minVal();
   //methods
   sample* execute();
   
   //getters
-  double getMin();
+  float getMin();
 };
 
 #endif 

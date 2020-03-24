@@ -89,7 +89,7 @@ int edgine::evaluate(vector<sample*> samples){
 
   //Check if we have to request a new TOKEN and info & date
   logCount = ((double)clock() / CLOCKS_PER_SEC)-startLogCount ;      
-  if( logCount >= token_expiration_time -period){ //every "token_expiration_time" authenticate (the engine could go to sleep while has to update the token so: token_expiration_time-period)
+  if( logCount >= token_expiration_time-period  && conn->isConnected()){ //every "token_expiration_time" authenticate (the engine could go to sleep while has to update the token so: token_expiration_time-period)
     authenticate();
     setToken(token); // Update the token in each script
 
@@ -111,7 +111,7 @@ int edgine::evaluate(vector<sample*> samples){
   //Check if we have to update scripts and description
   getDescrCount = (double)clock() / CLOCKS_PER_SEC-startGetDescrCount;
 
-  if( getDescrCount >= cycle ){
+  if( getDescrCount >= cycle  && conn->isConnected()){
     startGetDescrCount=(double)clock() / CLOCKS_PER_SEC;
     response = Api->GETDescr(opts.url+"/"+opts.ver+"/"+opts.devs+"/"+opts.id, token); // Get the description
     //if GET fails does not matter, the engine use the previous description 
@@ -130,6 +130,7 @@ int edgine::evaluate(vector<sample*> samples){
   }
   if(!conn->isConnected()){
     WiFiconnected=false;
+    conn->reconnect();
   }
   if(conn->isConnected() && WiFiconnected==false){
     WiFiconnected=true;
@@ -527,6 +528,6 @@ void edgine::deleteSpaces(string& str){
   }
 }
 
-double edgine::getPeriod(){
+int edgine::getPeriod(){
   return period;
 }

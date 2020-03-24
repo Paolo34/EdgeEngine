@@ -72,9 +72,9 @@ void stdDeviation::parseNumOfSamples(string numString,int maxNumOfSamples){
   numOfSamples= numberValue;
 }
 
-double stdDeviation::calculate(vector<sample*> samples) {
-    double avg=0;
-    double res=0;
+float stdDeviation::calculate(vector<sample*> samples) {
+    float avg=0;
+    float res=0;
     for(int i=0;i<samples.size();i++){
     avg+=samples[i]->value;
     }

@@ -108,7 +108,7 @@ class edgine{
   int evaluate(vector<sample*>);
 
   //getters
-  double getPeriod();
+  int getPeriod();
 };
 
 #endif 

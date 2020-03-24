@@ -16,13 +16,13 @@ class median : public operation{
   private:
   //variable
   vector<sample*> samples;
-  vector<double> orderedValues;
+  vector<float> orderedValues;
   int numOfSamples;
   int counter;
 
   //methods
   void parseNumOfSamples(string,int);
-  double calculate(vector<sample*>);
+  float calculate(vector<sample*>);
   
   public:
   //constructors

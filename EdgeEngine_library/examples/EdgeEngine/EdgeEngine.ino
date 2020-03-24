@@ -138,7 +138,7 @@ void detectedMotion(){
   samples.push_back(motion);
 }
 
-double getLux(){
+float getLux(){
   unsigned int data0, data1;
   if (lightSensor.getData(data0,data1))
   {

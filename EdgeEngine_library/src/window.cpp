@@ -78,7 +78,7 @@ void window::parseArgument(string arguments,int maxWindowBuffer){
     return;
   }
 }
-double window::calculate(double input) {
+float window::calculate(float input) {
   switch(function){
     case '+':
       return accumulator+input;

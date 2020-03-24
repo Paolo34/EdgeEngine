@@ -92,7 +92,7 @@ void slidingWindow::parseArgument(string arguments,int maxWindowBuffer){
   
 }
 
-double slidingWindow::calculate(vector<sample*> samples) {
+float slidingWindow::calculate(vector<sample*> samples) {
   accumulator=initial;
   int i;
   switch(function){
