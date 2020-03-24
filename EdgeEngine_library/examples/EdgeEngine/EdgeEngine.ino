@@ -9,7 +9,7 @@ using std::string;
 #define I2C_SDA 33
 #define I2C_SCL 32
 
-int pirPin = 35;
+uint8_t pirPin = 35;
 
 int tmpSensorAddress = 0x48;
 
@@ -84,7 +84,7 @@ void setup() {
 
 void loop() {
   cycleCounter=clock();
-  
+
   //create a light measurement sample
   light = new sample("light");
   light->startDate=Edge->Api->getActualDate();
@@ -100,28 +100,27 @@ void loop() {
   samples.push_back(temperature);
 
   Edge->evaluate(samples);
+
   samples.clear(); // after evaluated all samples delete them
 
   delete temperature;
   temperature=NULL;
   delete light;
-  light =NULL;
-  if(!motion){
-    delete motion;
-    motion=NULL;
-  }
+  light =NULL;  
   
-
-  if( ((double)clock()-pirCounter)>=2000){// pir sensor needs 2 seconds to be ready to give another measurement
+  if( ((float)clock()-pirCounter)>=2000){// pir sensor needs 2 seconds to be ready to give another measurement
+    if(!motion){
+      delete motion;
+      motion=NULL;
+    }
     attachInterrupt(digitalPinToInterrupt(pirPin), detectedMotion, FALLING);
-    Serial.println("attachInterrupt");
   }
  
 
   cycleCounter=clock()-cycleCounter;// duration of the exexution of th cycle
   
   // subtract te execution time to the Sleep period if result is not negative
-  ((double)cycleCounter/CLOCKS_PER_SEC) < Edge->getPeriod() ? sleepTime=(Edge->getPeriod()-(double)cycleCounter/CLOCKS_PER_SEC)*1000 : sleepTime=0;//delay in milliseconds
+  ((float)cycleCounter/CLOCKS_PER_SEC) < Edge->getPeriod() ? sleepTime=(Edge->getPeriod()-(float)cycleCounter/CLOCKS_PER_SEC)*1000 : sleepTime=0;//delay in milliseconds
   
 
   delay(sleepTime);
@@ -129,11 +128,10 @@ void loop() {
 
 void detectedMotion(){
   detachInterrupt(digitalPinToInterrupt(pirPin)); //PIR sensor needs 2 seconds to take an image to compare to
-  pirCounter=(double)clock();
-  Serial.println("Motion detected");
+  pirCounter=clock();
   motion = new sample("motion");
-  motion->startDate=Edge->Api->getActualDate();
-  motion->endDate=motion->startDate;
+  //motion->startDate=Edge->Api->getActualDate();
+  //motion->endDate=motion->startDate;
   motion->value=1;
   samples.push_back(motion);
 }
